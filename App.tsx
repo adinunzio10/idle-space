@@ -1,15 +1,43 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, TouchableOpacity } from 'react-native';
+import { Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { useEffect, useState } from 'react';
 import './global.css';
 import { GameController } from './src/core/GameController';
 import { GameState } from './src/storage/schemas/GameState';
+import { GalaxyMapView } from './src/components/galaxy/GalaxyMapView';
+import { Beacon } from './src/types/galaxy';
 
 export default function App() {
   const [gameController] = useState(() => GameController.getInstance());
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showGalaxyMap, setShowGalaxyMap] = useState(false);
+
+  // Sample beacons for testing
+  const sampleBeacons: Beacon[] = [
+    {
+      id: 'beacon-1',
+      position: { x: 100, y: 100 },
+      level: 1,
+      type: 'pioneer',
+      connections: ['beacon-2']
+    },
+    {
+      id: 'beacon-2', 
+      position: { x: 200, y: 150 },
+      level: 1,
+      type: 'harvester',
+      connections: ['beacon-1', 'beacon-3']
+    },
+    {
+      id: 'beacon-3',
+      position: { x: 150, y: 250 },
+      level: 2,
+      type: 'architect',
+      connections: ['beacon-2']
+    }
+  ];
 
   useEffect(() => {
     let mounted = true;
@@ -54,6 +82,14 @@ export default function App() {
     setGameState(updatedState);
   };
 
+  const handleBeaconSelect = (beacon: Beacon) => {
+    console.log('Selected beacon:', beacon);
+  };
+
+  const handleMapPress = (position: { x: number; y: number }) => {
+    console.log('Map pressed at:', position);
+  };
+
   if (error) {
     return (
       <View className="flex-1 bg-background items-center justify-center p-4">
@@ -71,6 +107,34 @@ export default function App() {
         <Text className="text-text/80 text-base mt-2">
           Initializing save system...
         </Text>
+        <StatusBar style="light" />
+      </View>
+    );
+  }
+
+  if (showGalaxyMap) {
+    const screenData = Dimensions.get('window');
+    return (
+      <View className="flex-1 bg-background">
+        <View className="flex-row justify-between items-center p-4 bg-surface">
+          <TouchableOpacity
+            onPress={() => setShowGalaxyMap(false)}
+            className="bg-primary px-4 py-2 rounded-lg"
+          >
+            <Text className="text-white font-semibold">← Back</Text>
+          </TouchableOpacity>
+          <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
+          <View style={{ width: 70 }} />
+        </View>
+        
+        <GalaxyMapView
+          width={screenData.width}
+          height={screenData.height - 80}
+          beacons={sampleBeacons}
+          onBeaconSelect={handleBeaconSelect}
+          onMapPress={handleMapPress}
+        />
+        
         <StatusBar style="light" />
       </View>
     );
@@ -99,6 +163,15 @@ export default function App() {
             >
               <Text className="text-white font-semibold text-center">
                 Generate +100 Quantum Data
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={() => setShowGalaxyMap(true)}
+              className="bg-accent px-6 py-3 rounded-lg"
+            >
+              <Text className="text-white font-semibold text-center">
+                Open Galaxy Map
               </Text>
             </TouchableOpacity>
             
