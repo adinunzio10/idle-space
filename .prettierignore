@@ -1,0 +1,15 @@
+# Task Master files
+.taskmaster/**
+
+# Claude Code files  
+.claude/**
+
+# Generated files
+node_modules/**
+.expo/**
+dist/**
+build/**
+
+# Config files we don't want to format
+.mcp.json
+package-lock.json
