@@ -1,4 +1,4 @@
-import { Point2D, ViewportBounds, ViewportState } from '../../types/galaxy';
+import { Point2D, ViewportBounds, ViewportState, GestureVelocity } from '../../types/galaxy';
 
 /**
  * Convert screen coordinates to galaxy coordinates
@@ -120,4 +120,167 @@ export function constrainTranslation(
     x: Math.max(minX, Math.min(maxX, translation.x)),
     y: Math.max(minY, Math.min(maxY, translation.y)),
   };
+}
+
+/**
+ * Apply elastic bounds constraints with rubber band effect
+ */
+export function constrainTranslationElastic(
+  translation: Point2D,
+  screenWidth: number,
+  screenHeight: number,
+  contentWidth: number,
+  contentHeight: number,
+  scale: number,
+  elasticity: number = 0.3
+): Point2D {
+  const scaledContentWidth = contentWidth * scale;
+  const scaledContentHeight = contentHeight * scale;
+
+  // Don't constrain if content is smaller than screen
+  if (scaledContentWidth <= screenWidth && scaledContentHeight <= screenHeight) {
+    return translation;
+  }
+
+  const minX = screenWidth - scaledContentWidth;
+  const maxX = 0;
+  const minY = screenHeight - scaledContentHeight;
+  const maxY = 0;
+
+  let x = translation.x;
+  let y = translation.y;
+
+  // Apply elastic resistance when exceeding bounds
+  if (x > maxX) {
+    const overflow = x - maxX;
+    x = maxX + overflow * elasticity;
+  } else if (x < minX) {
+    const overflow = minX - x;
+    x = minX - overflow * elasticity;
+  }
+
+  if (y > maxY) {
+    const overflow = y - maxY;
+    y = maxY + overflow * elasticity;
+  } else if (y < minY) {
+    const overflow = minY - y;
+    y = minY - overflow * elasticity;
+  }
+
+  return { x, y };
+}
+
+/**
+ * Calculate momentum decay factor
+ */
+export function calculateMomentumDecay(velocity: number, decayRate: number = 0.95): number {
+  return velocity * decayRate;
+}
+
+/**
+ * Apply momentum to translation with boundary constraints
+ */
+export function applyMomentum(
+  currentTranslation: Point2D,
+  velocity: GestureVelocity,
+  screenWidth: number,
+  screenHeight: number,
+  contentWidth: number,
+  contentHeight: number,
+  scale: number,
+  deltaTime: number
+): { translation: Point2D; newVelocity: GestureVelocity } {
+  // Apply velocity to translation
+  const newTranslation = {
+    x: currentTranslation.x + velocity.x * deltaTime,
+    y: currentTranslation.y + velocity.y * deltaTime,
+  };
+
+  // Apply elastic constraints
+  const constrainedTranslation = constrainTranslationElastic(
+    newTranslation,
+    screenWidth,
+    screenHeight,
+    contentWidth,
+    contentHeight,
+    scale
+  );
+
+  // Reduce velocity if hitting boundaries
+  let newVelocity = { ...velocity };
+  const scaledContentWidth = contentWidth * scale;
+  const scaledContentHeight = contentHeight * scale;
+  
+  if (scaledContentWidth > screenWidth) {
+    const minX = screenWidth - scaledContentWidth;
+    const maxX = 0;
+    
+    if ((constrainedTranslation.x <= minX && velocity.x < 0) || 
+        (constrainedTranslation.x >= maxX && velocity.x > 0)) {
+      newVelocity.x *= 0.1; // Dampen velocity when hitting bounds
+    }
+  }
+
+  if (scaledContentHeight > screenHeight) {
+    const minY = screenHeight - scaledContentHeight;
+    const maxY = 0;
+    
+    if ((constrainedTranslation.y <= minY && velocity.y < 0) || 
+        (constrainedTranslation.y >= maxY && velocity.y > 0)) {
+      newVelocity.y *= 0.1; // Dampen velocity when hitting bounds
+    }
+  }
+
+  // Apply decay
+  newVelocity.x = calculateMomentumDecay(newVelocity.x);
+  newVelocity.y = calculateMomentumDecay(newVelocity.y);
+
+  return {
+    translation: constrainedTranslation,
+    newVelocity,
+  };
+}
+
+/**
+ * Calculate focal point for zoom gestures
+ */
+export function calculateZoomFocalPoint(
+  focalPoint: Point2D,
+  currentTranslation: Point2D,
+  currentScale: number,
+  newScale: number
+): Point2D {
+  const scaleDiff = newScale - currentScale;
+  
+  return {
+    x: currentTranslation.x - (focalPoint.x - currentTranslation.x) * (scaleDiff / currentScale),
+    y: currentTranslation.y - (focalPoint.y - currentTranslation.y) * (scaleDiff / currentScale),
+  };
+}
+
+/**
+ * Check if velocity is below threshold (momentum stopped)
+ */
+export function isVelocityInsignificant(velocity: GestureVelocity, threshold: number = 0.1): boolean {
+  return Math.abs(velocity.x) < threshold && Math.abs(velocity.y) < threshold;
+}
+
+/**
+ * Calculate distance between two points
+ */
+export function distanceBetweenPoints(p1: Point2D, p2: Point2D): number {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Check if a point is within a circular hit area
+ */
+export function isPointInHitArea(
+  point: Point2D,
+  target: Point2D,
+  radius: number
+): boolean {
+  return distanceBetweenPoints(point, target) <= radius;
 }
