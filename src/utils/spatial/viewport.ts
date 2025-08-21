@@ -68,6 +68,7 @@ export function isPointVisible(
  * Clamp scale value within reasonable bounds
  */
 export function clampScale(scale: number): number {
+  'worklet';
   const MIN_SCALE = 0.1;
   const MAX_SCALE = 10.0;
   return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
@@ -134,6 +135,7 @@ export function constrainTranslationElastic(
   scale: number,
   elasticity: number = 0.3
 ): Point2D {
+  'worklet';
   const scaledContentWidth = contentWidth * scale;
   const scaledContentHeight = contentHeight * scale;
 
@@ -250,6 +252,7 @@ export function calculateZoomFocalPoint(
   currentScale: number,
   newScale: number
 ): Point2D {
+  'worklet';
   const scaleDiff = newScale - currentScale;
   
   return {
@@ -262,6 +265,7 @@ export function calculateZoomFocalPoint(
  * Check if velocity is below threshold (momentum stopped)
  */
 export function isVelocityInsignificant(velocity: GestureVelocity, threshold: number = 0.1): boolean {
+  'worklet';
   return Math.abs(velocity.x) < threshold && Math.abs(velocity.y) < threshold;
 }
 

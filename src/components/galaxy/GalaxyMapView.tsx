@@ -272,112 +272,100 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Pan gesture
   const panGesture = Gesture.Pan()
     .onStart(() => {
-      runOnUI(() => {
-        isDecaying.value = false;
-        gestureState.value.isActive = true;
-        lastTranslateX.value = translateX.value;
-        lastTranslateY.value = translateY.value;
-        velocityX.value = 0;
-        velocityY.value = 0;
-      })();
+      isDecaying.value = false;
+      gestureState.value.isActive = true;
+      lastTranslateX.value = translateX.value;
+      lastTranslateY.value = translateY.value;
+      velocityX.value = 0;
+      velocityY.value = 0;
     })
     .onUpdate((event) => {
-      runOnUI(() => {
-        translateX.value = lastTranslateX.value + event.translationX;
-        translateY.value = lastTranslateY.value + event.translationY;
-        
-        // Track velocity for momentum
-        velocityX.value = event.velocityX;
-        velocityY.value = event.velocityY;
-      })();
+      translateX.value = lastTranslateX.value + event.translationX;
+      translateY.value = lastTranslateY.value + event.translationY;
+      
+      // Track velocity for momentum
+      velocityX.value = event.velocityX;
+      velocityY.value = event.velocityY;
     })
     .onEnd(() => {
-      runOnUI(() => {
-        gestureState.value.isActive = false;
-        
-        // Apply elastic constraints
-        const constrainedTranslation = constrainTranslationElastic(
-          { x: translateX.value, y: translateY.value },
-          width,
-          height,
-          GALAXY_WIDTH,
-          GALAXY_HEIGHT,
-          scale.value
-        );
+      gestureState.value.isActive = false;
+      
+      // Apply elastic constraints
+      const constrainedTranslation = constrainTranslationElastic(
+        { x: translateX.value, y: translateY.value },
+        width,
+        height,
+        GALAXY_WIDTH,
+        GALAXY_HEIGHT,
+        scale.value
+      );
 
-        // Start momentum decay if velocity is significant
-        const currentVelocity = { x: velocityX.value, y: velocityY.value };
-        if (!isVelocityInsignificant(currentVelocity, 50)) {
-          isDecaying.value = true;
-          velocityX.value = velocityX.value * 0.1; // Scale down initial velocity
-          velocityY.value = velocityY.value * 0.1;
-        } else {
-          // Spring back to constrained position
-          translateX.value = withSpring(constrainedTranslation.x);
-          translateY.value = withSpring(constrainedTranslation.y);
-        }
-        
-        runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, scale.value);
-      })();
+      // Start momentum decay if velocity is significant
+      const currentVelocity = { x: velocityX.value, y: velocityY.value };
+      if (!isVelocityInsignificant(currentVelocity, 50)) {
+        isDecaying.value = true;
+        velocityX.value = velocityX.value * 0.1; // Scale down initial velocity
+        velocityY.value = velocityY.value * 0.1;
+      } else {
+        // Spring back to constrained position
+        translateX.value = withSpring(constrainedTranslation.x);
+        translateY.value = withSpring(constrainedTranslation.y);
+      }
+      
+      runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, scale.value);
     });
 
   // Pinch gesture with focal point zooming
   const pinchGesture = Gesture.Pinch()
     .onStart((event) => {
-      runOnUI(() => {
-        isDecaying.value = false;
-        gestureState.value.isActive = true;
-        lastScale.value = scale.value;
-        lastTranslateX.value = translateX.value;
-        lastTranslateY.value = translateY.value;
-        
-        // Set focal point for zoom
-        focalPointX.value = event.focalX;
-        focalPointY.value = event.focalY;
-        gestureState.value.focalPoint = { x: event.focalX, y: event.focalY };
-      })();
+      isDecaying.value = false;
+      gestureState.value.isActive = true;
+      lastScale.value = scale.value;
+      lastTranslateX.value = translateX.value;
+      lastTranslateY.value = translateY.value;
+      
+      // Set focal point for zoom
+      focalPointX.value = event.focalX;
+      focalPointY.value = event.focalY;
+      gestureState.value.focalPoint = { x: event.focalX, y: event.focalY };
     })
     .onUpdate((event) => {
-      runOnUI(() => {
-        const newScale = clampScale(lastScale.value * event.scale);
-        
-        // Calculate focal point adjustment
-        const focalPoint = { x: event.focalX, y: event.focalY };
-        const newTranslation = calculateZoomFocalPoint(
-          focalPoint,
-          { x: lastTranslateX.value, y: lastTranslateY.value },
-          lastScale.value,
-          newScale
-        );
-        
-        scale.value = newScale;
-        translateX.value = newTranslation.x;
-        translateY.value = newTranslation.y;
-      })();
+      const newScale = clampScale(lastScale.value * event.scale);
+      
+      // Calculate focal point adjustment
+      const focalPoint = { x: event.focalX, y: event.focalY };
+      const newTranslation = calculateZoomFocalPoint(
+        focalPoint,
+        { x: lastTranslateX.value, y: lastTranslateY.value },
+        lastScale.value,
+        newScale
+      );
+      
+      scale.value = newScale;
+      translateX.value = newTranslation.x;
+      translateY.value = newTranslation.y;
     })
     .onEnd(() => {
-      runOnUI(() => {
-        gestureState.value.isActive = false;
-        gestureState.value.focalPoint = undefined;
-        
-        const clampedScale = clampScale(scale.value);
-        
-        // Apply elastic constraints to translation
-        const constrainedTranslation = constrainTranslationElastic(
-          { x: translateX.value, y: translateY.value },
-          width,
-          height,
-          GALAXY_WIDTH,
-          GALAXY_HEIGHT,
-          clampedScale
-        );
-        
-        scale.value = withSpring(clampedScale);
-        translateX.value = withSpring(constrainedTranslation.x);
-        translateY.value = withSpring(constrainedTranslation.y);
-        
-        runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, clampedScale);
-      })();
+      gestureState.value.isActive = false;
+      gestureState.value.focalPoint = undefined;
+      
+      const clampedScale = clampScale(scale.value);
+      
+      // Apply elastic constraints to translation
+      const constrainedTranslation = constrainTranslationElastic(
+        { x: translateX.value, y: translateY.value },
+        width,
+        height,
+        GALAXY_WIDTH,
+        GALAXY_HEIGHT,
+        clampedScale
+      );
+      
+      scale.value = withSpring(clampedScale);
+      translateX.value = withSpring(constrainedTranslation.x);
+      translateY.value = withSpring(constrainedTranslation.y);
+      
+      runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, clampedScale);
     });
 
   // Handle single tap - needs to be a worklet-safe callback
@@ -459,38 +447,36 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd((event) => {
-      runOnUI(() => {
-        isDecaying.value = false;
-        
-        const currentScale = scale.value;
-        const targetScale = currentScale < 2 ? 3 : 1; // Zoom in to 3x or out to 1x
-        const focalPoint = { x: event.x, y: event.y };
-        
-        // Calculate new translation to center on tap point
-        const newTranslation = calculateZoomFocalPoint(
-          focalPoint,
-          { x: translateX.value, y: translateY.value },
-          currentScale,
-          targetScale
-        );
-        
-        // Apply constraints
-        const constrainedTranslation = constrainTranslationElastic(
-          newTranslation,
-          width,
-          height,
-          GALAXY_WIDTH,
-          GALAXY_HEIGHT,
-          targetScale
-        );
-        
-        // Animate to new scale and position
-        scale.value = withSpring(targetScale, { damping: 20, stiffness: 300 });
-        translateX.value = withSpring(constrainedTranslation.x, { damping: 20, stiffness: 300 });
-        translateY.value = withSpring(constrainedTranslation.y, { damping: 20, stiffness: 300 });
-        
-        runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, targetScale);
-      })();
+      isDecaying.value = false;
+      
+      const currentScale = scale.value;
+      const targetScale = currentScale < 2 ? 3 : 1; // Zoom in to 3x or out to 1x
+      const focalPoint = { x: event.x, y: event.y };
+      
+      // Calculate new translation to center on tap point
+      const newTranslation = calculateZoomFocalPoint(
+        focalPoint,
+        { x: translateX.value, y: translateY.value },
+        currentScale,
+        targetScale
+      );
+      
+      // Apply constraints
+      const constrainedTranslation = constrainTranslationElastic(
+        newTranslation,
+        width,
+        height,
+        GALAXY_WIDTH,
+        GALAXY_HEIGHT,
+        targetScale
+      );
+      
+      // Animate to new scale and position
+      scale.value = withSpring(targetScale, { damping: 20, stiffness: 300 });
+      translateX.value = withSpring(constrainedTranslation.x, { damping: 20, stiffness: 300 });
+      translateY.value = withSpring(constrainedTranslation.y, { damping: 20, stiffness: 300 });
+      
+      runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, targetScale);
     });
 
   // Compose gestures with proper priority
