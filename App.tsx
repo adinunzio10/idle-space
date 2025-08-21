@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect, useState } from 'react';
 import './global.css';
 import { GameController } from './src/core/GameController';
@@ -92,106 +93,114 @@ export default function App() {
 
   if (error) {
     return (
-      <View className="flex-1 bg-background items-center justify-center p-4">
-        <Text className="text-red-500 text-xl font-semibold mb-4">Error</Text>
-        <Text className="text-text/80 text-base text-center">{error}</Text>
-        <StatusBar style="light" />
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View className="flex-1 bg-background items-center justify-center p-4">
+          <Text className="text-red-500 text-xl font-semibold mb-4">Error</Text>
+          <Text className="text-text/80 text-base text-center">{error}</Text>
+          <StatusBar style="light" />
+        </View>
+      </GestureHandlerRootView>
     );
   }
 
   if (!isInitialized) {
     return (
-      <View className="flex-1 bg-background items-center justify-center">
-        <Text className="text-text text-xl font-semibold">Signal Garden</Text>
-        <Text className="text-text/80 text-base mt-2">
-          Initializing save system...
-        </Text>
-        <StatusBar style="light" />
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View className="flex-1 bg-background items-center justify-center">
+          <Text className="text-text text-xl font-semibold">Signal Garden</Text>
+          <Text className="text-text/80 text-base mt-2">
+            Initializing save system...
+          </Text>
+          <StatusBar style="light" />
+        </View>
+      </GestureHandlerRootView>
     );
   }
 
   if (showGalaxyMap) {
     const screenData = Dimensions.get('window');
     return (
-      <View className="flex-1 bg-background">
-        <View className="flex-row justify-between items-center p-4 bg-surface">
-          <TouchableOpacity
-            onPress={() => setShowGalaxyMap(false)}
-            className="bg-primary px-4 py-2 rounded-lg"
-          >
-            <Text className="text-white font-semibold">← Back</Text>
-          </TouchableOpacity>
-          <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
-          <View style={{ width: 70 }} />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View className="flex-1 bg-background">
+          <View className="flex-row justify-between items-center p-4 bg-surface">
+            <TouchableOpacity
+              onPress={() => setShowGalaxyMap(false)}
+              className="bg-primary px-4 py-2 rounded-lg"
+            >
+              <Text className="text-white font-semibold">← Back</Text>
+            </TouchableOpacity>
+            <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
+            <View style={{ width: 70 }} />
+          </View>
+          
+          <GalaxyMapView
+            width={screenData.width}
+            height={screenData.height - 80}
+            beacons={sampleBeacons}
+            onBeaconSelect={handleBeaconSelect}
+            onMapPress={handleMapPress}
+          />
+          
+          <StatusBar style="light" />
         </View>
-        
-        <GalaxyMapView
-          width={screenData.width}
-          height={screenData.height - 80}
-          beacons={sampleBeacons}
-          onBeaconSelect={handleBeaconSelect}
-          onMapPress={handleMapPress}
-        />
-        
-        <StatusBar style="light" />
-      </View>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <View className="flex-1 bg-background items-center justify-center p-4">
-      <Text className="text-text text-2xl font-bold mb-6">Signal Garden</Text>
-      
-      {gameState && (
-        <View className="items-center space-y-4">
-          <Text className="text-text/80 text-lg">
-            Commander: {gameState.player.name}
-          </Text>
-          <Text className="text-primary text-xl font-semibold">
-            Quantum Data: {Math.floor(gameState.resources.quantumData)}
-          </Text>
-          <Text className="text-text/60 text-sm">
-            Save #{gameState.saveCount} • Play time: {Math.floor(gameState.gameTime / 60)}m
-          </Text>
-          
-          <View className="mt-8 space-y-4">
-            <TouchableOpacity
-              onPress={handleAddResources}
-              className="bg-primary px-6 py-3 rounded-lg"
-            >
-              <Text className="text-white font-semibold text-center">
-                Generate +100 Quantum Data
-              </Text>
-            </TouchableOpacity>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View className="flex-1 bg-background items-center justify-center p-4">
+        <Text className="text-text text-2xl font-bold mb-6">Signal Garden</Text>
+        
+        {gameState && (
+          <View className="items-center space-y-4">
+            <Text className="text-text/80 text-lg">
+              {gameState.player.name}
+            </Text>
+            <Text className="text-primary text-xl font-semibold">
+              Quantum Data: {Math.floor(gameState.resources.quantumData)}
+            </Text>
+            <Text className="text-text/60 text-sm">
+              Save #{gameState.saveCount} • Play time: {Math.floor(gameState.gameTime / 60)}m
+            </Text>
             
-            <TouchableOpacity
-              onPress={() => setShowGalaxyMap(true)}
-              className="bg-accent px-6 py-3 rounded-lg"
-            >
-              <Text className="text-white font-semibold text-center">
-                Open Galaxy Map
-              </Text>
-            </TouchableOpacity>
+            <View className="mt-8 space-y-4">
+              <TouchableOpacity
+                onPress={handleAddResources}
+                className="bg-primary px-6 py-3 rounded-lg"
+              >
+                <Text className="text-white font-semibold text-center">
+                  Generate +100 Quantum Data
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => setShowGalaxyMap(true)}
+                className="bg-accent px-6 py-3 rounded-lg"
+              >
+                <Text className="text-white font-semibold text-center">
+                  Open Galaxy Map
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={handleSaveGame}
+                className="bg-secondary px-6 py-3 rounded-lg"
+              >
+                <Text className="text-white font-semibold text-center">
+                  Manual Save
+                </Text>
+              </TouchableOpacity>
+            </View>
             
-            <TouchableOpacity
-              onPress={handleSaveGame}
-              className="bg-secondary px-6 py-3 rounded-lg"
-            >
-              <Text className="text-white font-semibold text-center">
-                Manual Save
-              </Text>
-            </TouchableOpacity>
+            <Text className="text-text/40 text-xs mt-6 text-center">
+              Save system active • Auto-save every 2 minutes
+            </Text>
           </View>
-          
-          <Text className="text-text/40 text-xs mt-6 text-center">
-            Save system active • Auto-save every 30s
-          </Text>
-        </View>
-      )}
-      
-      <StatusBar style="light" />
-    </View>
+        )}
+        
+        <StatusBar style="light" />
+      </View>
+    </GestureHandlerRootView>
   );
 }

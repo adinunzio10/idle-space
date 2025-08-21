@@ -19,7 +19,7 @@ export class GameController {
   private appStateSubscription: any = null;
 
   private readonly config: GameControllerConfig = {
-    autoSaveInterval: 30,
+    autoSaveInterval: 120,
     enableAppStateHandling: true,
     enableBackgroundProcessing: true,
   };
