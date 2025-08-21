@@ -385,63 +385,65 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     .numberOfTaps(1)
     .maxDelay(250)
     .onEnd((event) => {
-      const screenPoint: Point2D = { x: event.x, y: event.y };
-      const galaxyPoint = screenToGalaxy(screenPoint, viewportState);
-      
-      // Calculate dynamic hit radius based on zoom
-      const hitRadius = calculateHitRadius(viewportState.scale);
-      
-      // Check if tap hits any cluster first (they're larger)
-      for (const cluster of renderingState.clusters) {
-        if (isPointInCluster(galaxyPoint, cluster)) {
-          // Handle cluster tap - could expand cluster or show cluster info
-          if (onBeaconSelect && cluster.beacons.length > 0) {
-            // For now, select the first beacon in the cluster
-            onBeaconSelect(cluster.beacons[0]);
-          }
-          return; // Early return if cluster was hit
-        }
-      }
-      
-      // Check if tap hits any connection first
-      const beaconMap = new Map(beacons.map(b => [b.id, b]));
-      let selectedConnection = null;
-      
-      for (const connection of renderingState.connections) {
-        const sourceBeacon = beaconMap.get(connection.sourceId);
-        const targetBeacon = beaconMap.get(connection.targetId);
+      runOnJS(() => {
+        const screenPoint: Point2D = { x: event.x, y: event.y };
+        const galaxyPoint = screenToGalaxy(screenPoint, viewportState);
         
-        if (sourceBeacon && targetBeacon) {
-          if (isPointNearConnection(galaxyPoint, sourceBeacon.position, targetBeacon.position, hitRadius)) {
-            selectedConnection = connection;
-            break;
+        // Calculate dynamic hit radius based on zoom
+        const hitRadius = calculateHitRadius(viewportState.scale);
+        
+        // Check if tap hits any cluster first (they're larger)
+        for (const cluster of renderingState.clusters) {
+          if (isPointInCluster(galaxyPoint, cluster)) {
+            // Handle cluster tap - could expand cluster or show cluster info
+            if (onBeaconSelect && cluster.beacons.length > 0) {
+              // For now, select the first beacon in the cluster
+              onBeaconSelect(cluster.beacons[0]);
+            }
+            return; // Early return if cluster was hit
           }
         }
-      }
-      
-      // Check if tap hits any visible beacon
-      let selectedBeacon = null;
-      if (!selectedConnection) {
-        for (const beacon of renderingState.visibleBeacons) {
-          if (isPointInHitArea(galaxyPoint, beacon.position, hitRadius)) {
-            selectedBeacon = beacon;
-            break; // Select first hit beacon
+        
+        // Check if tap hits any connection first
+        const beaconMap = new Map(beacons.map(b => [b.id, b]));
+        let selectedConnection = null;
+        
+        for (const connection of renderingState.connections) {
+          const sourceBeacon = beaconMap.get(connection.sourceId);
+          const targetBeacon = beaconMap.get(connection.targetId);
+          
+          if (sourceBeacon && targetBeacon) {
+            if (isPointNearConnection(galaxyPoint, sourceBeacon.position, targetBeacon.position, hitRadius)) {
+              selectedConnection = connection;
+              break;
+            }
           }
         }
-      }
-      
-      if (selectedConnection) {
-        // Handle connection selection - could show connection info
-        // For now, select the source beacon
-        const sourceBeacon = beaconMap.get(selectedConnection.sourceId);
-        if (sourceBeacon && onBeaconSelect) {
-          onBeaconSelect(sourceBeacon);
+        
+        // Check if tap hits any visible beacon
+        let selectedBeacon = null;
+        if (!selectedConnection) {
+          for (const beacon of renderingState.visibleBeacons) {
+            if (isPointInHitArea(galaxyPoint, beacon.position, hitRadius)) {
+              selectedBeacon = beacon;
+              break; // Select first hit beacon
+            }
+          }
         }
-      } else if (selectedBeacon && onBeaconSelect) {
-        onBeaconSelect(selectedBeacon);
-      } else if (onMapPress) {
-        onMapPress(galaxyPoint);
-      }
+        
+        if (selectedConnection) {
+          // Handle connection selection - could show connection info
+          // For now, select the source beacon
+          const sourceBeacon = beaconMap.get(selectedConnection.sourceId);
+          if (sourceBeacon && onBeaconSelect) {
+            onBeaconSelect(sourceBeacon);
+          }
+        } else if (selectedBeacon && onBeaconSelect) {
+          onBeaconSelect(selectedBeacon);
+        } else if (onMapPress) {
+          onMapPress(galaxyPoint);
+        }
+      })();
     });
 
   // Double tap to zoom gesture
