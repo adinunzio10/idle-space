@@ -112,6 +112,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const velocityY = useSharedValue(0);
   const isDecaying = useSharedValue(false);
   
+  // Velocity smoothing to prevent finger-lift artifacts
+  const prevVelocityX = useSharedValue(0);
+  const prevVelocityY = useSharedValue(0);
+  
   // Focal point for zoom
   const focalPointX = useSharedValue(width / 2);
   const focalPointY = useSharedValue(height / 2);
@@ -331,7 +335,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       translateX.value = lastTranslateX.value + event.translationX;
       translateY.value = lastTranslateY.value + event.translationY;
       
-      // Track velocity for momentum
+      // Track velocity for momentum with smoothing to prevent finger-lift spikes
+      prevVelocityX.value = velocityX.value;
+      prevVelocityY.value = velocityY.value;
       velocityX.value = event.velocityX;
       velocityY.value = event.velocityY;
       
@@ -356,11 +362,25 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     .onEnd(() => {
       const finalVelocity = { x: velocityX.value, y: velocityY.value };
       
+      // Smart velocity filtering to prevent finger-lift artifacts
+      const currentVelocity = { x: velocityX.value, y: velocityY.value };
+      const previousVelocity = { x: prevVelocityX.value, y: prevVelocityY.value };
+      
+      // Check for velocity spikes (finger lift artifacts)
+      const velocityJumpX = Math.abs(currentVelocity.x - previousVelocity.x);
+      const velocityJumpY = Math.abs(currentVelocity.y - previousVelocity.y);
+      const isLikelyFingerLift = velocityJumpX > 100 || velocityJumpY > 100;
+      
+      // Use previous velocity if current one seems like a finger-lift artifact
+      const smoothedVelocity = isLikelyFingerLift ? previousVelocity : currentVelocity;
+      
       runOnJS(logGesture)('Pan End', {
         finalTranslateX: translateX.value,
         finalTranslateY: translateY.value,
-        velocity: finalVelocity,
-        willStartMomentum: !isVelocityInsignificant(finalVelocity, 50)
+        rawVelocity: finalVelocity,
+        smoothedVelocity: smoothedVelocity,
+        isLikelyFingerLift: isLikelyFingerLift,
+        willStartMomentum: !isVelocityInsignificant(smoothedVelocity, 150)
       });
       
       gestureState.value.isActive = false;
@@ -374,13 +394,12 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         GALAXY_HEIGHT,
         scale.value
       );
-
-      // Start momentum decay if velocity is significant
-      const currentVelocity = { x: velocityX.value, y: velocityY.value };
-      if (!isVelocityInsignificant(currentVelocity, 200)) { // Increased threshold to reduce oversensitive momentum
+      
+      // Start momentum decay if smoothed velocity is significant
+      if (!isVelocityInsignificant(smoothedVelocity, 150)) { // Reduced threshold since we're using smoothed velocity
         isDecaying.value = true;
-        velocityX.value = velocityX.value * 0.05; // More aggressive scaling to reduce overshoot
-        velocityY.value = velocityY.value * 0.05;
+        velocityX.value = smoothedVelocity.x * 0.05; // Use smoothed velocity
+        velocityY.value = smoothedVelocity.y * 0.05;
       } else {
         // Spring back to constrained position
         translateX.value = withSpring(constrainedTranslation.x);
