@@ -192,6 +192,7 @@ export function applyMomentum(
   scale: number,
   deltaTime: number
 ): { translation: Point2D; newVelocity: GestureVelocity } {
+  'worklet';
   // Apply velocity to translation
   const newTranslation = {
     x: currentTranslation.x + velocity.x * deltaTime,
