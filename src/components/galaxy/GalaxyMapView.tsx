@@ -331,6 +331,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       velocityX.value = event.velocityX;
       velocityY.value = event.velocityY;
       
+      // ✅ ADDED: Real-time viewport updates during panning for responsive UI
+      runOnJS(updateViewportState)(translateX.value, translateY.value, scale.value);
+      
       // Log every 10th update to avoid spam
       if (Math.abs(event.translationX) % 20 < 5 || Math.abs(event.translationY) % 20 < 5) {
         runOnJS(logGesture)('Pan Update', {
@@ -416,6 +419,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       scale.value = newScale;
       translateX.value = newTranslation.x;
       translateY.value = newTranslation.y;
+      
+      // ✅ ADDED: Real-time viewport updates during pinch for responsive UI
+      runOnJS(updateViewportState)(newTranslation.x, newTranslation.y, newScale);
       
       // Log occasional updates
       if (Math.abs(event.scale - 1) > 0.1) {
