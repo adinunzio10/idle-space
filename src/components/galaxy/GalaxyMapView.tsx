@@ -27,13 +27,14 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
+  useAnimatedProps,
   useSharedValue,
   withSpring,
   runOnJS,
   useFrameCallback,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Svg, { Rect } from 'react-native-svg';
+import Svg, { G, Rect } from 'react-native-svg';
 
 import {
   Point2D,
@@ -80,6 +81,7 @@ import ConnectionRenderer from './ConnectionRenderer';
 import StarField from './StarField';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
+const AnimatedG = Animated.createAnimatedComponent(G);
 
 interface GalaxyMapViewProps extends GalaxyMapProps {
   style?: any;
@@ -528,16 +530,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     )
   );
 
-  // Animated style for SVG transform
-  // WORKLET PATTERN: useAnimatedStyle with shared values only
-  const animatedStyle = useAnimatedStyle(() => {
-    // ✅ CORRECT: Only accessing shared values, no JavaScript function calls
+  // Create animated props for SVG group transform
+  const animatedProps = useAnimatedProps(() => {
     return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { scale: scale.value },
-      ],
+      transform: `translate(${translateX.value}, ${translateY.value}) scale(${scale.value})`,
     };
   });
 
@@ -554,7 +550,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
           <AnimatedSvg
             width={width}
             height={height}
-            style={animatedStyle}
             viewBox={`0 0 ${width} ${height}`}
           >
             {/* Background galaxy space */}
@@ -566,7 +561,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
               fill="#0F172A"
             />
 
-            {/* Star field background with parallax */}
+            {/* Star field background with parallax - stays fixed */}
             <StarField
               viewportState={viewportState}
               width={width}
@@ -575,70 +570,73 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
               densityFactor={performanceMonitor.getQualitySettings().starDensity}
             />
             
-            {/* Debug: Show viewport bounds */}
-            <Rect
-              x={galaxyToScreen({ x: viewportState.bounds.minX, y: viewportState.bounds.minY }, viewportState).x}
-              y={galaxyToScreen({ x: viewportState.bounds.minX, y: viewportState.bounds.minY }, viewportState).y}
-              width={(viewportState.bounds.maxX - viewportState.bounds.minX) * viewportState.scale}
-              height={(viewportState.bounds.maxY - viewportState.bounds.minY) * viewportState.scale}
-              fill="none"
-              stroke="#4F46E5"
-              strokeWidth="2"
-              strokeOpacity="0.3"
-            />
-
-            {/* Render connections (behind beacons and clusters) */}
-            {renderingState.connections
-              .slice(0, CONNECTION_CONFIG.PERFORMANCE.MAX_CONNECTIONS_PER_FRAME)
-              .map((connection) => {
-                const sourceBeacon = beacons.find(b => b.id === connection.sourceId);
-                const targetBeacon = beacons.find(b => b.id === connection.targetId);
-                
-                if (!sourceBeacon || !targetBeacon) return null;
-                
-                const connectionRenderInfo = getConnectionRenderInfo(
-                  connection,
-                  viewportState.scale,
-                  true // Already filtered for visibility
-                );
-                
-                return (
-                  <ConnectionRenderer
-                    key={connection.id}
-                    connection={connection}
-                    sourceBeacon={sourceBeacon}
-                    targetBeacon={targetBeacon}
-                    renderInfo={connectionRenderInfo}
-                    viewportState={viewportState}
-                  />
-                );
-              })}
-
-            {/* Render beacon clusters */}
-            {renderingState.clusters.map((cluster) => (
-              <BeaconClusterRenderer
-                key={cluster.id}
-                cluster={cluster}
-                viewportState={viewportState}
-                onPress={onBeaconSelect ? (cluster) => {
-                  // Handle cluster press - for now select first beacon
-                  if (cluster.beacons.length > 0) {
-                    onBeaconSelect(cluster.beacons[0]);
-                  }
-                } : undefined}
+            {/* Transformable galaxy content group */}
+            <AnimatedG animatedProps={animatedProps}>
+              {/* Debug: Show viewport bounds */}
+              <Rect
+                x={0}
+                y={0}
+                width={GALAXY_WIDTH}
+                height={GALAXY_HEIGHT}
+                fill="none"
+                stroke="#4F46E5"
+                strokeWidth="2"
+                strokeOpacity="0.3"
               />
-            ))}
 
-            {/* Render individual visible beacons */}
-            {renderingState.visibleBeacons.map((beacon) => (
-              <BeaconRenderer
-                key={beacon.id}
-                beacon={beacon}
-                lodInfo={lodRenderInfo}
-                viewportState={viewportState}
-                onPress={onBeaconSelect}
-              />
-            ))}
+              {/* Render connections (behind beacons and clusters) */}
+              {renderingState.connections
+                .slice(0, CONNECTION_CONFIG.PERFORMANCE.MAX_CONNECTIONS_PER_FRAME)
+                .map((connection) => {
+                  const sourceBeacon = beacons.find(b => b.id === connection.sourceId);
+                  const targetBeacon = beacons.find(b => b.id === connection.targetId);
+                  
+                  if (!sourceBeacon || !targetBeacon) return null;
+                  
+                  const connectionRenderInfo = getConnectionRenderInfo(
+                    connection,
+                    viewportState.scale,
+                    true // Already filtered for visibility
+                  );
+                  
+                  return (
+                    <ConnectionRenderer
+                      key={connection.id}
+                      connection={connection}
+                      sourceBeacon={sourceBeacon}
+                      targetBeacon={targetBeacon}
+                      renderInfo={connectionRenderInfo}
+                      viewportState={viewportState}
+                    />
+                  );
+                })}
+
+              {/* Render beacon clusters */}
+              {renderingState.clusters.map((cluster) => (
+                <BeaconClusterRenderer
+                  key={cluster.id}
+                  cluster={cluster}
+                  viewportState={viewportState}
+                  onPress={onBeaconSelect ? (cluster) => {
+                    // Handle cluster press - for now select first beacon
+                    if (cluster.beacons.length > 0) {
+                      onBeaconSelect(cluster.beacons[0]);
+                    }
+                  } : undefined}
+                />
+              ))}
+
+              {/* Render individual visible beacons */}
+              {renderingState.visibleBeacons.map((beacon) => (
+                <BeaconRenderer
+                  key={beacon.id}
+                  beacon={beacon}
+                  lodInfo={lodRenderInfo}
+                  viewportState={viewportState}
+                  onPress={onBeaconSelect}
+                />
+              ))}
+            </AnimatedG>
           </AnimatedSvg>
         </Animated.View>
       </GestureDetector>
