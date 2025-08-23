@@ -176,6 +176,7 @@ export function constrainTranslationElastic(
  * Calculate momentum decay factor
  */
 export function calculateMomentumDecay(velocity: number, decayRate: number = 0.95): number {
+  'worklet';
   return velocity * decayRate;
 }
 
