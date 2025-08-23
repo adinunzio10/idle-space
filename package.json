@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
+    "@expo/ngrok": "^4.1.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "expo": "~53.0.20",
     "expo-dev-client": "^5.2.4",
@@ -27,9 +28,9 @@
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "^5.6.1",
     "react-native-svg": "15.11.2",
-    "react-native-web": "^0.20.0",
-    "@expo/ngrok": "^4.1.0"
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
