@@ -269,6 +269,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         isDecaying.value = false;
         velocityX.value = 0;
         velocityY.value = 0;
+        runOnJS(logGesture)('Momentum Stopped', {
+          finalTranslateX: translateX.value,
+          finalTranslateY: translateY.value
+        });
         return;
       }
       
@@ -297,10 +301,21 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     }
   }, true);
 
+  // Debug logging helper
+  const logGesture = useCallback((type: string, data: any) => {
+    console.log(`[GalaxyMap] ${type}:`, data);
+  }, []);
+
   // Pan gesture
   // WORKLET PATTERN: Gesture handlers with proper runOnJS usage
   const panGesture = Gesture.Pan()
     .onStart(() => {
+      runOnJS(logGesture)('Pan Start', {
+        translateX: translateX.value,
+        translateY: translateY.value,
+        scale: scale.value
+      });
+      
       isDecaying.value = false;
       gestureState.value.isActive = true;
       lastTranslateX.value = translateX.value;
@@ -315,8 +330,29 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       // Track velocity for momentum
       velocityX.value = event.velocityX;
       velocityY.value = event.velocityY;
+      
+      // Log every 10th update to avoid spam
+      if (Math.abs(event.translationX) % 20 < 5 || Math.abs(event.translationY) % 20 < 5) {
+        runOnJS(logGesture)('Pan Update', {
+          translationX: event.translationX,
+          translationY: event.translationY,
+          newTranslateX: translateX.value,
+          newTranslateY: translateY.value,
+          velocityX: velocityX.value,
+          velocityY: velocityY.value
+        });
+      }
     })
     .onEnd(() => {
+      const finalVelocity = { x: velocityX.value, y: velocityY.value };
+      
+      runOnJS(logGesture)('Pan End', {
+        finalTranslateX: translateX.value,
+        finalTranslateY: translateY.value,
+        velocity: finalVelocity,
+        willStartMomentum: !isVelocityInsignificant(finalVelocity, 50)
+      });
+      
       gestureState.value.isActive = false;
       
       // Apply elastic constraints
@@ -348,6 +384,12 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Pinch gesture with focal point zooming
   const pinchGesture = Gesture.Pinch()
     .onStart((event) => {
+      runOnJS(logGesture)('Pinch Start', {
+        focalX: event.focalX,
+        focalY: event.focalY,
+        initialScale: scale.value
+      });
+      
       isDecaying.value = false;
       gestureState.value.isActive = true;
       lastScale.value = scale.value;
@@ -374,8 +416,24 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       scale.value = newScale;
       translateX.value = newTranslation.x;
       translateY.value = newTranslation.y;
+      
+      // Log occasional updates
+      if (Math.abs(event.scale - 1) > 0.1) {
+        runOnJS(logGesture)('Pinch Update', {
+          scale: event.scale,
+          newScale: newScale,
+          focalX: event.focalX,
+          focalY: event.focalY
+        });
+      }
     })
     .onEnd(() => {
+      runOnJS(logGesture)('Pinch End', {
+        finalScale: scale.value,
+        finalTranslateX: translateX.value,
+        finalTranslateY: translateY.value
+      });
+      
       gestureState.value.isActive = false;
       gestureState.value.focalPoint = undefined;
       
@@ -489,11 +547,19 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd((event) => {
-      isDecaying.value = false;
-      
       const currentScale = scale.value;
       const targetScale = currentScale < 2 ? 3 : 1; // Zoom in to 3x or out to 1x
       const focalPoint = { x: event.x, y: event.y };
+      
+      runOnJS(logGesture)('Double Tap', {
+        tapX: event.x,
+        tapY: event.y,
+        currentScale,
+        targetScale,
+        action: currentScale < 2 ? 'zoom in' : 'zoom out'
+      });
+      
+      isDecaying.value = false;
       
       // Calculate new translation to center on tap point
       const newTranslation = calculateZoomFocalPoint(
