@@ -309,6 +309,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Pan gesture
   // WORKLET PATTERN: Gesture handlers with proper runOnJS usage
   const panGesture = Gesture.Pan()
+    .minDistance(1) // Start panning after just 1px movement
+    .activateAfterLongPress(0) // No long press delay
+    .minPointers(1)
+    .maxPointers(1)
     .onStart(() => {
       runOnJS(logGesture)('Pan Start', {
         translateX: translateX.value,
@@ -331,8 +335,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       velocityX.value = event.velocityX;
       velocityY.value = event.velocityY;
       
-      // ✅ ADDED: Real-time viewport updates during panning for responsive UI
-      runOnJS(updateViewportState)(translateX.value, translateY.value, scale.value);
+      // ✅ ADDED: Real-time viewport updates during panning for responsive UI (throttled)
+      // Only update every few pixels to avoid excessive calls
+      if (Math.abs(event.translationX) % 10 < 2 || Math.abs(event.translationY) % 10 < 2) {
+        runOnJS(updateViewportState)(translateX.value, translateY.value, scale.value);
+      }
       
       // Log every 10th update to avoid spam
       if (Math.abs(event.translationX) % 20 < 5 || Math.abs(event.translationY) % 20 < 5) {
@@ -370,10 +377,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
       // Start momentum decay if velocity is significant
       const currentVelocity = { x: velocityX.value, y: velocityY.value };
-      if (!isVelocityInsignificant(currentVelocity, 50)) {
+      if (!isVelocityInsignificant(currentVelocity, 200)) { // Increased threshold to reduce oversensitive momentum
         isDecaying.value = true;
-        velocityX.value = velocityX.value * 0.1; // Scale down initial velocity
-        velocityY.value = velocityY.value * 0.1;
+        velocityX.value = velocityX.value * 0.05; // More aggressive scaling to reduce overshoot
+        velocityY.value = velocityY.value * 0.05;
       } else {
         // Spring back to constrained position
         translateX.value = withSpring(constrainedTranslation.x);
@@ -420,8 +427,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       translateX.value = newTranslation.x;
       translateY.value = newTranslation.y;
       
-      // ✅ ADDED: Real-time viewport updates during pinch for responsive UI
-      runOnJS(updateViewportState)(newTranslation.x, newTranslation.y, newScale);
+      // ✅ ADDED: Real-time viewport updates during pinch for responsive UI (throttled)
+      // Only update on significant scale changes to avoid excessive calls  
+      if (Math.abs(event.scale - lastScale.value) > 0.05) {
+        runOnJS(updateViewportState)(newTranslation.x, newTranslation.y, newScale);
+      }
       
       // Log occasional updates
       if (Math.abs(event.scale - 1) > 0.1) {
