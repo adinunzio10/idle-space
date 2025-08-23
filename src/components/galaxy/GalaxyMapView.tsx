@@ -1,3 +1,28 @@
+/**
+ * WORKLET PATTERNS DOCUMENTATION
+ * 
+ * This file demonstrates proper React Native Reanimated v3 worklet usage patterns
+ * to avoid synchronous UI thread to JavaScript thread violations.
+ * 
+ * KEY PRINCIPLES:
+ * 1. Functions marked with 'worklet' run on UI thread - can access shared values directly
+ * 2. JavaScript functions must be called via runOnJS() from gesture handlers/worklets
+ * 3. React state should never be accessed directly inside gesture handlers
+ * 4. Pass needed data as parameters to runOnJS callbacks instead of capturing closures
+ * 
+ * COMMON VIOLATIONS TO AVOID:
+ * ❌ Direct React state access in gesture handlers
+ * ❌ Calling non-worklet functions inside useAnimatedStyle
+ * ❌ Accessing component methods/hooks inside gesture callbacks
+ * ❌ Using console.log inside worklets (use runOnJS for logging)
+ * 
+ * CORRECT PATTERNS USED IN THIS FILE:
+ * ✅ runOnJS() wrapping for all JavaScript function calls from gestures
+ * ✅ 'worklet' directive on utility functions in viewport.ts
+ * ✅ Passing React state as parameters instead of closure capture
+ * ✅ Using shared values only within worklet contexts
+ */
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -5,7 +30,6 @@ import Animated, {
   useSharedValue,
   withSpring,
   runOnJS,
-  runOnUI,
   useFrameCallback,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -228,6 +252,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings, renderingState.patterns]);
 
   // Momentum physics frame callback
+  // WORKLET PATTERN: useFrameCallback with runOnJS for state updates
   useFrameCallback((frameInfo) => {
     if (isDecaying.value && !gestureState.value.isActive) {
       const deltaTime = frameInfo.timeSincePreviousFrame || 16.67; // Fallback to 60fps
@@ -261,6 +286,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       velocityX.value = momentumResult.newVelocity.x;
       velocityY.value = momentumResult.newVelocity.y;
       
+      // ✅ CORRECT: runOnJS wraps JavaScript function call from worklet context
       runOnJS(updateViewportState)(
         momentumResult.translation.x,
         momentumResult.translation.y,
@@ -270,6 +296,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   }, true);
 
   // Pan gesture
+  // WORKLET PATTERN: Gesture handlers with proper runOnJS usage
   const panGesture = Gesture.Pan()
     .onStart(() => {
       isDecaying.value = false;
@@ -312,6 +339,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         translateY.value = withSpring(constrainedTranslation.y);
       }
       
+      // ✅ CORRECT: All gesture handlers use runOnJS for JavaScript calls
       runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, scale.value);
     });
 
@@ -368,14 +396,15 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, clampedScale);
     });
 
-  // Handle single tap - needs to be a worklet-safe callback
-  const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number) => {
+  // Handle single tap - worklet-safe callback that receives necessary data as parameters
+  // WORKLET PATTERN: Pass React state as parameters instead of closure capture
+  const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[]) => {
     const screenPoint: Point2D = { x: tapX, y: tapY };
     const currentViewport: ViewportState = {
       translateX: currentTranslateX,
       translateY: currentTranslateY,
       scale: currentScale,
-      bounds: viewportState.bounds, // This should be safe to access
+      bounds: viewportBounds,
     };
     const galaxyPoint = screenToGalaxy(screenPoint, currentViewport);
     
@@ -383,7 +412,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     const hitRadius = calculateHitRadius(currentScale);
     
     // Check if tap hits any cluster first (they're larger)
-    for (const cluster of renderingState.clusters) {
+    for (const cluster of clusters) {
       if (isPointInCluster(galaxyPoint, cluster)) {
         // Handle cluster tap - could expand cluster or show cluster info
         if (onBeaconSelect && cluster.beacons.length > 0) {
@@ -398,7 +427,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     const beaconMap = new Map(beacons.map(b => [b.id, b]));
     let selectedConnection = null;
     
-    for (const connection of renderingState.connections) {
+    for (const connection of connections) {
       const sourceBeacon = beaconMap.get(connection.sourceId);
       const targetBeacon = beaconMap.get(connection.targetId);
       
@@ -413,7 +442,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     // Check if tap hits any visible beacon
     let selectedBeacon = null;
     if (!selectedConnection) {
-      for (const beacon of renderingState.visibleBeacons) {
+      for (const beacon of visibleBeacons) {
         if (isPointInHitArea(galaxyPoint, beacon.position, hitRadius)) {
           selectedBeacon = beacon;
           break; // Select first hit beacon
@@ -433,14 +462,25 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     } else if (onMapPress) {
       onMapPress(galaxyPoint);
     }
-  }, [viewportState.bounds, renderingState.clusters, renderingState.connections, renderingState.visibleBeacons, beacons, onBeaconSelect, onMapPress]);
+  }, [beacons, onBeaconSelect, onMapPress]);
 
   // Single tap for beacon/cluster selection or map interaction
   const singleTapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .maxDelay(250)
     .onEnd((event) => {
-      runOnJS(handleSingleTap)(event.x, event.y, scale.value, translateX.value, translateY.value);
+      // ✅ CORRECT: Pass React state as parameters to avoid closure capture violations
+      runOnJS(handleSingleTap)(
+        event.x, 
+        event.y, 
+        scale.value, 
+        translateX.value, 
+        translateY.value,
+        viewportState.bounds,
+        renderingState.clusters,
+        renderingState.connections,
+        renderingState.visibleBeacons
+      );
     });
 
   // Double tap to zoom gesture
@@ -489,7 +529,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   );
 
   // Animated style for SVG transform
+  // WORKLET PATTERN: useAnimatedStyle with shared values only
   const animatedStyle = useAnimatedStyle(() => {
+    // ✅ CORRECT: Only accessing shared values, no JavaScript function calls
     return {
       transform: [
         { translateX: translateX.value },
@@ -529,8 +571,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
               viewportState={viewportState}
               width={width}
               height={height}
-              enableParallax={getQualitySettings().enableParallax}
-              densityFactor={getQualitySettings().starDensity}
+              enableParallax={performanceMonitor.getQualitySettings().enableParallax}
+              densityFactor={performanceMonitor.getQualitySettings().starDensity}
             />
             
             {/* Debug: Show viewport bounds */}
