@@ -175,6 +175,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     };
   }, []);
 
+  // Debug logging helper - defined early so it's available in worklets
+  const logGesture = useCallback((type: string, data: any) => {
+    console.log(`[GalaxyMap] ${type}:`, data);
+  }, []);
+
   // Update viewport and rendering state callback
   const updateViewportState = useCallback((newTranslateX: number, newTranslateY: number, newScale: number) => {
     startFrame(); // Start performance monitoring
@@ -300,11 +305,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       );
     }
   }, true);
-
-  // Debug logging helper
-  const logGesture = useCallback((type: string, data: any) => {
-    console.log(`[GalaxyMap] ${type}:`, data);
-  }, []);
 
   // Pan gesture
   // WORKLET PATTERN: Gesture handlers with proper runOnJS usage
