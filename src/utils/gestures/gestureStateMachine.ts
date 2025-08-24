@@ -501,10 +501,9 @@ export class GestureStateMachine {
 // Worklet-safe utility functions for use in gesture handlers
 /**
  * Create a worklet-safe state checker that accepts SharedValue directly
+ * This function runs in JS context during initialization
  */
 export function createStateChecker(sharedState: SharedValue<GestureStateType>) {
-  'worklet';
-  
   return {
     isState: (state: GestureStateType) => {
       'worklet';
@@ -519,7 +518,43 @@ export function createStateChecker(sharedState: SharedValue<GestureStateType>) {
     canTransition: (toState: GestureStateType) => {
       'worklet';
       const currentState = sharedState.value;
-      return VALID_TRANSITIONS[currentState]?.includes(toState) ?? false;
+      
+      // Worklet-safe transition validation
+      // Since we can't access VALID_TRANSITIONS object in worklets,
+      // we'll implement basic transition logic directly
+      switch (currentState) {
+        case GestureStateType.IDLE:
+          return toState === GestureStateType.TAP_PENDING ||
+                 toState === GestureStateType.PAN_STARTING ||
+                 toState === GestureStateType.PINCH_STARTING;
+        case GestureStateType.TAP_PENDING:
+          return toState === GestureStateType.TAP_CONFIRMED ||
+                 toState === GestureStateType.DOUBLE_TAP_PENDING ||
+                 toState === GestureStateType.PAN_STARTING ||
+                 toState === GestureStateType.CANCELLED ||
+                 toState === GestureStateType.IDLE;
+        case GestureStateType.PAN_STARTING:
+          return toState === GestureStateType.PAN_ACTIVE ||
+                 toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
+                 toState === GestureStateType.CANCELLED ||
+                 toState === GestureStateType.IDLE;
+        case GestureStateType.PAN_ACTIVE:
+          return toState === GestureStateType.MOMENTUM_ACTIVE ||
+                 toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
+                 toState === GestureStateType.ELASTIC_BOUNCE ||
+                 toState === GestureStateType.IDLE;
+        case GestureStateType.PINCH_STARTING:
+          return toState === GestureStateType.PINCH_ACTIVE ||
+                 toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
+                 toState === GestureStateType.CANCELLED ||
+                 toState === GestureStateType.IDLE;
+        case GestureStateType.PINCH_ACTIVE:
+          return toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
+                 toState === GestureStateType.ELASTIC_BOUNCE ||
+                 toState === GestureStateType.IDLE;
+        default:
+          return toState === GestureStateType.IDLE;
+      }
     },
   };
 }
