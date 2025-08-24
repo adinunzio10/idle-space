@@ -233,6 +233,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     console.log(`[GalaxyMap] ${type}:`, data);
   }, []);
 
+  // FIX: State transition helper to avoid closure capture in runOnJS
+  const requestStateTransition = useCallback((targetState: GestureStateType, eventData: any) => {
+    gestureStateMachine.requestTransition(targetState, eventData);
+  }, [gestureStateMachine]);
+
   // Palm rejection tracking - Use serializable string storage to avoid JSI crashes
   const activeTouchesData = useSharedValue(''); // JSON string storage
   const recentTouchesData = useSharedValue(''); // JSON string storage
@@ -533,10 +538,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         state: currentState
       });
       
-      // Request state transition
-      runOnJS((targetState: GestureStateType, eventData: any) => {
-        gestureStateMachine.requestTransition(targetState, eventData);
-      })(GestureStateType.PAN_STARTING, {
+      // FIX: Use separate callback to avoid closure capture
+      runOnJS(requestStateTransition)(GestureStateType.PAN_STARTING, {
         type: 'pan',
         timestamp: gestureStartTime,
         pointerCount: event.numberOfPointers || 1,
@@ -719,10 +722,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         pointerCount
       });
       
-      // Request state transition
-      runOnJS((targetState: GestureStateType, eventData: any) => {
-        gestureStateMachine.requestTransition(targetState, eventData);
-      })(resolvedState, {
+      // FIX: Use separate callback to avoid closure capture
+      runOnJS(requestStateTransition)(resolvedState, {
         type: 'pinch',
         timestamp: gestureStartTime,
         pointerCount,
