@@ -121,7 +121,7 @@ export function resolveGestureConflictWorklet(
       (current === GestureStateType.PAN_ACTIVE && incomingGesture === GestureStateType.PINCH_STARTING) ||
       (current === GestureStateType.PINCH_ACTIVE && incomingGesture === GestureStateType.PAN_STARTING)
     ) {
-      currentState.value = GestureStateType.SIMULTANEOUS_PAN_PINCH;
+      // Don't update shared state here - let JS state machine handle it
       return GestureStateType.SIMULTANEOUS_PAN_PINCH;
     }
   }
@@ -147,7 +147,7 @@ export function resolveGestureConflictWorklet(
   
   // Higher priority wins
   if (incomingPriority > currentPriority) {
-    currentState.value = incomingGesture;
+    // Don't update shared state here - let JS state machine handle it
     return incomingGesture;
   }
   

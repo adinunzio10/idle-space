@@ -63,7 +63,6 @@ import {
   createStateChecker,
 } from '../../utils/gestures/gestureStateMachine';
 import {
-  validateGestureTransitionWorklet,
   palmRejectionWorklet,
   smoothVelocityWorklet as gestureSmoothenWorklet,
   updatePerformanceMetricsWorklet,
@@ -500,23 +499,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         return; // Exit early if palm detected
       }
       
-      // State machine transition
+      // State machine transition (simplified)
       const currentState = gestureSharedState.value;
-      const canTransition = validateGestureTransitionWorklet(
-        gestureSharedState,
-        GestureStateType.PAN_STARTING,
-        {
-          type: 'pan',
-          timestamp: gestureStartTime,
-          pointerCount: event.numberOfPointers || 1,
-          position: { x: event.x, y: event.y },
-        }
-      );
-      
-      if (!canTransition) {
-        debugGestureWorklet('Pan Blocked', { currentState, reason: 'invalid transition' }, gestureStartTime, debugSharedValue);
-        return;
-      }
       
       // Update rapid touch tracking
       if (gestureStartTime - lastTouchTime.value < 100) {
@@ -563,34 +547,21 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       // Transition to active panning state only if in PAN_STARTING
       const currentTime = Date.now();
       
-      // Only transition to PAN_ACTIVE if currently in PAN_STARTING
+      // Only transition to PAN_ACTIVE if currently in PAN_STARTING (do this once)
       if (gestureSharedState.value === GestureStateType.PAN_STARTING) {
-        const canTransition = validateGestureTransitionWorklet(
-          gestureSharedState,
-          GestureStateType.PAN_ACTIVE,
-          {
-            type: 'pan',
-            timestamp: currentTime,
-            pointerCount: event.numberOfPointers || 1,
-            position: { x: event.x, y: event.y },
-          }
-        );
+        runOnJS(requestStateTransition)(GestureStateType.PAN_ACTIVE, {
+          type: 'pan',
+          timestamp: currentTime,
+          pointerCount: event.numberOfPointers || 1,
+          position: { x: event.x, y: event.y },
+        });
         
-        if (canTransition) {
-          runOnJS(requestStateTransition)(GestureStateType.PAN_ACTIVE, {
-            type: 'pan',
-            timestamp: currentTime,
-            pointerCount: event.numberOfPointers || 1,
-            position: { x: event.x, y: event.y },
-          });
-          
-          // Debug state transition
-          runOnJS(logGesture)('State Transition', {
-            from: 'PAN_STARTING',
-            to: 'PAN_ACTIVE',
-            timestamp: currentTime
-          });
-        }
+        // Debug state transition
+        runOnJS(logGesture)('State Transition', {
+          from: 'PAN_STARTING',
+          to: 'PAN_ACTIVE',
+          timestamp: currentTime
+        });
       }
       
       // Update translation with elastic resistance at boundaries
@@ -758,24 +729,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         return;
       }
       
-      // State machine validation and transition
+      // State machine transition (simplified)
       const currentState = gestureSharedState.value;
-      const canTransition = validateGestureTransitionWorklet(
-        gestureSharedState,
-        GestureStateType.PINCH_STARTING,
-        {
-          type: 'pinch',
-          timestamp: gestureStartTime,
-          pointerCount,
-          focalPoint: { x: event.focalX, y: event.focalY },
-          scale: event.scale,
-        }
-      );
-      
-      if (!canTransition) {
-        debugGestureWorklet('Pinch Blocked', { currentState, reason: 'invalid transition' }, gestureStartTime, debugSharedValue);
-        return;
-      }
       
       // Track performance
       trackGestureResponseTimeWorklet(performanceSharedValues, gestureStartTime, gestureStartTime);
@@ -813,29 +768,15 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     .onUpdate((event) => {
       const currentTime = Date.now();
       
-      // Only transition to PINCH_ACTIVE if currently in PINCH_STARTING
+      // Only transition to PINCH_ACTIVE if currently in PINCH_STARTING (do this once)
       if (gestureSharedState.value === GestureStateType.PINCH_STARTING) {
-        const canTransition = validateGestureTransitionWorklet(
-          gestureSharedState,
-          GestureStateType.PINCH_ACTIVE,
-          {
-            type: 'pinch',
-            timestamp: currentTime,
-            pointerCount: event.numberOfPointers || 2,
-            focalPoint: { x: event.focalX, y: event.focalY },
-            scale: event.scale,
-          }
-        );
-        
-        if (canTransition) {
-          runOnJS(requestStateTransition)(GestureStateType.PINCH_ACTIVE, {
-            type: 'pinch',
-            timestamp: currentTime,
-            pointerCount: event.numberOfPointers || 2,
-            focalPoint: { x: event.focalX, y: event.focalY },
-            scale: event.scale,
-          });
-        }
+        runOnJS(requestStateTransition)(GestureStateType.PINCH_ACTIVE, {
+          type: 'pinch',
+          timestamp: currentTime,
+          pointerCount: event.numberOfPointers || 2,
+          focalPoint: { x: event.focalX, y: event.focalY },
+          scale: event.scale,
+        });
       }
       
       // Enhanced scale clamping with worklet
