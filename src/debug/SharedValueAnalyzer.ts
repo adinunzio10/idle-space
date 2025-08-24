@@ -5,7 +5,7 @@
  * potential JSI serialization crashes before they happen in production.
  */
 
-import { SharedValue, runOnUI } from 'react-native-reanimated';
+import { SharedValue, runOnUI, runOnJS } from 'react-native-reanimated';
 
 export interface SharedValueTest {
   name: string;
@@ -105,6 +105,7 @@ export async function analyzeSharedValue(
 ): Promise<{
   name: string;
   currentValue: any;
+  valueType: string;
   isProblematic: boolean;
   issues: string[];
   recommendations: string[];
@@ -114,6 +115,9 @@ export async function analyzeSharedValue(
   
   try {
     const currentValue = sharedValue.value;
+    const valueType = Array.isArray(currentValue) 
+      ? `Array[${currentValue.length}]`
+      : typeof currentValue;
     
     // Check for complex objects
     if (typeof currentValue === 'object' && currentValue !== null) {
@@ -160,6 +164,7 @@ export async function analyzeSharedValue(
     return {
       name,
       currentValue,
+      valueType,
       isProblematic: issues.length > 0,
       issues,
       recommendations
@@ -169,6 +174,7 @@ export async function analyzeSharedValue(
     return {
       name,
       currentValue: 'ERROR_READING_VALUE',
+      valueType: 'ERROR',
       isProblematic: true,
       issues: [`Failed to read value: ${error}`],
       recommendations: ['Check if SharedValue is properly initialized']
@@ -206,10 +212,10 @@ export async function testSharedValueSafety(
           try {
             sharedValue.value = testCase.value;
             // If we get here without crashing, it's unexpected
-            resolve();
+            runOnJS(resolve)();
           } catch (error) {
             // Expected to fail, so this is good
-            reject(error);
+            runOnJS(reject)(error);
           }
         })();
         
@@ -242,9 +248,9 @@ export async function testSharedValueSafety(
           'worklet';
           try {
             sharedValue.value = testCase.value;
-            resolve();
+            runOnJS(resolve)();
           } catch (error) {
-            reject(error);
+            runOnJS(reject)(error);
           }
         })();
         

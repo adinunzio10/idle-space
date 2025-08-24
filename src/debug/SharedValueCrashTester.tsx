@@ -35,9 +35,9 @@ export const SharedValueCrashTester: React.FC = () => {
   const testComplexNestedData = useSharedValue('test');
   const testComplexArrayData = useSharedValue('[1,2,3]');
 
-  // Create some intentionally problematic SharedValues for testing
-  const problematicObjectValue = useSharedValue({ shouldFail: true });
-  const problematicArrayValue = useSharedValue([{ id: 1 }, { id: 2 }]);
+  // Safe test SharedValues (avoid complex objects that crash on init)
+  const testProblematicObject = useSharedValue('safe-string-placeholder');
+  const testProblematicArray = useSharedValue('[1,2,3]');
 
   const runComprehensiveTest = async () => {
     setIsRunning(true);
@@ -57,8 +57,8 @@ export const SharedValueCrashTester: React.FC = () => {
       { name: 'touchCount', sharedValue: testTouchCount },
       { name: 'complexNestedData', sharedValue: testComplexNestedData },
       { name: 'complexArrayData', sharedValue: testComplexArrayData },
-      { name: 'problematicObject', sharedValue: problematicObjectValue },
-      { name: 'problematicArray', sharedValue: problematicArrayValue },
+      { name: 'testProblematicObject', sharedValue: testProblematicObject },
+      { name: 'testProblematicArray', sharedValue: testProblematicArray },
     ];
 
     let completedTests = 0;
@@ -152,8 +152,8 @@ export const SharedValueCrashTester: React.FC = () => {
       { name: 'touchCount', sharedValue: testTouchCount },
       { name: 'complexNestedData', sharedValue: testComplexNestedData },
       { name: 'complexArrayData', sharedValue: testComplexArrayData },
-      { name: 'problematicObject', sharedValue: problematicObjectValue },
-      { name: 'problematicArray', sharedValue: problematicArrayValue },
+      { name: 'testProblematicObject', sharedValue: testProblematicObject },
+      { name: 'testProblematicArray', sharedValue: testProblematicArray },
     ];
 
     for (const { name, sharedValue } of testSharedValues) {
@@ -161,10 +161,12 @@ export const SharedValueCrashTester: React.FC = () => {
         const analysis = await analyzeSharedValue(name, sharedValue);
         
         if (analysis.isProblematic) {
-          quickResults.push(`🚨 ${name}: ${analysis.issues.join(', ')}`);
+          quickResults.push(`🚨 ${name} (${analysis.valueType}): ${JSON.stringify(analysis.currentValue)}`);
+          quickResults.push(`   Issues: ${analysis.issues.join(', ')}`);
           quickResults.push(`   Recommendations: ${analysis.recommendations.join(', ')}`);
+          quickResults.push('');
         } else {
-          quickResults.push(`✅ ${name}: Safe`);
+          quickResults.push(`✅ ${name} (${analysis.valueType}): ${JSON.stringify(analysis.currentValue)} - Safe`);
         }
       } catch (error) {
         quickResults.push(`❌ ${name}: Error - ${error}`);
