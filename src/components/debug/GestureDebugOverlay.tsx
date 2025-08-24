@@ -1,0 +1,375 @@
+/**
+ * GESTURE DEBUG OVERLAY
+ * 
+ * Visual debugging overlay for gesture system development and testing.
+ * Provides real-time visualization of gesture states, conflicts, and performance metrics.
+ * 
+ * Features:
+ * - Real-time state visualization
+ * - Conflict resolution monitoring
+ * - Performance metrics display
+ * - Touch point visualization
+ * - Gesture velocity tracking
+ * - State history timeline
+ */
+
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from 'react-native-reanimated';
+
+import {
+  GestureStateMachine,
+  GestureStateType,
+  DebugOverlayInfo,
+  getDebugOverlayInfo,
+  StateTransitionResult,
+} from '../../utils/gestures/gestureStateMachine';
+import { gestureConfig } from '../../constants/gestures';
+
+interface GestureDebugOverlayProps {
+  stateMachine: GestureStateMachine;
+  enabled?: boolean;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  compact?: boolean;
+}
+
+interface TouchPoint {
+  id: number;
+  x: number;
+  y: number;
+  timestamp: number;
+  phase: 'began' | 'moved' | 'ended';
+}
+
+// State color mapping for visual feedback
+const STATE_COLORS: Record<GestureStateType, string> = {
+  [GestureStateType.IDLE]: '#6B7280',
+  [GestureStateType.TAP_PENDING]: '#F59E0B',
+  [GestureStateType.TAP_CONFIRMED]: '#10B981',
+  [GestureStateType.DOUBLE_TAP_PENDING]: '#8B5CF6',
+  [GestureStateType.PAN_STARTING]: '#3B82F6',
+  [GestureStateType.PAN_ACTIVE]: '#2563EB',
+  [GestureStateType.PINCH_STARTING]: '#EC4899',
+  [GestureStateType.PINCH_ACTIVE]: '#BE185D',
+  [GestureStateType.SIMULTANEOUS_PAN_PINCH]: '#DC2626',
+  [GestureStateType.MOMENTUM_ACTIVE]: '#059669',
+  [GestureStateType.ELASTIC_BOUNCE]: '#7C2D12',
+  [GestureStateType.CANCELLED]: '#EF4444',
+};
+
+export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
+  stateMachine,
+  enabled = __DEV__,
+  position = 'top-left',
+  compact = false,
+}) => {
+  const [debugInfo, setDebugInfo] = useState<DebugOverlayInfo | null>(null);
+  const [recentTransitions, setRecentTransitions] = useState<StateTransitionResult[]>([]);
+  const [touchPoints, setTouchPoints] = useState<TouchPoint[]>([]);
+  const [conflicts, setConflicts] = useState<string[]>([]);
+
+  // Animated values for visual feedback
+  const stateIndicatorScale = useSharedValue(1);
+  const conflictIndicatorOpacity = useSharedValue(0);
+
+  // Update debug info periodically
+  useEffect(() => {
+    if (!enabled) return;
+
+    const updateInterval = setInterval(() => {
+      const info = getDebugOverlayInfo(stateMachine);
+      setDebugInfo(info);
+    }, 16); // 60fps updates
+
+    return () => clearInterval(updateInterval);
+  }, [stateMachine, enabled]);
+
+  // Set up state machine callbacks
+  useEffect(() => {
+    if (!enabled) return;
+
+    stateMachine.setDebugCallbacks({
+      onStateChange: (transition) => {
+        setRecentTransitions(prev => [...prev.slice(-4), transition]);
+        
+        // Animate state indicator
+        stateIndicatorScale.value = withTiming(1.2, { duration: 100 }, () => {
+          stateIndicatorScale.value = withTiming(1, { duration: 200 });
+        });
+      },
+      
+      onConflictResolution: (context, resolution) => {
+        const conflictMsg = `${context.incomingGesture} -> ${resolution}`;
+        setConflicts(prev => [...prev.slice(-2), conflictMsg]);
+        
+        // Show conflict indicator
+        conflictIndicatorOpacity.value = withTiming(1, { duration: 100 }, () => {
+          conflictIndicatorOpacity.value = withTiming(0, { duration: 1000 });
+        });
+      },
+      
+      onPerformanceUpdate: (metrics) => {
+        // Performance updates handled in debugInfo
+      },
+    });
+  }, [stateMachine, enabled, stateIndicatorScale, conflictIndicatorOpacity]);
+
+  // Animated styles
+  const stateIndicatorStyle = useAnimatedStyle(() => {
+    const currentState = debugInfo?.currentState ?? GestureStateType.IDLE;
+    const color = STATE_COLORS[currentState];
+    
+    return {
+      transform: [{ scale: stateIndicatorScale.value }],
+      backgroundColor: color,
+    };
+  });
+
+  const conflictIndicatorStyle = useAnimatedStyle(() => {
+    return {
+      opacity: conflictIndicatorOpacity.value,
+    };
+  });
+
+  if (!enabled || !debugInfo) {
+    return null;
+  }
+
+  // Position styles
+  const positionStyles = {
+    'top-left': { top: 50, left: 10 },
+    'top-right': { top: 50, right: 10 },
+    'bottom-left': { bottom: 50, left: 10 },
+    'bottom-right': { bottom: 50, right: 10 },
+  };
+
+  const formatStateHistory = (history: string[]) => {
+    return history.join(' → ');
+  };
+
+  const formatPerformanceMetrics = (metrics: typeof debugInfo.performanceMetrics) => {
+    return {
+      transition: `${metrics.stateTransitionTime.toFixed(1)}ms`,
+      response: `${metrics.gestureResponseTime.toFixed(1)}ms`,
+      conflict: `${metrics.conflictResolutionTime.toFixed(1)}ms`,
+      active: metrics.totalActiveGestures.toString(),
+    };
+  };
+
+  if (compact) {
+    return (
+      <View style={[styles.compactContainer, positionStyles[position]]}>
+        <Animated.View style={[styles.stateIndicator, stateIndicatorStyle]}>
+          <Text style={styles.stateText}>
+            {debugInfo.currentState.replace('_', '').slice(0, 3)}
+          </Text>
+        </Animated.View>
+        
+        <Animated.View style={[styles.conflictIndicator, conflictIndicatorStyle]}>
+          <Text style={styles.conflictText}>!</Text>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  const perfMetrics = formatPerformanceMetrics(debugInfo.performanceMetrics);
+
+  return (
+    <View style={[styles.container, positionStyles[position]]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Gesture Debug</Text>
+        <Animated.View style={[styles.stateIndicator, stateIndicatorStyle]}>
+          <Text style={styles.stateText}>{debugInfo.currentState}</Text>
+        </Animated.View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>State History</Text>
+        <Text style={styles.historyText}>
+          {formatStateHistory(debugInfo.stateHistory)}
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Performance</Text>
+        <View style={styles.metricsGrid}>
+          <Text style={styles.metricText}>Trans: {perfMetrics.transition}</Text>
+          <Text style={styles.metricText}>Resp: {perfMetrics.response}</Text>
+          <Text style={styles.metricText}>Conf: {perfMetrics.conflict}</Text>
+          <Text style={styles.metricText}>Active: {perfMetrics.active}</Text>
+        </View>
+      </View>
+
+      {recentTransitions.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Transitions</Text>
+          {recentTransitions.slice(-2).map((transition, index) => (
+            <Text key={index} style={styles.transitionText}>
+              {transition.previousState} → {transition.newState}
+              {transition.conflictResolution && ` [${transition.conflictResolution}]`}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {conflicts.length > 0 && (
+        <Animated.View style={[styles.section, conflictIndicatorStyle]}>
+          <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>Conflicts</Text>
+          {conflicts.map((conflict, index) => (
+            <Text key={index} style={styles.conflictText}>
+              {conflict}
+            </Text>
+          ))}
+        </Animated.View>
+      )}
+
+      {/* Touch point visualization */}
+      {touchPoints.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Touch Points</Text>
+          {touchPoints.map((point) => (
+            <Text key={point.id} style={styles.touchText}>
+              #{point.id}: ({point.x.toFixed(0)}, {point.y.toFixed(0)}) {point.phase}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      {/* Configuration info */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Config</Text>
+        <Text style={styles.configText}>
+          Profile: {gestureConfig.getCurrentProfile().name}
+        </Text>
+        <Text style={styles.configText}>
+          Accessibility: {Object.entries(gestureConfig.getAccessibilitySettings())
+            .filter(([_, enabled]) => enabled)
+            .map(([type]) => type)
+            .join(', ') || 'None'}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    borderRadius: 8,
+    padding: 12,
+    minWidth: 220,
+    maxWidth: 280,
+    zIndex: 9999,
+  },
+  
+  compactContainer: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+
+  title: {
+    color: '#F9FAFB',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  stateIndicator: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+  },
+
+  stateText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
+  conflictIndicator: {
+    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+
+  section: {
+    marginBottom: 8,
+  },
+
+  sectionTitle: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+
+  historyText: {
+    color: '#F3F4F6',
+    fontSize: 10,
+    fontFamily: 'monospace',
+  },
+
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+
+  metricText: {
+    color: '#D1D5DB',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    marginRight: 8,
+    marginBottom: 2,
+  },
+
+  transitionText: {
+    color: '#A7F3D0',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    marginBottom: 1,
+  },
+
+  conflictText: {
+    color: '#FECACA',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    marginBottom: 1,
+  },
+
+  touchText: {
+    color: '#BFDBFE',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    marginBottom: 1,
+  },
+
+  configText: {
+    color: '#E5E7EB',
+    fontSize: 10,
+    marginBottom: 1,
+  },
+});
+
+export default GestureDebugOverlay;

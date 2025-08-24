@@ -26,7 +26,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
   useAnimatedProps,
   useSharedValue,
   withSpring,
@@ -47,7 +46,6 @@ import {
 } from '../../types/galaxy';
 import {
   screenToGalaxy,
-  galaxyToScreen,
   calculateVisibleBounds,
   clampScale,
   constrainTranslationElastic,
@@ -55,13 +53,35 @@ import {
   calculateZoomFocalPoint,
   isVelocityInsignificant,
   isPointInHitArea,
+  smoothVelocityWorklet,
+  isVelocitySignificantForMomentum,
+  getConfiguredHitRadius,
 } from '../../utils/spatial/viewport';
+import {
+  GestureStateMachine,
+  GestureStateType,
+  createStateChecker,
+} from '../../utils/gestures/gestureStateMachine';
+import {
+  createPerformanceSharedValues,
+  validateGestureTransitionWorklet,
+  resolveGestureConflictWorklet,
+  palmRejectionWorklet,
+  smoothVelocityWorklet as gestureSmoothenWorklet,
+  updatePerformanceMetricsWorklet,
+  trackGestureResponseTimeWorklet,
+  constrainGestureBoundsWorklet,
+  applyElasticResistanceWorklet,
+  clampScaleWorklet,
+  calculateFocalPointZoomWorklet,
+  debugGestureWorklet,
+} from '../../utils/gestures/gestureWorklets';
+import GestureDebugOverlay from '../debug/GestureDebugOverlay';
 import { QuadTreeSpatialIndex } from '../../utils/spatial/quadtree';
 import { performanceMonitor, usePerformanceMonitor } from '../../utils/performance/monitor';
 import { 
   getLODRenderInfo, 
-  shouldEnableClustering, 
-  calculateHitRadius 
+  shouldEnableClustering
 } from '../../utils/rendering/lod';
 import { hierarchicalCluster, isPointInCluster } from '../../utils/rendering/clustering';
 import { 
@@ -75,6 +95,7 @@ import {
   updateConnectionPatterns 
 } from '../../utils/patterns/detection';
 import { CONNECTION_CONFIG } from '../../constants/connections';
+import { gestureConfig, GESTURE_THRESHOLDS } from '../../constants/gestures';
 import BeaconRenderer from './BeaconRenderer';
 import BeaconClusterRenderer from './BeaconCluster';
 import ConnectionRenderer from './ConnectionRenderer';
@@ -120,12 +141,32 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const focalPointX = useSharedValue(width / 2);
   const focalPointY = useSharedValue(height / 2);
   
-  // Gesture state tracking
+  // Advanced Gesture State Machine
+  const gestureStateMachine = useMemo(() => new GestureStateMachine(GestureStateType.IDLE), []);
+  const stateChecker = useMemo(() => createStateChecker(gestureStateMachine), [gestureStateMachine]);
+  
+  // Performance tracking shared values
+  const performanceSharedValues = useMemo(() => createPerformanceSharedValues(), []);
+  
+  // Debug shared value for worklet debugging
+  const debugSharedValue = useSharedValue('');
+  
+  // Enhanced gesture state tracking
   const gestureState = useSharedValue<GestureState>({
     isActive: false,
     velocity: { x: 0, y: 0 },
     focalPoint: undefined,
   });
+  
+  // Advanced palm rejection tracking
+  const activeTouchAreas = useSharedValue<Map<number, {
+    area: number;
+    width: number;
+    height: number;
+    timestamp: number;
+  }>>(new Map());
+  const rapidTouchCount = useSharedValue(0);
+  const lastTouchTime = useSharedValue(0);
 
   // Viewport state management
   const [viewportState, setViewportState] = useState<ViewportState>({
@@ -183,6 +224,88 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const logGesture = useCallback((type: string, data: any) => {
     console.log(`[GalaxyMap] ${type}:`, data);
   }, []);
+
+  // Palm rejection tracking
+  const activeTouches = useSharedValue<Map<number, { x: number; y: number; timestamp: number }>>(new Map());
+  const recentTouches = useSharedValue<{ x: number; y: number; timestamp: number }[]>([]);
+
+  // Palm rejection helper (called via runOnJS)
+  const handleTouchEvent = useCallback((touchData: {
+    identifier: number;
+    x: number;
+    y: number;
+    timestamp: number;
+    phase: 'began' | 'moved' | 'ended';
+  }) => {
+    const now = Date.now();
+    
+    // Clean up old touches (older than 1 second)
+    recentTouches.value = recentTouches.value.filter(
+      touch => now - touch.timestamp < 1000
+    );
+    
+    switch (touchData.phase) {
+      case 'began':
+        // Check for palm rejection
+        const config = gestureConfig.getPalmRejectionConfig();
+        
+        // Check for rapid succession touches (potential palm)
+        const recentCount = recentTouches.value.filter(
+          touch => now - touch.timestamp < config.timing.RAPID_SUCCESSION_MS
+        ).length;
+        
+        if (recentCount >= config.timing.MAX_RAPID_TOUCHES) {
+          logGesture('Palm Rejected', { 
+            reason: 'rapid succession',
+            count: recentCount,
+            touchId: touchData.identifier 
+          });
+          return false; // Reject touch
+        }
+        
+        // Check for clustered touches (potential palm)
+        const nearbyTouches = Array.from(activeTouches.value.values()).filter(
+          activeTouch => {
+            const distance = Math.sqrt(
+              Math.pow(activeTouch.x - touchData.x, 2) + 
+              Math.pow(activeTouch.y - touchData.y, 2)
+            );
+            return distance < config.multiTouch.CLUSTER_THRESHOLD;
+          }
+        );
+        
+        if (nearbyTouches.length >= 2) {
+          logGesture('Palm Rejected', { 
+            reason: 'clustered touches',
+            nearbyCount: nearbyTouches.length,
+            touchId: touchData.identifier 
+          });
+          return false; // Reject touch
+        }
+        
+        // Track active touch
+        activeTouches.value.set(touchData.identifier, {
+          x: touchData.x,
+          y: touchData.y,
+          timestamp: now,
+        });
+        
+        // Add to recent touches
+        recentTouches.value.push({
+          x: touchData.x,
+          y: touchData.y,
+          timestamp: now,
+        });
+        
+        break;
+        
+      case 'ended':
+        activeTouches.value.delete(touchData.identifier);
+        break;
+    }
+    
+    return true; // Allow touch
+  }, [logGesture, activeTouches, recentTouches]);
 
   // Update viewport and rendering state callback
   const updateViewportState = useCallback((newTranslateX: number, newTranslateY: number, newScale: number) => {
@@ -274,7 +397,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         y: velocityY.value,
       };
       
-      if (isVelocityInsignificant(currentVelocity, 0.1)) {
+      // Use configurable momentum physics - check if velocity is below minimum threshold
+      if (!isVelocitySignificantForMomentum(currentVelocity)) {
         isDecaying.value = false;
         velocityX.value = 0;
         velocityY.value = 0;
@@ -310,18 +434,78 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     }
   }, true);
 
-  // Pan gesture
-  // WORKLET PATTERN: Gesture handlers with proper runOnJS usage
+  // Advanced Pan gesture with state machine integration
+  const panThresholds = gestureConfig.getPanThresholds();
   const panGesture = Gesture.Pan()
-    .minDistance(1) // Start panning after just 1px movement
-    .activateAfterLongPress(0) // No long press delay
-    .minPointers(1)
-    .maxPointers(1)
-    .onStart(() => {
+    .minDistance(panThresholds.minDistance)
+    .activateAfterLongPress(panThresholds.activationDelay)
+    .minPointers(panThresholds.minPointers)
+    .maxPointers(panThresholds.maxPointers)
+    .shouldCancelWhenOutside(false) // Allow dragging outside bounds
+    .enableTrackpadTwoFingerGesture(true) // Support trackpad gestures
+    .onStart((event) => {
+      // Advanced gesture state management
+      const gestureStartTime = Date.now();
+      
+      // Palm rejection check
+      const isPalm = palmRejectionWorklet(
+        event.handlerTag || 0, // Use handlerTag as area approximation
+        0, // Width not available in pan gesture
+        0, // Height not available in pan gesture
+        event.numberOfPointers || 1,
+        rapidTouchCount.value
+      );
+      
+      if (isPalm) {
+        debugGestureWorklet('Palm Rejected', { reason: 'pan start' }, gestureStartTime, debugSharedValue);
+        return; // Exit early if palm detected
+      }
+      
+      // State machine transition
+      const currentState = gestureStateMachine.getSharedState().value;
+      const canTransition = validateGestureTransitionWorklet(
+        gestureStateMachine.getSharedState(),
+        GestureStateType.PAN_STARTING,
+        {
+          type: 'pan',
+          timestamp: gestureStartTime,
+          pointerCount: event.numberOfPointers || 1,
+          position: { x: event.x, y: event.y },
+        }
+      );
+      
+      if (!canTransition) {
+        debugGestureWorklet('Pan Blocked', { currentState, reason: 'invalid transition' }, gestureStartTime, debugSharedValue);
+        return;
+      }
+      
+      // Update rapid touch tracking
+      if (gestureStartTime - lastTouchTime.value < 100) {
+        rapidTouchCount.value++;
+      } else {
+        rapidTouchCount.value = 1;
+      }
+      lastTouchTime.value = gestureStartTime;
+      
+      // Track performance
+      updatePerformanceMetricsWorklet(performanceSharedValues, gestureStartTime);
+      
+      // Legacy gesture handling
       runOnJS(logGesture)('Pan Start', {
         translateX: translateX.value,
         translateY: translateY.value,
-        scale: scale.value
+        scale: scale.value,
+        state: currentState
+      });
+      
+      // Request state transition
+      runOnJS((targetState: GestureStateType, eventData: any) => {
+        gestureStateMachine.requestTransition(targetState, eventData);
+      })(GestureStateType.PAN_STARTING, {
+        type: 'pan',
+        timestamp: gestureStartTime,
+        pointerCount: event.numberOfPointers || 1,
+        position: { x: event.x, y: event.y },
       });
       
       isDecaying.value = false;
@@ -332,34 +516,80 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       velocityY.value = 0;
     })
     .onUpdate((event) => {
-      translateX.value = lastTranslateX.value + event.translationX;
-      translateY.value = lastTranslateY.value + event.translationY;
+      // Transition to active panning state
+      const currentTime = Date.now();
       
-      // Track velocity for momentum with smoothing to prevent finger-lift spikes
+      // Update state machine to active panning
+      const resolvedState = resolveGestureConflictWorklet(
+        gestureStateMachine.getSharedState(),
+        GestureStateType.PAN_ACTIVE,
+        event.numberOfPointers || 1,
+        currentTime
+      );
+      
+      // Update translation with elastic resistance at boundaries
+      const newTranslation = {
+        x: lastTranslateX.value + event.translationX,
+        y: lastTranslateY.value + event.translationY,
+      };
+      
+      // Apply boundary constraints with elastic resistance
+      const constrainedTranslation = constrainGestureBoundsWorklet(
+        newTranslation,
+        scale.value,
+        width,
+        height,
+        GALAXY_WIDTH,
+        GALAXY_HEIGHT
+      );
+      
+      const elasticTranslation = applyElasticResistanceWorklet(
+        newTranslation,
+        constrainedTranslation,
+        0.3
+      );
+      
+      translateX.value = elasticTranslation.x;
+      translateY.value = elasticTranslation.y;
+      
+      // Enhanced velocity smoothing with worklet
+      const currentVel = { x: event.velocityX || 0, y: event.velocityY || 0 };
+      const prevVel = { x: velocityX.value, y: velocityY.value };
+      
+      const smoothedVel = gestureSmoothenWorklet(currentVel, prevVel);
+      
       prevVelocityX.value = velocityX.value;
       prevVelocityY.value = velocityY.value;
-      velocityX.value = event.velocityX;
-      velocityY.value = event.velocityY;
+      velocityX.value = smoothedVel.x;
+      velocityY.value = smoothedVel.y;
       
-      // ✅ ADDED: Real-time viewport updates during panning for responsive UI (throttled)
-      // Only update every few pixels to avoid excessive calls
+      // Track performance
+      updatePerformanceMetricsWorklet(performanceSharedValues, currentTime);
+      
+      // Debug logging with worklet
+      if (Math.abs(event.translationX) % 20 < 5 || Math.abs(event.translationY) % 20 < 5) {
+        debugGestureWorklet('Pan Update', {
+          translation: { x: event.translationX, y: event.translationY },
+          velocity: smoothedVel,
+          state: resolvedState,
+        }, currentTime, debugSharedValue);
+      }
+      
+      // Real-time viewport updates (throttled)
       if (Math.abs(event.translationX) % 10 < 2 || Math.abs(event.translationY) % 10 < 2) {
         runOnJS(updateViewportState)(translateX.value, translateY.value, scale.value);
       }
-      
-      // Log every 10th update to avoid spam
-      if (Math.abs(event.translationX) % 20 < 5 || Math.abs(event.translationY) % 20 < 5) {
-        runOnJS(logGesture)('Pan Update', {
-          translationX: event.translationX,
-          translationY: event.translationY,
-          newTranslateX: translateX.value,
-          newTranslateY: translateY.value,
-          velocityX: velocityX.value,
-          velocityY: velocityY.value
-        });
-      }
     })
-    .onEnd(() => {
+    .onEnd((event) => {
+      // Track touch end for palm rejection cleanup
+      runOnJS(handleTouchEvent)({
+        identifier: 0, // Pan is single touch
+        x: event.x,
+        y: event.y,
+        timestamp: Date.now(),
+        phase: 'ended',
+      });
+      
       const finalVelocity = { x: velocityX.value, y: velocityY.value };
       
       // Smart velocity filtering to prevent finger-lift artifacts
@@ -395,8 +625,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         scale.value
       );
       
-      // Start momentum decay if smoothed velocity is significant
-      if (!isVelocityInsignificant(smoothedVelocity, 150)) { // Reduced threshold since we're using smoothed velocity
+      // Use research-based velocity threshold for momentum
+      if (isVelocitySignificantForMomentum(smoothedVelocity)) {
         isDecaying.value = true;
         velocityX.value = smoothedVelocity.x * 0.05; // Use smoothed velocity
         velocityY.value = smoothedVelocity.y * 0.05;
@@ -410,13 +640,59 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, scale.value);
     });
 
-  // Pinch gesture with focal point zooming
+  // Advanced Pinch gesture with state machine integration
   const pinchGesture = Gesture.Pinch()
+    .onTouchesCancelled(() => {
+      // Handle cancelled touches for better error recovery
+      debugGestureWorklet('Pinch Cancelled', {}, Date.now(), debugSharedValue);
+    })
     .onStart((event) => {
+      const gestureStartTime = Date.now();
+      
+      // Advanced palm rejection for multi-touch
+      const pointerCount = event.numberOfPointers || 2;
+      const isPalm = palmRejectionWorklet(
+        0, // Area not available in pinch
+        0, // Width not available
+        0, // Height not available
+        pointerCount,
+        rapidTouchCount.value
+      );
+      
+      if (isPalm) {
+        debugGestureWorklet('Palm Rejected', { reason: 'pinch start', pointerCount }, gestureStartTime, debugSharedValue);
+        return;
+      }
+      
+      // State machine validation and conflict resolution
+      const currentState = gestureStateMachine.getSharedState().value;
+      const resolvedState = resolveGestureConflictWorklet(
+        gestureStateMachine.getSharedState(),
+        GestureStateType.PINCH_STARTING,
+        pointerCount,
+        gestureStartTime
+      );
+      
+      // Track performance
+      trackGestureResponseTimeWorklet(performanceSharedValues, gestureStartTime, gestureStartTime);
+      
       runOnJS(logGesture)('Pinch Start', {
         focalX: event.focalX,
         focalY: event.focalY,
-        initialScale: scale.value
+        initialScale: scale.value,
+        resolvedState,
+        pointerCount
+      });
+      
+      // Request state transition
+      runOnJS((targetState: GestureStateType, eventData: any) => {
+        gestureStateMachine.requestTransition(targetState, eventData);
+      })(resolvedState, {
+        type: 'pinch',
+        timestamp: gestureStartTime,
+        pointerCount,
+        focalPoint: { x: event.focalX, y: event.focalY },
+        scale: event.scale,
       });
       
       isDecaying.value = false;
@@ -431,35 +707,58 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       gestureState.value.focalPoint = { x: event.focalX, y: event.focalY };
     })
     .onUpdate((event) => {
-      const newScale = clampScale(lastScale.value * event.scale);
+      const currentTime = Date.now();
       
-      // Calculate focal point adjustment
-      const focalPoint = { x: event.focalX, y: event.focalY };
-      const newTranslation = calculateZoomFocalPoint(
+      // Update state machine to active pinching
+      const resolvedState = resolveGestureConflictWorklet(
+        gestureStateMachine.getSharedState(),
+        GestureStateType.PINCH_ACTIVE,
+        event.numberOfPointers || 2,
+        currentTime
+      );
+      
+      // Enhanced scale clamping with worklet
+      const newScale = clampScaleWorklet(lastScale.value * (event.scale || 1), 0.1, 10.0);
+      
+      // Calculate focal point adjustment with worklet
+      const focalPoint = { x: event.focalX || width / 2, y: event.focalY || height / 2 };
+      const newTranslation = calculateFocalPointZoomWorklet(
         focalPoint,
         { x: lastTranslateX.value, y: lastTranslateY.value },
         lastScale.value,
         newScale
       );
       
-      scale.value = newScale;
-      translateX.value = newTranslation.x;
-      translateY.value = newTranslation.y;
+      // Apply boundary constraints
+      const constrainedTranslation = constrainGestureBoundsWorklet(
+        newTranslation,
+        newScale,
+        width,
+        height,
+        GALAXY_WIDTH,
+        GALAXY_HEIGHT
+      );
       
-      // ✅ ADDED: Real-time viewport updates during pinch for responsive UI (throttled)
-      // Only update on significant scale changes to avoid excessive calls  
-      if (Math.abs(event.scale - lastScale.value) > 0.05) {
-        runOnJS(updateViewportState)(newTranslation.x, newTranslation.y, newScale);
+      scale.value = newScale;
+      translateX.value = constrainedTranslation.x;
+      translateY.value = constrainedTranslation.y;
+      
+      // Track performance
+      updatePerformanceMetricsWorklet(performanceSharedValues, currentTime);
+      
+      // Debug logging with worklet
+      if (Math.abs((event.scale || 1) - 1) > 0.1) {
+        debugGestureWorklet('Pinch Update', {
+          scale: event.scale,
+          newScale,
+          focalPoint,
+          state: resolvedState,
+        }, currentTime, debugSharedValue);
       }
       
-      // Log occasional updates
-      if (Math.abs(event.scale - 1) > 0.1) {
-        runOnJS(logGesture)('Pinch Update', {
-          scale: event.scale,
-          newScale: newScale,
-          focalX: event.focalX,
-          focalY: event.focalY
-        });
+      // Real-time viewport updates (throttled)
+      if (Math.abs((event.scale || 1) - lastScale.value) > 0.05) {
+        runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, newScale);
       }
     })
     .onEnd(() => {
@@ -503,8 +802,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     };
     const galaxyPoint = screenToGalaxy(screenPoint, currentViewport);
     
-    // Calculate dynamic hit radius based on zoom
-    const hitRadius = calculateHitRadius(currentScale);
+    // Calculate dynamic hit radius using gesture configuration
+    const hitRadius = getConfiguredHitRadius(20, currentScale); // Use configured hit radius
     
     // Check if tap hits any cluster first (they're larger)
     for (const cluster of clusters) {
@@ -559,11 +858,13 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     }
   }, [beacons, onBeaconSelect, onMapPress]);
 
-  // Single tap for beacon/cluster selection or map interaction
+  // Single tap for beacon/cluster selection or map interaction with optimized thresholds
+  const tapThresholds = gestureConfig.getTapThresholds();
   const singleTapGesture = Gesture.Tap()
     .numberOfTaps(1)
-    .maxDelay(250)
-    .onEnd((event) => {
+    .maxDelay(tapThresholds.maxDuration) // Research-based 200ms (or extended for accessibility)
+    .minPointers(tapThresholds.minPointers)
+    .onEnd((event: any) => {
       // ✅ CORRECT: Pass React state as parameters to avoid closure capture violations
       runOnJS(handleSingleTap)(
         event.x, 
@@ -578,10 +879,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       );
     });
 
-  // Double tap to zoom gesture
+  // Double tap to zoom gesture with optimized timing
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
-    .onEnd((event) => {
+    .maxDelay(GESTURE_THRESHOLDS.DOUBLE_TAP.MAX_DELAY) // 300ms between taps
+    .onEnd((event: any) => {
       const currentScale = scale.value;
       const targetScale = currentScale < 2 ? 3 : 1; // Zoom in to 3x or out to 1x
       const focalPoint = { x: event.x, y: event.y };
@@ -622,12 +924,25 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, targetScale);
     });
 
-  // Compose gestures with proper priority
+  // Advanced gesture composition with hierarchical conflict resolution
   const composedGesture = Gesture.Race(
+    // Highest priority: Double tap (must be detected before single tap)
     doubleTapGesture,
+    
+    // Medium priority: Exclusive gesture group
     Gesture.Exclusive(
-      singleTapGesture,
-      Gesture.Simultaneous(panGesture, pinchGesture)
+      // Single tap has failure requirements - fails if pan or pinch starts
+      singleTapGesture
+        .requireExternalGestureToFail(panGesture)
+        .requireExternalGestureToFail(pinchGesture),
+      
+      // Simultaneous pan + pinch for advanced navigation
+      Gesture.Simultaneous(
+        panGesture
+          .simultaneousWithExternalGesture(pinchGesture),
+        pinchGesture
+          .simultaneousWithExternalGesture(panGesture)
+      )
     )
   );
 
@@ -646,6 +961,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   return (
     <View style={[{ width, height }, style]}>
+      {/* Gesture Debug Overlay */}
+      {__DEV__ && (
+        <GestureDebugOverlay
+          stateMachine={gestureStateMachine}
+          enabled={true}
+          position="top-left"
+          compact={false}
+        />
+      )}
+      
       <GestureDetector gesture={composedGesture}>
         <Animated.View style={{ flex: 1 }}>
           <AnimatedSvg

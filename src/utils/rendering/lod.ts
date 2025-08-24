@@ -1,5 +1,6 @@
 import { LODRenderInfo, Beacon, ViewportState } from '../../types/galaxy';
 import { RENDERING_CONFIG, LOD_LEVELS } from '../../constants/rendering';
+import { gestureConfig } from '../../constants/gestures';
 
 /**
  * Calculate the appropriate LOD level based on zoom
@@ -89,17 +90,13 @@ export function shouldEnableClustering(
 }
 
 /**
- * Calculate adaptive hit radius based on zoom level
+ * Calculate adaptive hit radius based on zoom level using gesture configuration
  */
 export function calculateHitRadius(zoom: number): number {
   const baseRadius = RENDERING_CONFIG.INTERACTION.HIT_RADIUS_BASE;
-  const minRadius = RENDERING_CONFIG.INTERACTION.HIT_RADIUS_MIN;
-  const maxRadius = RENDERING_CONFIG.INTERACTION.HIT_RADIUS_MAX;
   
-  // Inverse relationship with zoom - bigger hit area when zoomed out
-  const adaptiveRadius = baseRadius / Math.max(zoom, 0.1);
-  
-  return Math.max(minRadius, Math.min(maxRadius, adaptiveRadius));
+  // Use gesture configuration for dynamic hit radius calculation
+  return gestureConfig.getHitRadius(baseRadius, zoom);
 }
 
 /**
