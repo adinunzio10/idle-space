@@ -63,11 +63,29 @@ export function validateGestureTransitionWorklet(
     );
   }
   
+  if (current === GestureStateType.PAN_STARTING) {
+    return (
+      targetState === GestureStateType.PAN_ACTIVE ||
+      targetState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
+      targetState === GestureStateType.CANCELLED ||
+      targetState === GestureStateType.IDLE
+    );
+  }
+  
   if (current === GestureStateType.PAN_ACTIVE) {
     return (
       targetState === GestureStateType.MOMENTUM_ACTIVE ||
       targetState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
       targetState === GestureStateType.ELASTIC_BOUNCE ||
+      targetState === GestureStateType.IDLE
+    );
+  }
+  
+  if (current === GestureStateType.PINCH_STARTING) {
+    return (
+      targetState === GestureStateType.PINCH_ACTIVE ||
+      targetState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
+      targetState === GestureStateType.CANCELLED ||
       targetState === GestureStateType.IDLE
     );
   }
@@ -103,6 +121,7 @@ export function resolveGestureConflictWorklet(
       (current === GestureStateType.PAN_ACTIVE && incomingGesture === GestureStateType.PINCH_STARTING) ||
       (current === GestureStateType.PINCH_ACTIVE && incomingGesture === GestureStateType.PAN_STARTING)
     ) {
+      currentState.value = GestureStateType.SIMULTANEOUS_PAN_PINCH;
       return GestureStateType.SIMULTANEOUS_PAN_PINCH;
     }
   }
@@ -128,6 +147,7 @@ export function resolveGestureConflictWorklet(
   
   // Higher priority wins
   if (incomingPriority > currentPriority) {
+    currentState.value = incomingGesture;
     return incomingGesture;
   }
   
