@@ -171,12 +171,12 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   });
   
   // Advanced palm rejection tracking
-  const activeTouchAreas = useSharedValue<Map<number, {
+  const activeTouchAreas = useSharedValue<Record<number, {
     area: number;
     width: number;
     height: number;
     timestamp: number;
-  }>>(new Map());
+  }>>({});
   const rapidTouchCount = useSharedValue(0);
   const lastTouchTime = useSharedValue(0);
 
@@ -238,7 +238,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   }, []);
 
   // Palm rejection tracking
-  const activeTouches = useSharedValue<Map<number, { x: number; y: number; timestamp: number }>>(new Map());
+  const activeTouches = useSharedValue<Record<number, { x: number; y: number; timestamp: number }>>({});
   const recentTouches = useSharedValue<{ x: number; y: number; timestamp: number }[]>([]);
 
   // Palm rejection helper (called via runOnJS)
@@ -276,7 +276,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         }
         
         // Check for clustered touches (potential palm)
-        const nearbyTouches = Array.from(activeTouches.value.values()).filter(
+        const nearbyTouches = Object.values(activeTouches.value).filter(
           activeTouch => {
             const distance = Math.sqrt(
               Math.pow(activeTouch.x - touchData.x, 2) + 
@@ -296,11 +296,14 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         }
         
         // Track active touch
-        activeTouches.value.set(touchData.identifier, {
-          x: touchData.x,
-          y: touchData.y,
-          timestamp: now,
-        });
+        activeTouches.value = {
+          ...activeTouches.value,
+          [touchData.identifier]: {
+            x: touchData.x,
+            y: touchData.y,
+            timestamp: now,
+          }
+        };
         
         // Add to recent touches
         recentTouches.value.push({
@@ -312,7 +315,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         break;
         
       case 'ended':
-        activeTouches.value.delete(touchData.identifier);
+        const newActiveTouches = { ...activeTouches.value };
+        delete newActiveTouches[touchData.identifier];
+        activeTouches.value = newActiveTouches;
         break;
     }
     
