@@ -163,20 +163,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Debug shared value for worklet debugging
   const debugSharedValue = useSharedValue('');
   
-  // Enhanced gesture state tracking
-  const gestureState = useSharedValue<GestureState>({
-    isActive: false,
-    velocity: { x: 0, y: 0 },
-    focalPoint: undefined,
-  });
+  // Enhanced gesture state tracking - Use primitive SharedValues to avoid serialization issues
+  const gestureStateIsActive = useSharedValue(false);
+  const gestureStateVelocityX = useSharedValue(0);
+  const gestureStateVelocityY = useSharedValue(0);
+  const gestureStateFocalPointX = useSharedValue(0);
+  const gestureStateFocalPointY = useSharedValue(0);
+  const gestureStateHasFocalPoint = useSharedValue(false);
   
-  // Advanced palm rejection tracking
-  const activeTouchAreas = useSharedValue<Record<number, {
-    area: number;
-    width: number;
-    height: number;
-    timestamp: number;
-  }>>({});
+  // Advanced palm rejection tracking - Use simple arrays instead of complex objects
+  const activeTouchAreasData = useSharedValue(''); // JSON string for serializable storage
   const rapidTouchCount = useSharedValue(0);
   const lastTouchTime = useSharedValue(0);
 
@@ -237,11 +233,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     console.log(`[GalaxyMap] ${type}:`, data);
   }, []);
 
-  // Palm rejection tracking
-  const activeTouches = useSharedValue<Record<number, { x: number; y: number; timestamp: number }>>({});
-  const recentTouches = useSharedValue<{ x: number; y: number; timestamp: number }[]>([]);
+  // Palm rejection tracking - Use serializable string storage to avoid JSI crashes
+  const activeTouchesData = useSharedValue(''); // JSON string storage
+  const recentTouchesData = useSharedValue(''); // JSON string storage
 
-  // Palm rejection helper (called via runOnJS)
+  // Palm rejection helper (called via runOnJS) - Fixed for JSI serialization
   const handleTouchEvent = useCallback((touchData: {
     identifier: number;
     x: number;
@@ -251,78 +247,99 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   }) => {
     const now = Date.now();
     
-    // Clean up old touches (older than 1 second)
-    recentTouches.value = recentTouches.value.filter(
-      touch => now - touch.timestamp < 1000
-    );
-    
-    switch (touchData.phase) {
-      case 'began':
-        // Check for palm rejection
-        const config = gestureConfig.getPalmRejectionConfig();
-        
-        // Check for rapid succession touches (potential palm)
-        const recentCount = recentTouches.value.filter(
-          touch => now - touch.timestamp < config.timing.RAPID_SUCCESSION_MS
-        ).length;
-        
-        if (recentCount >= config.timing.MAX_RAPID_TOUCHES) {
-          logGesture('Palm Rejected', { 
-            reason: 'rapid succession',
-            count: recentCount,
-            touchId: touchData.identifier 
-          });
-          return false; // Reject touch
+    try {
+      // Parse current data from serializable storage
+      let activeTouches: Record<number, { x: number; y: number; timestamp: number }> = {};
+      let recentTouches: { x: number; y: number; timestamp: number }[] = [];
+      
+      try {
+        if (activeTouchesData.value) {
+          activeTouches = JSON.parse(activeTouchesData.value);
         }
-        
-        // Check for clustered touches (potential palm)
-        const nearbyTouches = Object.values(activeTouches.value).filter(
-          activeTouch => {
-            const distance = Math.sqrt(
-              Math.pow(activeTouch.x - touchData.x, 2) + 
-              Math.pow(activeTouch.y - touchData.y, 2)
-            );
-            return distance < config.multiTouch.CLUSTER_THRESHOLD;
+        if (recentTouchesData.value) {
+          recentTouches = JSON.parse(recentTouchesData.value);
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse touch data, resetting:', parseError);
+        activeTouches = {};
+        recentTouches = [];
+      }
+      
+      // Clean up old touches (older than 1 second)
+      recentTouches = recentTouches.filter(
+        touch => now - touch.timestamp < 1000
+      );
+      
+      switch (touchData.phase) {
+        case 'began':
+          // Check for palm rejection
+          const config = gestureConfig.getPalmRejectionConfig();
+          
+          // Check for rapid succession touches (potential palm)
+          const recentCount = recentTouches.filter(
+            touch => now - touch.timestamp < config.timing.RAPID_SUCCESSION_MS
+          ).length;
+          
+          if (recentCount >= config.timing.MAX_RAPID_TOUCHES) {
+            logGesture('Palm Rejected', { 
+              reason: 'rapid succession',
+              count: recentCount,
+              touchId: touchData.identifier 
+            });
+            return false; // Reject touch
           }
-        );
-        
-        if (nearbyTouches.length >= 2) {
-          logGesture('Palm Rejected', { 
-            reason: 'clustered touches',
-            nearbyCount: nearbyTouches.length,
-            touchId: touchData.identifier 
-          });
-          return false; // Reject touch
-        }
-        
-        // Track active touch
-        activeTouches.value = {
-          ...activeTouches.value,
-          [touchData.identifier]: {
+          
+          // Check for clustered touches (potential palm)
+          const nearbyTouches = Object.values(activeTouches).filter(
+            activeTouch => {
+              const distance = Math.sqrt(
+                Math.pow(activeTouch.x - touchData.x, 2) + 
+                Math.pow(activeTouch.y - touchData.y, 2)
+              );
+              return distance < config.multiTouch.CLUSTER_THRESHOLD;
+            }
+          );
+          
+          if (nearbyTouches.length >= 2) {
+            logGesture('Palm Rejected', { 
+              reason: 'clustered touches',
+              nearbyCount: nearbyTouches.length,
+              touchId: touchData.identifier 
+            });
+            return false; // Reject touch
+          }
+          
+          // Track active touch
+          activeTouches[touchData.identifier] = {
             x: touchData.x,
             y: touchData.y,
             timestamp: now,
-          }
-        };
-        
-        // Add to recent touches
-        recentTouches.value.push({
-          x: touchData.x,
-          y: touchData.y,
-          timestamp: now,
-        });
-        
-        break;
-        
-      case 'ended':
-        const newActiveTouches = { ...activeTouches.value };
-        delete newActiveTouches[touchData.identifier];
-        activeTouches.value = newActiveTouches;
-        break;
+          };
+          
+          // Add to recent touches
+          recentTouches.push({
+            x: touchData.x,
+            y: touchData.y,
+            timestamp: now,
+          });
+          
+          break;
+          
+        case 'ended':
+          delete activeTouches[touchData.identifier];
+          break;
+      }
+      
+      // Save back to serializable storage
+      activeTouchesData.value = JSON.stringify(activeTouches);
+      recentTouchesData.value = JSON.stringify(recentTouches);
+      
+      return true; // Allow touch
+    } catch (error) {
+      console.warn('Touch event processing error:', error);
+      return true; // Default to allowing touch on error
     }
-    
-    return true; // Allow touch
-  }, [logGesture, activeTouches, recentTouches]);
+  }, [logGesture, activeTouchesData, recentTouchesData]);
 
   // Update viewport and rendering state callback
   const updateViewportState = useCallback((newTranslateX: number, newTranslateY: number, newScale: number) => {
@@ -405,7 +422,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Momentum physics frame callback
   // WORKLET PATTERN: useFrameCallback with runOnJS for state updates
   useFrameCallback((frameInfo) => {
-    if (isDecaying.value && !gestureState.value.isActive) {
+    if (isDecaying.value && !gestureStateIsActive.value) {
       const deltaTime = frameInfo.timeSincePreviousFrame || 16.67; // Fallback to 60fps
       const normalizedDelta = deltaTime / 16.67; // Normalize to 60fps
       
@@ -526,7 +543,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       });
       
       isDecaying.value = false;
-      gestureState.value.isActive = true;
+      gestureStateIsActive.value = true;
       lastTranslateX.value = translateX.value;
       lastTranslateY.value = translateY.value;
       velocityX.value = 0;
@@ -630,7 +647,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         willStartMomentum: !isVelocityInsignificant(smoothedVelocity, 150)
       });
       
-      gestureState.value.isActive = false;
+      gestureStateIsActive.value = false;
       
       // Apply elastic constraints
       const constrainedTranslation = constrainTranslationElastic(
@@ -713,7 +730,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       });
       
       isDecaying.value = false;
-      gestureState.value.isActive = true;
+      gestureStateIsActive.value = true;
       lastScale.value = scale.value;
       lastTranslateX.value = translateX.value;
       lastTranslateY.value = translateY.value;
@@ -721,7 +738,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       // Set focal point for zoom
       focalPointX.value = event.focalX;
       focalPointY.value = event.focalY;
-      gestureState.value.focalPoint = { x: event.focalX, y: event.focalY };
+      gestureStateFocalPointX.value = event.focalX;
+      gestureStateFocalPointY.value = event.focalY;
+      gestureStateHasFocalPoint.value = true;
     })
     .onUpdate((event) => {
       const currentTime = Date.now();
@@ -785,8 +804,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         finalTranslateY: translateY.value
       });
       
-      gestureState.value.isActive = false;
-      gestureState.value.focalPoint = undefined;
+      gestureStateIsActive.value = false;
+      gestureStateHasFocalPoint.value = false;
       
       const clampedScale = clampScale(scale.value);
       
