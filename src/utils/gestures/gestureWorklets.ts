@@ -29,20 +29,8 @@ export interface GesturePerformanceSharedValues {
   gestureResponseTime: SharedValue<number>;
 }
 
-/**
- * Create performance tracking shared values
- */
-export function createPerformanceSharedValues(): GesturePerformanceSharedValues {
-  'worklet';
-  
-  return {
-    lastFrameTime: { value: 0 } as SharedValue<number>,
-    frameCount: { value: 0 } as SharedValue<number>,
-    avgFrameTime: { value: 16.67 } as SharedValue<number>,
-    droppedFrames: { value: 0 } as SharedValue<number>,
-    gestureResponseTime: { value: 0 } as SharedValue<number>,
-  };
-}
+// Note: Performance shared values are now created directly in components using useSharedValue()
+// This function has been removed to avoid creating fake SharedValues
 
 /**
  * High-performance gesture state validation worklet

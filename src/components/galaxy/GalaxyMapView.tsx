@@ -63,7 +63,6 @@ import {
   createStateChecker,
 } from '../../utils/gestures/gestureStateMachine';
 import {
-  createPerformanceSharedValues,
   validateGestureTransitionWorklet,
   resolveGestureConflictWorklet,
   palmRejectionWorklet,
@@ -144,10 +143,22 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Advanced Gesture State Machine - create proper SharedValue for state
   const gestureSharedState = useSharedValue(GestureStateType.IDLE);
   const gestureStateMachine = useMemo(() => new GestureStateMachine(gestureSharedState), [gestureSharedState]);
-  const stateChecker = useMemo(() => createStateChecker(gestureStateMachine), [gestureStateMachine]);
+  const stateChecker = useMemo(() => createStateChecker(gestureSharedState), [gestureSharedState]);
   
-  // Performance tracking shared values
-  const performanceSharedValues = useMemo(() => createPerformanceSharedValues(), []);
+  // Performance tracking shared values - create real SharedValues
+  const performanceLastFrameTime = useSharedValue(0);
+  const performanceFrameCount = useSharedValue(0);
+  const performanceAvgFrameTime = useSharedValue(16.67);
+  const performanceDroppedFrames = useSharedValue(0);
+  const performanceGestureResponseTime = useSharedValue(0);
+  
+  const performanceSharedValues = useMemo(() => ({
+    lastFrameTime: performanceLastFrameTime,
+    frameCount: performanceFrameCount,
+    avgFrameTime: performanceAvgFrameTime,
+    droppedFrames: performanceDroppedFrames,
+    gestureResponseTime: performanceGestureResponseTime,
+  }), [performanceLastFrameTime, performanceFrameCount, performanceAvgFrameTime, performanceDroppedFrames, performanceGestureResponseTime]);
   
   // Debug shared value for worklet debugging
   const debugSharedValue = useSharedValue('');
@@ -463,9 +474,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       }
       
       // State machine transition
-      const currentState = gestureStateMachine.getSharedState().value;
+      const currentState = gestureSharedState.value;
       const canTransition = validateGestureTransitionWorklet(
-        gestureStateMachine.getSharedState(),
+        gestureSharedState,
         GestureStateType.PAN_STARTING,
         {
           type: 'pan',
@@ -522,7 +533,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       
       // Update state machine to active panning
       const resolvedState = resolveGestureConflictWorklet(
-        gestureStateMachine.getSharedState(),
+        gestureSharedState,
         GestureStateType.PAN_ACTIVE,
         event.numberOfPointers || 1,
         currentTime
@@ -666,9 +677,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       }
       
       // State machine validation and conflict resolution
-      const currentState = gestureStateMachine.getSharedState().value;
+      const currentState = gestureSharedState.value;
       const resolvedState = resolveGestureConflictWorklet(
-        gestureStateMachine.getSharedState(),
+        gestureSharedState,
         GestureStateType.PINCH_STARTING,
         pointerCount,
         gestureStartTime
@@ -712,7 +723,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       
       // Update state machine to active pinching
       const resolvedState = resolveGestureConflictWorklet(
-        gestureStateMachine.getSharedState(),
+        gestureSharedState,
         GestureStateType.PINCH_ACTIVE,
         event.numberOfPointers || 2,
         currentTime

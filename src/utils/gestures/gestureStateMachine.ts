@@ -500,25 +500,25 @@ export class GestureStateMachine {
 
 // Worklet-safe utility functions for use in gesture handlers
 /**
- * Create a worklet-safe state checker
+ * Create a worklet-safe state checker that accepts SharedValue directly
  */
-export function createStateChecker(stateMachine: GestureStateMachine) {
+export function createStateChecker(sharedState: SharedValue<GestureStateType>) {
   'worklet';
   
   return {
     isState: (state: GestureStateType) => {
       'worklet';
-      return stateMachine.getSharedState().value === state;
+      return sharedState.value === state;
     },
     
     isAnyState: (states: GestureStateType[]) => {
       'worklet';
-      return states.includes(stateMachine.getSharedState().value);
+      return states.includes(sharedState.value);
     },
     
     canTransition: (toState: GestureStateType) => {
       'worklet';
-      const currentState = stateMachine.getSharedState().value;
+      const currentState = sharedState.value;
       return VALID_TRANSITIONS[currentState]?.includes(toState) ?? false;
     },
   };
