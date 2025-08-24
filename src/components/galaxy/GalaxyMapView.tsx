@@ -440,7 +440,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         velocityX.value = 0;
         velocityY.value = 0;
         
-        // Transition back to idle when momentum stops
+        // Update shared state immediately in worklet for thread synchronization
+        gestureSharedState.value = GestureStateType.IDLE;
+        
+        // Transition back to idle when momentum stops on JavaScript thread too
         runOnJS(requestStateTransition)(GestureStateType.IDLE, {
           type: 'momentum',
           timestamp: Date.now(),
@@ -514,8 +517,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         return; // Exit early if palm detected
       }
       
-      // State machine transition (simplified)
+      // State machine transition (simplified) - only proceed if starting from IDLE
       const currentState = gestureSharedState.value;
+      
+      if (currentState !== GestureStateType.IDLE) {
+        debugGestureWorklet('Pan Start Blocked', { 
+          currentState, 
+          reason: 'not_idle_state' 
+        }, gestureStartTime, debugSharedValue);
+        return; // Don't start pan if not in IDLE state
+      }
       
       // Update rapid touch tracking
       if (gestureStartTime - lastTouchTime.value < 100) {
@@ -681,7 +692,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       
       // Use research-based velocity threshold for momentum
       if (isVelocitySignificantForMomentum(smoothedVelocity)) {
-        // Transition to momentum state
+        // Update shared state immediately in worklet for thread synchronization
+        gestureSharedState.value = GestureStateType.MOMENTUM_ACTIVE;
+        
+        // Transition to momentum state on JavaScript thread too
         runOnJS(requestStateTransition)(GestureStateType.MOMENTUM_ACTIVE, {
           type: 'momentum',
           timestamp: Date.now(),
@@ -705,7 +719,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
           scaledVelocity: { x: smoothedVelocity.x * 0.05, y: smoothedVelocity.y * 0.05 }
         });
       } else {
-        // Transition back to idle immediately
+        // Update shared state immediately in worklet for thread synchronization
+        gestureSharedState.value = GestureStateType.IDLE;
+        
+        // Transition back to idle on JavaScript thread too
         runOnJS(requestStateTransition)(GestureStateType.IDLE, {
           type: 'momentum', 
           timestamp: Date.now(),
@@ -759,8 +776,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         return;
       }
       
-      // State machine transition (simplified)
+      // State machine transition (simplified) - only proceed if starting from IDLE
       const currentState = gestureSharedState.value;
+      
+      if (currentState !== GestureStateType.IDLE) {
+        debugGestureWorklet('Pinch Start Blocked', { 
+          currentState, 
+          reason: 'not_idle_state' 
+        }, gestureStartTime, debugSharedValue);
+        return; // Don't start pinch if not in IDLE state
+      }
       
       // Track performance
       trackGestureResponseTimeWorklet(performanceSharedValues, gestureStartTime, gestureStartTime);
@@ -854,6 +879,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       }
     })
     .onEnd(() => {
+      const currentState = gestureSharedState.value; // Capture state before transition
+      
       runOnJS(logGesture)('Pinch End', {
         finalScale: scale.value,
         finalTranslateX: translateX.value,
@@ -862,6 +889,23 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       
       gestureStateIsActive.value = false;
       gestureStateHasFocalPoint.value = false;
+      
+      // Update shared state immediately in worklet for thread synchronization
+      gestureSharedState.value = GestureStateType.IDLE;
+      
+      // Transition back to idle on JavaScript thread too
+      runOnJS(requestStateTransition)(GestureStateType.IDLE, {
+        type: 'pinch',
+        timestamp: Date.now(),
+        pointerCount: 0,
+      });
+      
+      // Debug state transition back to idle
+      runOnJS(logGesture)('State Transition', {
+        from: currentState,
+        to: 'IDLE',
+        reason: 'pinch_end'
+      });
       
       const clampedScale = clampScale(scale.value);
       
