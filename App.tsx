@@ -8,6 +8,7 @@ import { GameController } from './src/core/GameController';
 import { GameState } from './src/storage/schemas/GameState';
 import { GalaxyMapView } from './src/components/galaxy/GalaxyMapView';
 import { Beacon } from './src/types/galaxy';
+import { JSICrashTester } from './src/debug/JSICrashTester';
 
 interface GalaxyMapScreenProps {
   onBack: () => void;
@@ -63,6 +64,7 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showGalaxyMap, setShowGalaxyMap] = useState(false);
+  const [showDebugTester, setShowDebugTester] = useState(false);
 
   // Sample beacons for testing
   const sampleBeacons: Beacon[] = [
@@ -170,6 +172,28 @@ export default function App() {
     );
   }
 
+  if (showDebugTester) {
+    return (
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <View className="flex-1">
+            <View className="flex-row justify-between items-center px-4 py-4 bg-surface">
+              <TouchableOpacity
+                onPress={() => setShowDebugTester(false)}
+                className="bg-primary px-4 py-2 rounded-lg"
+              >
+                <Text className="text-white font-semibold">← Back</Text>
+              </TouchableOpacity>
+              <Text className="text-text text-lg font-semibold">Debug JSI Crashes</Text>
+              <View style={{ width: 70 }} />
+            </View>
+            <JSICrashTester />
+          </View>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    );
+  }
+
   if (showGalaxyMap) {
     return (
       <SafeAreaProvider>
@@ -217,6 +241,15 @@ export default function App() {
                 >
                   <Text className="text-white font-semibold text-center">
                     Open Galaxy Map
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => setShowDebugTester(true)}
+                  className="bg-red-500 px-6 py-3 rounded-lg"
+                >
+                  <Text className="text-white font-semibold text-center">
+                    🐛 Debug JSI Crashes
                   </Text>
                 </TouchableOpacity>
                 

@@ -786,11 +786,79 @@
             "parentTaskId": 12
           }
         ]
+      },
+      {
+        "id": 13,
+        "title": "Debug and Fix React Native Reanimated JSI Crashes in Galaxy Map",
+        "description": "Investigate and resolve React Native Reanimated crashes occurring in galaxy map gesture handling, specifically JSI crashes in worklet execution and RNBetterPanGestureRecognizer context violations.",
+        "details": "Debug the specific crash at facebook::jsi::Function::getHostFunction by analyzing worklet boundary violations in gesture handlers. Investigate worklet context isolation issues where JavaScript objects are being improperly serialized across worklet boundaries. Common causes include: SharedValue objects containing non-serializable JavaScript Map/Set objects, React state being accessed directly in worklets, gesture callbacks trying to call non-worklet functions synchronously. Fix by: replacing JavaScript Map objects with plain objects or arrays in SharedValue contexts, ensuring all gesture handler callbacks are properly marked as worklets or wrapped with runOnJS(), implementing proper error boundaries around worklet execution, adding worklet context validation to prevent cross-boundary violations. Use React Native Flipper and Chrome DevTools to trace worklet execution flow and identify memory leaks. Add comprehensive logging to gesture state machine transitions to isolate crash triggers.",
+        "testStrategy": "Reproduce crash scenarios with rapid gesture combinations on galaxy map. Test gesture handlers under memory pressure and rapid state changes. Verify worklet execution stability with device rotation and app backgrounding. Use React Native debugging tools to monitor worklet memory usage and garbage collection. Test on both iOS and Android with debug/release builds. Create automated stress tests for gesture recognition with concurrent animations.",
+        "status": "pending",
+        "dependencies": [
+          11,
+          12
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Reproduce and Analyze JSI Crashes Using React Native Debugging Tools",
+            "description": "Set up debugging environment and systematically reproduce JSI crashes in galaxy map gesture handling to identify root causes.",
+            "dependencies": [],
+            "details": "Configure React Native Flipper and Chrome DevTools for worklet debugging. Create reproducible test scenarios with rapid gesture combinations on galaxy map. Analyze crash logs focusing on facebook::jsi::Function::getHostFunction errors. Document crash patterns and triggers. Set up memory profiling to track worklet execution context violations.\n<info added on 2025-08-24T01:41:12.652Z>\nDebugging environment successfully configured with JSICrashTester component implementing systematic crash reproduction scenarios including rapid gesture combinations, memory pressure tests, and worklet boundary violations. Hermes debugger integration active for JavaScript engine-level debugging. Debug menu integrated into main app for runtime crash testing controls. Comprehensive debugging guide created documenting crash reproduction steps, debugging tool usage, and analysis procedures. Environment ready for systematic crash pattern identification and root cause analysis.\n</info added on 2025-08-24T01:41:12.652Z>",
+            "status": "in-progress",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Identify and Fix SharedValue Serialization Issues with Map/Set Objects",
+            "description": "Audit SharedValue usage to find non-serializable JavaScript Map/Set objects causing worklet boundary violations.",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "Scan codebase for SharedValue objects containing JavaScript Map, Set, or other non-serializable objects. Replace Map objects with plain objects or arrays in SharedValue contexts. Implement serialization validation for SharedValue assignments. Add runtime checks to prevent non-serializable data from crossing worklet boundaries.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Fix Gesture Handler Worklet Boundary Violations with runOnJS Wrapping",
+            "description": "Ensure all gesture handler callbacks properly use runOnJS() for JavaScript thread operations or are marked as worklets.",
+            "dependencies": [
+              "13.2"
+            ],
+            "details": "Audit all gesture handlers in galaxy map for synchronous JavaScript calls. Wrap non-worklet function calls with runOnJS() in gesture callbacks. Mark appropriate functions with 'worklet' directive for UI thread execution. Fix RNBetterPanGestureRecognizer context violations by ensuring proper worklet context isolation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Debug State Machine Integration for React State Access in Worklets",
+            "description": "Resolve issues where worklets attempt to directly access React state, causing JSI crashes and context violations.",
+            "dependencies": [
+              "13.3"
+            ],
+            "details": "Identify locations where worklets access React state directly. Implement proper state sharing mechanisms using SharedValue for worklet-accessible state. Add error boundaries around worklet execution to catch state access violations. Ensure gesture state machine transitions don't violate worklet context rules.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Memory Leak Prevention and Comprehensive Cross-Platform Testing",
+            "description": "Add comprehensive logging, prevent memory leaks, and test fixes across iOS/Android with stress tests for gesture combinations.",
+            "dependencies": [
+              "13.4"
+            ],
+            "details": "Implement comprehensive logging for gesture state machine transitions to isolate crash triggers. Add memory leak detection and cleanup for worklet contexts. Create stress tests with rapid gesture combinations, device rotation, and app backgrounding. Test on both iOS and Android with release builds. Monitor worklet memory usage and garbage collection patterns.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-08-24T01:20:55.020Z",
+      "updated": "2025-08-24T01:34:32.057Z",
       "description": "Tasks for master context"
     }
   }
