@@ -472,7 +472,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const panThresholds = gestureConfig.getPanThresholds();
   const panGesture = Gesture.Pan()
     .minDistance(panThresholds.minDistance)
-    .activateAfterLongPress(panThresholds.activationDelay)
+    // FIX: Remove .activateAfterLongPress(0) - it causes JSI crashes when delay is 0
+    // .activateAfterLongPress(panThresholds.activationDelay) 
     .minPointers(panThresholds.minPointers)
     .maxPointers(panThresholds.maxPointers)
     .shouldCancelWhenOutside(false) // Allow dragging outside bounds
