@@ -29,11 +29,9 @@ export const JSICrashTester: React.FC = () => {
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
   
-  // Complex shared value that might cause serialization issues
-  const complexSharedValue = useSharedValue({
-    nested: { data: 'test' },
-    array: [1, 2, 3]
-  });
+  // Fixed: Use primitive values instead of complex objects
+  const complexNestedData = useSharedValue('test');
+  const complexArrayData = useSharedValue('[1,2,3]');
 
   const logCrashEvent = (message: string) => {
     console.log(`[JSI CRASH TEST]: ${message}`);
@@ -45,7 +43,7 @@ export const JSICrashTester: React.FC = () => {
       'worklet';
       // This might cause JSI issues with complex objects
       try {
-        console.log('Pan started with complex value:', complexSharedValue.value);
+        console.log('Pan started with complex data:', complexNestedData.value);
       } catch (e) {
         runOnJS(logCrashEvent)('Pan gesture JSI error: ' + String(e));
       }
@@ -85,13 +83,12 @@ export const JSICrashTester: React.FC = () => {
         // Complex worklet operations that might cause crashes
         const complexCalculation = Math.pow(event.scale, 2) * Math.sin(rotation.value);
         
-        // Attempting to access/modify complex shared values in worklet
-        if (complexSharedValue.value && typeof complexSharedValue.value === 'object') {
-          // This might cause serialization issues
-          complexSharedValue.value = {
-            ...complexSharedValue.value,
-            dynamic: complexCalculation
-          };
+        // Fixed: Update primitive values instead of complex objects
+        try {
+          complexNestedData.value = `test-${complexCalculation}`;
+          complexArrayData.value = JSON.stringify([complexCalculation, complexCalculation * 2, complexCalculation * 3]);
+        } catch (e) {
+          runOnJS(logCrashEvent)('Complex value update error: ' + String(e));
         }
       } catch (e) {
         runOnJS(logCrashEvent)('Pinch gesture JSI error: ' + String(e));
@@ -131,13 +128,10 @@ export const JSICrashTester: React.FC = () => {
           scale.value = 0.5 + Math.random();
           rotation.value = Math.random() * Math.PI * 2;
           
-          // Attempt to update complex object in SharedValue
+          // Fixed: Update primitive values instead of complex objects
           try {
-            complexSharedValue.value = {
-              nested: { data: `test-${i}` },
-              array: [i, i + 1, i + 2],
-              timestamp: Date.now()
-            };
+            complexNestedData.value = `test-${i}`;
+            complexArrayData.value = JSON.stringify([i, i + 1, i + 2]);
           } catch (e) {
             logCrashEvent(`Complex value update error at iteration ${i}: ${e}`);
           }
