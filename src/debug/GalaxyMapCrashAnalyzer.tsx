@@ -9,8 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { gestureConfig } from '../constants/gestures';
-import { GestureStateMachine, GestureStateType } from '../utils/gestures/gestureStateMachine';
-import { createStateChecker } from '../utils/gestures/stateCheckers';
+import { GestureStateMachine, GestureStateType, createStateChecker } from '../utils/gestures/gestureStateMachine';
 
 export const GalaxyMapCrashAnalyzer: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
