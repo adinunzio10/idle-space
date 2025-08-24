@@ -545,6 +545,13 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         position: { x: event.x, y: event.y },
       });
       
+      // Debug state transition
+      runOnJS(logGesture)('State Transition', {
+        from: currentState,
+        to: 'PAN_STARTING',
+        timestamp: gestureStartTime
+      });
+      
       isDecaying.value = false;
       gestureStateIsActive.value = true;
       lastTranslateX.value = translateX.value;
@@ -575,6 +582,13 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
             timestamp: currentTime,
             pointerCount: event.numberOfPointers || 1,
             position: { x: event.x, y: event.y },
+          });
+          
+          // Debug state transition
+          runOnJS(logGesture)('State Transition', {
+            from: 'PAN_STARTING',
+            to: 'PAN_ACTIVE',
+            timestamp: currentTime
           });
         }
       }
@@ -662,19 +676,34 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         rawVelocity: finalVelocity,
         smoothedVelocity: smoothedVelocity,
         isLikelyFingerLift: isLikelyFingerLift,
-        willStartMomentum: !isVelocityInsignificant(smoothedVelocity, 150)
+        willStartMomentum: isVelocitySignificantForMomentum(smoothedVelocity)
       });
       
       gestureStateIsActive.value = false;
       
-      // Apply elastic constraints
+      // Transition state machine back to idle
+      runOnJS(requestStateTransition)(GestureStateType.IDLE, {
+        type: 'momentum',
+        timestamp: Date.now(),
+        pointerCount: 0,
+      });
+      
+      // Debug state transition back to idle
+      runOnJS(logGesture)('State Transition', {
+        from: gestureSharedState.value,
+        to: 'IDLE',
+        reason: 'pan_end'
+      });
+      
+      // Apply elastic constraints only if needed
       const constrainedTranslation = constrainTranslationElastic(
         { x: translateX.value, y: translateY.value },
         width,
         height,
         GALAXY_WIDTH,
         GALAXY_HEIGHT,
-        scale.value
+        scale.value,
+        0.1 // Reduce elasticity to be less aggressive
       );
       
       // Use research-based velocity threshold for momentum
@@ -682,10 +711,23 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         isDecaying.value = true;
         velocityX.value = smoothedVelocity.x * 0.05; // Use smoothed velocity
         velocityY.value = smoothedVelocity.y * 0.05;
+        
+        // Log momentum start
+        runOnJS(logGesture)('Momentum Start', {
+          initialVelocity: smoothedVelocity,
+          scaledVelocity: { x: smoothedVelocity.x * 0.05, y: smoothedVelocity.y * 0.05 }
+        });
       } else {
-        // Spring back to constrained position
-        translateX.value = withSpring(constrainedTranslation.x);
-        translateY.value = withSpring(constrainedTranslation.y);
+        // Only spring back if significantly out of bounds
+        const distance = Math.sqrt(
+          Math.pow(constrainedTranslation.x - translateX.value, 2) + 
+          Math.pow(constrainedTranslation.y - translateY.value, 2)
+        );
+        
+        if (distance > 5) { // Only snap back if more than 5px out of bounds
+          translateX.value = withSpring(constrainedTranslation.x);
+          translateY.value = withSpring(constrainedTranslation.y);
+        }
       }
       
       // ✅ CORRECT: All gesture handlers use runOnJS for JavaScript calls
