@@ -172,9 +172,9 @@ export class GestureStateMachine {
   private onConflictResolution?: (context: ConflictContext, resolution: string) => void;
   private onPerformanceUpdate?: (metrics: PerformanceMetrics) => void;
 
-  constructor(initialState: GestureStateType = GestureStateType.IDLE) {
-    this.currentState = { value: initialState } as SharedValue<GestureStateType>;
-    this.recordState(initialState, Date.now());
+  constructor(sharedState: SharedValue<GestureStateType>) {
+    this.currentState = sharedState;
+    this.recordState(sharedState.value, Date.now());
   }
 
   /**

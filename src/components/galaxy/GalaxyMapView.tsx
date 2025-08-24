@@ -141,8 +141,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const focalPointX = useSharedValue(width / 2);
   const focalPointY = useSharedValue(height / 2);
   
-  // Advanced Gesture State Machine
-  const gestureStateMachine = useMemo(() => new GestureStateMachine(GestureStateType.IDLE), []);
+  // Advanced Gesture State Machine - create proper SharedValue for state
+  const gestureSharedState = useSharedValue(GestureStateType.IDLE);
+  const gestureStateMachine = useMemo(() => new GestureStateMachine(gestureSharedState), [gestureSharedState]);
   const stateChecker = useMemo(() => createStateChecker(gestureStateMachine), [gestureStateMachine]);
   
   // Performance tracking shared values
