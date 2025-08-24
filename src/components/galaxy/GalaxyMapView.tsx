@@ -439,10 +439,25 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         isDecaying.value = false;
         velocityX.value = 0;
         velocityY.value = 0;
+        
+        // Transition back to idle when momentum stops
+        runOnJS(requestStateTransition)(GestureStateType.IDLE, {
+          type: 'momentum',
+          timestamp: Date.now(),
+          pointerCount: 0,
+        });
+        
         runOnJS(logGesture)('Momentum Stopped', {
           finalTranslateX: translateX.value,
           finalTranslateY: translateY.value
         });
+        
+        runOnJS(logGesture)('State Transition', {
+          from: 'MOMENTUM_ACTIVE',
+          to: 'IDLE',
+          reason: 'momentum_end'
+        });
+        
         return;
       }
       
@@ -651,20 +666,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       });
       
       gestureStateIsActive.value = false;
-      
-      // Transition state machine back to idle
-      runOnJS(requestStateTransition)(GestureStateType.IDLE, {
-        type: 'momentum',
-        timestamp: Date.now(),
-        pointerCount: 0,
-      });
-      
-      // Debug state transition back to idle
-      runOnJS(logGesture)('State Transition', {
-        from: gestureSharedState.value,
-        to: 'IDLE',
-        reason: 'pan_end'
-      });
+      const currentState = gestureSharedState.value; // Capture state before transition
       
       // Apply elastic constraints only if needed
       const constrainedTranslation = constrainTranslationElastic(
@@ -679,9 +681,23 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       
       // Use research-based velocity threshold for momentum
       if (isVelocitySignificantForMomentum(smoothedVelocity)) {
+        // Transition to momentum state
+        runOnJS(requestStateTransition)(GestureStateType.MOMENTUM_ACTIVE, {
+          type: 'momentum',
+          timestamp: Date.now(),
+          pointerCount: 0,
+        });
+        
         isDecaying.value = true;
         velocityX.value = smoothedVelocity.x * 0.05; // Use smoothed velocity
         velocityY.value = smoothedVelocity.y * 0.05;
+        
+        // Debug state transition to momentum
+        runOnJS(logGesture)('State Transition', {
+          from: currentState,
+          to: 'MOMENTUM_ACTIVE',
+          reason: 'momentum_start'
+        });
         
         // Log momentum start
         runOnJS(logGesture)('Momentum Start', {
@@ -689,6 +705,20 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
           scaledVelocity: { x: smoothedVelocity.x * 0.05, y: smoothedVelocity.y * 0.05 }
         });
       } else {
+        // Transition back to idle immediately
+        runOnJS(requestStateTransition)(GestureStateType.IDLE, {
+          type: 'momentum', 
+          timestamp: Date.now(),
+          pointerCount: 0,
+        });
+        
+        // Debug state transition back to idle
+        runOnJS(logGesture)('State Transition', {
+          from: currentState,
+          to: 'IDLE',
+          reason: 'pan_end_no_momentum'
+        });
+        
         // Only spring back if significantly out of bounds
         const distance = Math.sqrt(
           Math.pow(constrainedTranslation.x - translateX.value, 2) + 
