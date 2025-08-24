@@ -9,6 +9,7 @@ import { GameState } from './src/storage/schemas/GameState';
 import { GalaxyMapView } from './src/components/galaxy/GalaxyMapView';
 import { Beacon } from './src/types/galaxy';
 import { JSICrashTester } from './src/debug/JSICrashTester';
+import { SharedValueCrashTester } from './src/debug/SharedValueCrashTester';
 
 interface GalaxyMapScreenProps {
   onBack: () => void;
@@ -65,6 +66,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [showGalaxyMap, setShowGalaxyMap] = useState(false);
   const [showDebugTester, setShowDebugTester] = useState(false);
+  const [showSharedValueTester, setShowSharedValueTester] = useState(false);
 
   // Sample beacons for testing
   const sampleBeacons: Beacon[] = [
@@ -194,6 +196,28 @@ export default function App() {
     );
   }
 
+  if (showSharedValueTester) {
+    return (
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <View className="flex-1">
+            <View className="flex-row justify-between items-center px-4 py-4 bg-surface">
+              <TouchableOpacity
+                onPress={() => setShowSharedValueTester(false)}
+                className="bg-primary px-4 py-2 rounded-lg"
+              >
+                <Text className="text-white font-semibold">← Back</Text>
+              </TouchableOpacity>
+              <Text className="text-text text-lg font-semibold">SharedValue Analyzer</Text>
+              <View style={{ width: 70 }} />
+            </View>
+            <SharedValueCrashTester />
+          </View>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    );
+  }
+
   if (showGalaxyMap) {
     return (
       <SafeAreaProvider>
@@ -250,6 +274,15 @@ export default function App() {
                 >
                   <Text className="text-white font-semibold text-center">
                     🐛 Debug JSI Crashes
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => setShowSharedValueTester(true)}
+                  className="bg-purple-500 px-6 py-3 rounded-lg"
+                >
+                  <Text className="text-white font-semibold text-center">
+                    🔍 SharedValue Analyzer
                   </Text>
                 </TouchableOpacity>
                 
