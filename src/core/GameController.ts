@@ -261,10 +261,25 @@ export class GameController {
   private updateBeaconConnections(): void {
     if (!this.gameState) return;
 
-    // Get all current beacons as Beacon instances
-    const beacons = this.getBeacons();
+    // Create fresh beacon instances with mutable connections arrays
+    const beacons: Record<string, Beacon> = {};
+    for (const [id, beaconData] of Object.entries(this.gameState.beacons)) {
+      beacons[id] = new Beacon({
+        id: beaconData.id,
+        position: { x: beaconData.x, y: beaconData.y },
+        level: beaconData.level,
+        type: beaconData.type,
+        specialization: beaconData.specialization,
+        status: beaconData.status,
+        connections: [], // Start with empty connections array
+        createdAt: beaconData.createdAt,
+        lastUpgraded: beaconData.lastUpgraded,
+        generationRate: beaconData.generationRate,
+        totalResourcesGenerated: beaconData.totalResourcesGenerated,
+      });
+    }
     
-    // Update the connection manager with current beacons
+    // Update the connection manager with fresh beacons
     this.beaconConnectionManager.updateBeacons(beacons);
     
     // Sync the updated connection data back to game state

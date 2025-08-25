@@ -21,6 +21,7 @@ interface GalaxyMapScreenProps {
   quantumData: number;
   showDebugOverlay: boolean;
   onToggleDebugOverlay: () => void;
+  beaconVersion: number;
 }
 
 const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
@@ -33,6 +34,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   quantumData,
   showDebugOverlay,
   onToggleDebugOverlay,
+  beaconVersion,
 }) => {
   const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
@@ -130,6 +132,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
         </View>
         
         <GalaxyMapView
+          key={`galaxy-map-${beacons.length}-${beaconVersion}`}
           width={screenData.width}
           height={screenData.height - headerHeight}
           beacons={beacons}
@@ -154,6 +157,7 @@ export default function App() {
   const [showSpecializationModal, setShowSpecializationModal] = useState(false);
   const [selectedBeaconForUpgrade, setSelectedBeaconForUpgrade] = useState<string | null>(null);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
+  const [beaconVersion, setBeaconVersion] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -164,6 +168,7 @@ export default function App() {
         if (mounted) {
           const state = gameController.getGameState();
           setGameState(state);
+          setBeaconVersion(prev => prev + 1); // Trigger beacon re-render
           setIsInitialized(true);
         }
       } catch (err) {
@@ -182,11 +187,19 @@ export default function App() {
     };
   }, [gameController]);
 
+  // Trigger beacon re-render when galaxy map becomes visible
+  useEffect(() => {
+    if (showGalaxyMap && gameState) {
+      setBeaconVersion(prev => prev + 1);
+    }
+  }, [showGalaxyMap, gameState]);
+
   const handleSaveGame = async () => {
     try {
       await gameController.saveGame();
       const updatedState = gameController.getGameState();
       setGameState(updatedState);
+      setBeaconVersion(prev => prev + 1); // Trigger beacon re-render
     } catch (err) {
       console.error('Failed to save game:', err);
     }
@@ -220,6 +233,7 @@ export default function App() {
       // Refresh game state to show the new beacon
       const updatedState = gameController.getGameState();
       setGameState(updatedState);
+      setBeaconVersion(prev => prev + 1); // Force re-render
       console.log(`Placed ${selectedBeaconType} beacon at (${position.x}, ${position.y})`);
     } else {
       console.error('Failed to place beacon:', result.error);
@@ -236,7 +250,7 @@ export default function App() {
       position: { x: beacon.x, y: beacon.y },
       level: beacon.level,
       type: beacon.type,
-      connections: beacon.connections
+      connections: [...beacon.connections] // Create a fresh array to avoid reference issues
     }));
   };
 
@@ -288,6 +302,7 @@ export default function App() {
           quantumData={gameState?.resources.quantumData || 0}
           showDebugOverlay={showDebugOverlay}
           onToggleDebugOverlay={() => setShowDebugOverlay(!showDebugOverlay)}
+          beaconVersion={beaconVersion}
         />
         
         <BeaconSpecializationModal
