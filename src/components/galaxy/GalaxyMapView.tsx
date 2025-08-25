@@ -569,30 +569,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         return; // Exit if state changed (e.g., pinch started)
       }
       
-      // Update translation with elastic resistance at boundaries
-      const newTranslation = {
-        x: lastTranslateX.value + event.translationX,
-        y: lastTranslateY.value + event.translationY,
-      };
-      
-      // Apply boundary constraints with elastic resistance
-      const constrainedTranslation = constrainGestureBoundsWorklet(
-        newTranslation,
-        scale.value,
-        width,
-        height,
-        GALAXY_WIDTH,
-        GALAXY_HEIGHT
-      );
-      
-      const elasticTranslation = applyElasticResistanceWorklet(
-        newTranslation,
-        constrainedTranslation,
-        0.3
-      );
-      
-      translateX.value = elasticTranslation.x;
-      translateY.value = elasticTranslation.y;
+      // Update translation directly without constraint interference
+      // Let user pan freely - they can see what they're doing
+      translateX.value = lastTranslateX.value + event.translationX;
+      translateY.value = lastTranslateY.value + event.translationY;
       
       // Enhanced velocity smoothing with worklet
       const currentVel = { x: event.velocityX || 0, y: event.velocityY || 0 };
