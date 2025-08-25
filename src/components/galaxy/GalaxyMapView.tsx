@@ -388,7 +388,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     const allConnections = buildConnectionsFromBeacons(beacons);
     
     // Detect patterns (skip if performance is poor)
-    let patterns = renderingState.patterns; // Reuse previous patterns
+    // Don't reuse renderingState.patterns to avoid circular dependency
+    let patterns: any[] = [];
     if (qualitySettings.enableAnimations) {
       patterns = patternDetector.detectPatternsOptimized(beacons, allConnections);
     }
@@ -422,7 +423,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     
     setRenderingState(newRenderingState);
     endFrame(); // End performance monitoring
-  }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings, renderingState.patterns]);
+  }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings]);
 
   // Momentum physics frame callback
   // WORKLET PATTERN: useFrameCallback with runOnJS for state updates
