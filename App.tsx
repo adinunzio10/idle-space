@@ -21,6 +21,7 @@ interface GalaxyMapScreenProps {
   quantumData: number;
   showDebugOverlay: boolean;
   onToggleDebugOverlay: () => void;
+  onClearAllBeacons: () => void;
   beaconVersion: number;
 }
 
@@ -34,6 +35,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   quantumData,
   showDebugOverlay,
   onToggleDebugOverlay,
+  onClearAllBeacons,
   beaconVersion,
 }) => {
   const insets = useSafeAreaInsets();
@@ -58,20 +60,31 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
             <View className="flex-row items-center space-x-3">
               <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
               {__DEV__ && (
-                <TouchableOpacity
-                  onPress={onToggleDebugOverlay}
-                  className={`px-2 py-1 rounded border ${
-                    showDebugOverlay 
-                      ? 'bg-accent/20 border-accent' 
-                      : 'bg-surface border-text/20'
-                  }`}
-                >
-                  <Text className={`text-xs font-semibold ${
-                    showDebugOverlay ? 'text-accent' : 'text-text/60'
-                  }`}>
-                    DEBUG
-                  </Text>
-                </TouchableOpacity>
+                <View className="flex-row space-x-2">
+                  <TouchableOpacity
+                    onPress={onToggleDebugOverlay}
+                    className={`px-2 py-1 rounded border ${
+                      showDebugOverlay 
+                        ? 'bg-accent/20 border-accent' 
+                        : 'bg-surface border-text/20'
+                    }`}
+                  >
+                    <Text className={`text-xs font-semibold ${
+                      showDebugOverlay ? 'text-accent' : 'text-text/60'
+                    }`}>
+                      DEBUG
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    onPress={onClearAllBeacons}
+                    className="px-2 py-1 rounded border bg-red-500/20 border-red-500"
+                  >
+                    <Text className="text-xs font-semibold text-red-400">
+                      CLEAR
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
             <Text className="text-accent text-sm font-semibold">
@@ -226,6 +239,14 @@ export default function App() {
     setGameState(updatedState);
   };
 
+  const handleClearAllBeacons = () => {
+    gameController.clearAllBeacons();
+    const updatedState = gameController.getGameState();
+    setGameState(updatedState);
+    setBeaconVersion(prev => prev + 1); // Force re-render
+    console.log('Cleared all beacons for debugging');
+  };
+
   const handleMapPress = (position: { x: number; y: number }) => {
     const result = gameController.placeBeacon(position, selectedBeaconType);
     
@@ -302,6 +323,7 @@ export default function App() {
           quantumData={gameState?.resources.quantumData || 0}
           showDebugOverlay={showDebugOverlay}
           onToggleDebugOverlay={() => setShowDebugOverlay(!showDebugOverlay)}
+          onClearAllBeacons={handleClearAllBeacons}
           beaconVersion={beaconVersion}
         />
         
