@@ -2,7 +2,11 @@ import { AppState, AppStateStatus } from 'react-native';
 import { SaveManager } from './SaveManager';
 import { ResourceManager } from './ResourceManager';
 import { ResourceGenerationEngine } from './ResourceGenerationEngine';
+import { BeaconPlacementManager } from './BeaconPlacementManager';
 import { GameState, DEFAULT_RESOURCES, DEFAULT_PLAYER_SETTINGS, DEFAULT_PLAYER_STATISTICS } from '../storage/schemas/GameState';
+import { BeaconType } from '../types/beacon';
+import { Point2D } from '../types/galaxy';
+import { Beacon } from '../entities/Beacon';
 
 export interface GameControllerConfig {
   autoSaveInterval: number; // seconds
@@ -15,6 +19,7 @@ export class GameController {
   private saveManager: SaveManager;
   private resourceManager: ResourceManager;
   private generationEngine: ResourceGenerationEngine;
+  private beaconPlacementManager: BeaconPlacementManager;
   private gameState: GameState | null = null;
   private autoSaveTimer: NodeJS.Timeout | null = null;
   private gameTimer: NodeJS.Timeout | null = null;
@@ -32,6 +37,11 @@ export class GameController {
     this.saveManager = SaveManager.getInstance();
     this.resourceManager = ResourceManager.getInstance();
     this.generationEngine = new ResourceGenerationEngine();
+    this.beaconPlacementManager = new BeaconPlacementManager({
+      bounds: { minX: -10000, minY: -10000, maxX: 10000, maxY: 10000 },
+      enableSpatialIndexing: true,
+      performanceMode: false,
+    });
   }
 
   static getInstance(): GameController {
@@ -56,6 +66,9 @@ export class GameController {
         
         // Load resources into ResourceManager
         this.resourceManager.loadFromGameState(this.gameState.resources);
+        
+        // Load beacons into BeaconPlacementManager
+        this.loadBeaconsIntoManager();
         
         // Calculate offline time and apply offline progression
         await this.handleOfflineProgression();
@@ -127,6 +140,142 @@ export class GameController {
 
   getGenerationEngine(): ResourceGenerationEngine {
     return this.generationEngine;
+  }
+
+  getBeaconPlacementManager(): BeaconPlacementManager {
+    return this.beaconPlacementManager;
+  }
+
+  /**
+   * Place a beacon at the specified position
+   */
+  placeBeacon(position: Point2D, type: BeaconType): { success: boolean; beacon?: Beacon; error?: string } {
+    if (!this.gameState) {
+      return { success: false, error: 'Game not initialized' };
+    }
+
+    // Check if player has enough resources (base cost is 50 quantum data)
+    const cost = 50;
+    if (this.resourceManager.getResource('quantumData').isLessThan(cost)) {
+      return { success: false, error: 'Insufficient quantum data' };
+    }
+
+    // Attempt to place the beacon
+    const result = this.beaconPlacementManager.placeBeacon(position, type);
+    
+    if (result.success && result.beacon) {
+      // Deduct resources
+      this.resourceManager.subtractResource('quantumData', cost);
+      
+      // Add beacon to game state
+      this.gameState.beacons[result.beacon.id] = {
+        id: result.beacon.id,
+        x: result.beacon.position.x,
+        y: result.beacon.position.y,
+        z: 0,
+        level: result.beacon.level,
+        type: result.beacon.type,
+        specialization: result.beacon.specialization,
+        status: result.beacon.status,
+        connections: result.beacon.connections,
+        createdAt: result.beacon.createdAt,
+        lastUpgraded: result.beacon.lastUpgraded,
+        generationRate: result.beacon.generationRate,
+        totalResourcesGenerated: result.beacon.totalResourcesGenerated,
+      };
+
+      // Update player statistics
+      this.gameState.player.statistics.beaconsPlaced++;
+
+      // Update generation engine
+      this.generationEngine.updateFromGameState(this.gameState);
+
+      console.log(`[GameController] Placed ${type} beacon at (${position.x}, ${position.y})`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Get all placed beacons
+   */
+  getBeacons(): Record<string, Beacon> {
+    if (!this.gameState) return {};
+    
+    const beacons: Record<string, Beacon> = {};
+    for (const [id, beaconData] of Object.entries(this.gameState.beacons)) {
+      beacons[id] = new Beacon({
+        id: beaconData.id,
+        position: { x: beaconData.x, y: beaconData.y },
+        level: beaconData.level,
+        type: beaconData.type,
+        specialization: beaconData.specialization,
+        status: beaconData.status,
+        connections: beaconData.connections,
+        createdAt: beaconData.createdAt,
+        lastUpgraded: beaconData.lastUpgraded,
+        generationRate: beaconData.generationRate,
+        totalResourcesGenerated: beaconData.totalResourcesGenerated,
+      });
+    }
+    return beacons;
+  }
+
+  /**
+   * Get beacon by ID
+   */
+  getBeacon(beaconId: string): Beacon | null {
+    if (!this.gameState || !this.gameState.beacons[beaconId]) {
+      return null;
+    }
+    
+    const beaconData = this.gameState.beacons[beaconId];
+    return new Beacon({
+      id: beaconData.id,
+      position: { x: beaconData.x, y: beaconData.y },
+      level: beaconData.level,
+      type: beaconData.type,
+      specialization: beaconData.specialization,
+      status: beaconData.status,
+      connections: beaconData.connections,
+      createdAt: beaconData.createdAt,
+      lastUpgraded: beaconData.lastUpgraded,
+      generationRate: beaconData.generationRate,
+      totalResourcesGenerated: beaconData.totalResourcesGenerated,
+    });
+  }
+
+  /**
+   * Load existing beacons from game state into the placement manager
+   */
+  private loadBeaconsIntoManager(): void {
+    if (!this.gameState) return;
+
+    for (const beaconData of Object.values(this.gameState.beacons)) {
+      const beacon = new Beacon({
+        id: beaconData.id,
+        position: { x: beaconData.x, y: beaconData.y },
+        level: beaconData.level,
+        type: beaconData.type,
+        specialization: beaconData.specialization,
+        status: beaconData.status,
+        connections: beaconData.connections,
+        createdAt: beaconData.createdAt,
+        lastUpgraded: beaconData.lastUpgraded,
+        generationRate: beaconData.generationRate,
+        totalResourcesGenerated: beaconData.totalResourcesGenerated,
+      });
+
+      // Add to placement manager's internal tracking
+      // Note: This bypasses placement validation since these are already placed
+      this.beaconPlacementManager['beacons'].set(beacon.id, beacon);
+      
+      if (this.beaconPlacementManager['spatialIndex']) {
+        this.beaconPlacementManager['spatialIndex'].addBeacon(beacon);
+      }
+    }
+
+    console.log(`[GameController] Loaded ${Object.keys(this.gameState.beacons).length} beacons into placement manager`);
   }
 
   updateGameState(updates: Partial<GameState>): void {
