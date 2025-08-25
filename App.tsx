@@ -8,9 +8,6 @@ import { GameController } from './src/core/GameController';
 import { GameState } from './src/storage/schemas/GameState';
 import { GalaxyMapView } from './src/components/galaxy/GalaxyMapView';
 import { Beacon } from './src/types/galaxy';
-import { JSICrashTester } from './src/debug/JSICrashTester';
-import { SharedValueCrashTester } from './src/debug/SharedValueCrashTester';
-import { GalaxyMapCrashAnalyzer } from './src/debug/GalaxyMapCrashAnalyzer';
 
 interface GalaxyMapScreenProps {
   onBack: () => void;
@@ -66,9 +63,6 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showGalaxyMap, setShowGalaxyMap] = useState(false);
-  const [showDebugTester, setShowDebugTester] = useState(false);
-  const [showSharedValueTester, setShowSharedValueTester] = useState(false);
-  const [showGalaxyMapAnalyzer, setShowGalaxyMapAnalyzer] = useState(false);
 
   // Sample beacons for testing
   const sampleBeacons: Beacon[] = [
@@ -177,71 +171,6 @@ export default function App() {
     );
   }
 
-  if (showDebugTester) {
-    return (
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <View className="flex-1">
-            <View className="flex-row justify-between items-center px-4 py-4 bg-surface">
-              <TouchableOpacity
-                onPress={() => setShowDebugTester(false)}
-                className="bg-primary px-4 py-2 rounded-lg"
-              >
-                <Text className="text-white font-semibold">← Back</Text>
-              </TouchableOpacity>
-              <Text className="text-text text-lg font-semibold">Debug JSI Crashes</Text>
-              <View style={{ width: 70 }} />
-            </View>
-            <JSICrashTester />
-          </View>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
-    );
-  }
-
-  if (showSharedValueTester) {
-    return (
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <View className="flex-1">
-            <View className="flex-row justify-between items-center px-4 py-4 bg-surface">
-              <TouchableOpacity
-                onPress={() => setShowSharedValueTester(false)}
-                className="bg-primary px-4 py-2 rounded-lg"
-              >
-                <Text className="text-white font-semibold">← Back</Text>
-              </TouchableOpacity>
-              <Text className="text-text text-lg font-semibold">SharedValue Analyzer</Text>
-              <View style={{ width: 70 }} />
-            </View>
-            <SharedValueCrashTester />
-          </View>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
-    );
-  }
-
-  if (showGalaxyMapAnalyzer) {
-    return (
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <View className="flex-1">
-            <View className="flex-row justify-between items-center px-4 py-4 bg-surface">
-              <TouchableOpacity
-                onPress={() => setShowGalaxyMapAnalyzer(false)}
-                className="bg-primary px-4 py-2 rounded-lg"
-              >
-                <Text className="text-white font-semibold">← Back</Text>
-              </TouchableOpacity>
-              <Text className="text-text text-lg font-semibold">Galaxy Map Analyzer</Text>
-              <View style={{ width: 70 }} />
-            </View>
-            <GalaxyMapCrashAnalyzer />
-          </View>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
-    );
-  }
 
   if (showGalaxyMap) {
     return (
@@ -293,32 +222,6 @@ export default function App() {
                   </Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity
-                  onPress={() => setShowDebugTester(true)}
-                  className="bg-red-500 px-6 py-3 rounded-lg"
-                >
-                  <Text className="text-white font-semibold text-center">
-                    🐛 Debug JSI Crashes
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  onPress={() => setShowSharedValueTester(true)}
-                  className="bg-purple-500 px-6 py-3 rounded-lg"
-                >
-                  <Text className="text-white font-semibold text-center">
-                    🔍 SharedValue Analyzer
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  onPress={() => setShowGalaxyMapAnalyzer(true)}
-                  className="bg-orange-500 px-6 py-3 rounded-lg"
-                >
-                  <Text className="text-white font-semibold text-center">
-                    🗺️ Galaxy Map Analyzer
-                  </Text>
-                </TouchableOpacity>
                 
                 <TouchableOpacity
                   onPress={handleSaveGame}
