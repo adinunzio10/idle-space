@@ -701,16 +701,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
           reason: 'pan_end_no_momentum'
         });
         
-        // Only spring back if significantly out of bounds
-        const distance = Math.sqrt(
-          Math.pow(constrainedTranslation.x - translateX.value, 2) + 
-          Math.pow(constrainedTranslation.y - translateY.value, 2)
-        );
-        
-        if (distance > 5) { // Only snap back if more than 5px out of bounds
-          translateX.value = withSpring(constrainedTranslation.x);
-          translateY.value = withSpring(constrainedTranslation.y);
-        }
+        // Don't snap position - let user see where they dragged
+        // Only apply constraints if user actually dragged outside bounds during gesture
       }
       
       // ✅ CORRECT: Use actual position, not constrained - let user see where they dragged
@@ -867,10 +859,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       );
       
       scale.value = withSpring(clampedScale);
-      translateX.value = withSpring(constrainedTranslation.x);
-      translateY.value = withSpring(constrainedTranslation.y);
+      // Don't spring translation back - keep where user pinched
       
-      runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, clampedScale);
+      runOnJS(updateViewportState)(translateX.value, translateY.value, clampedScale);
     });
 
   // Handle single tap - worklet-safe callback that receives necessary data as parameters
