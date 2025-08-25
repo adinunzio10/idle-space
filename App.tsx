@@ -145,13 +145,13 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
         </View>
         
         <GalaxyMapView
-          key={`galaxy-map-${beacons.length}-${beaconVersion}`}
           width={screenData.width}
           height={screenData.height - headerHeight}
           beacons={beacons}
           onBeaconSelect={onBeaconSelect}
           onMapPress={onMapPress}
           showDebugOverlay={showDebugOverlay}
+          beaconUpdateTrigger={beaconVersion}
         />
         
         <StatusBar style="light" />

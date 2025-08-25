@@ -112,6 +112,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   onBeaconSelect,
   onMapPress,
   showDebugOverlay = false,
+  beaconUpdateTrigger,
   style,
 }) => {
   // Constants for galaxy content
@@ -1016,6 +1017,18 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const lodRenderInfo = useMemo(() => {
     return getLODRenderInfo(viewportState.scale);
   }, [viewportState.scale]);
+
+  // Force update rendering state when beacons change
+  useEffect(() => {
+    if (beaconUpdateTrigger !== undefined) {
+      // Force a viewport update to refresh spatial index and visible beacons
+      updateViewportState(
+        translateX.value,
+        translateY.value,
+        scale.value
+      );
+    }
+  }, [beaconUpdateTrigger, updateViewportState]);
 
   return (
     <View style={[{ width, height }, style]}>
