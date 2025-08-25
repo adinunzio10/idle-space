@@ -3,6 +3,7 @@ import { SaveManager } from './SaveManager';
 import { ResourceManager } from './ResourceManager';
 import { ResourceGenerationEngine } from './ResourceGenerationEngine';
 import { BeaconPlacementManager } from './BeaconPlacementManager';
+import { BeaconConnectionManager } from './BeaconConnectionManager';
 import { GameState, DEFAULT_RESOURCES, DEFAULT_PLAYER_SETTINGS, DEFAULT_PLAYER_STATISTICS } from '../storage/schemas/GameState';
 import { BeaconType } from '../types/beacon';
 import { Point2D } from '../types/galaxy';
@@ -20,6 +21,7 @@ export class GameController {
   private resourceManager: ResourceManager;
   private generationEngine: ResourceGenerationEngine;
   private beaconPlacementManager: BeaconPlacementManager;
+  private beaconConnectionManager: BeaconConnectionManager;
   private gameState: GameState | null = null;
   private autoSaveTimer: NodeJS.Timeout | null = null;
   private gameTimer: NodeJS.Timeout | null = null;
@@ -42,6 +44,7 @@ export class GameController {
       enableSpatialIndexing: true,
       performanceMode: false,
     });
+    this.beaconConnectionManager = new BeaconConnectionManager();
   }
 
   static getInstance(): GameController {
@@ -146,6 +149,10 @@ export class GameController {
     return this.beaconPlacementManager;
   }
 
+  getBeaconConnectionManager(): BeaconConnectionManager {
+    return this.beaconConnectionManager;
+  }
+
   /**
    * Place a beacon at the specified position
    */
@@ -186,6 +193,9 @@ export class GameController {
 
       // Update player statistics
       this.gameState.player.statistics.beaconsPlaced++;
+
+      // Update beacon connection manager with all beacons
+      this.updateBeaconConnections();
 
       // Update generation engine
       this.generationEngine.updateFromGameState(this.gameState);
@@ -246,6 +256,29 @@ export class GameController {
   }
 
   /**
+   * Update beacon connections by rebuilding the connection network
+   */
+  private updateBeaconConnections(): void {
+    if (!this.gameState) return;
+
+    // Get all current beacons as Beacon instances
+    const beacons = this.getBeacons();
+    
+    // Update the connection manager with current beacons
+    this.beaconConnectionManager.updateBeacons(beacons);
+    
+    // Sync the updated connection data back to game state
+    for (const [beaconId, beacon] of Object.entries(beacons)) {
+      if (this.gameState.beacons[beaconId]) {
+        this.gameState.beacons[beaconId].connections = [...beacon.connections];
+      }
+    }
+
+    const connectionCount = this.beaconConnectionManager.getAllConnections().length;
+    console.log(`[GameController] Updated beacon connections: ${connectionCount} active connections`);
+  }
+
+  /**
    * Load existing beacons from game state into the placement manager
    */
   private loadBeaconsIntoManager(): void {
@@ -276,6 +309,9 @@ export class GameController {
     }
 
     console.log(`[GameController] Loaded ${Object.keys(this.gameState.beacons).length} beacons into placement manager`);
+    
+    // Rebuild connections for loaded beacons
+    this.updateBeaconConnections();
   }
 
   updateGameState(updates: Partial<GameState>): void {
