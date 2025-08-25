@@ -443,12 +443,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         // Update shared state immediately in worklet for thread synchronization
         gestureSharedState.value = GestureStateType.IDLE;
         
-        // Transition back to idle when momentum stops on JavaScript thread too
-        runOnJS(requestStateTransition)(GestureStateType.IDLE, {
-          type: 'momentum',
-          timestamp: Date.now(),
-          pointerCount: 0,
-        });
+        // Momentum stopped - no more JS thread state transitions needed
         
         runOnJS(logGesture)('Momentum Stopped', {
           finalTranslateX: translateX.value,
@@ -548,16 +543,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         state: currentState
       });
       
-      // FIX: Directly update shared state and use simplified state
+      // FIX: Directly update shared state only (no redundant JS thread call)
       gestureSharedState.value = GestureStateType.PANNING;
-      
-      // Also update JS thread for debugging
-      runOnJS(requestStateTransition)(GestureStateType.PANNING, {
-        type: 'pan',
-        timestamp: gestureStartTime,
-        pointerCount: event.numberOfPointers || 1,
-        position: { x: event.x, y: event.y },
-      });
       
       // Debug state transition
       runOnJS(logGesture)('State Transition', {
@@ -687,13 +674,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         // Update shared state immediately in worklet for thread synchronization
         gestureSharedState.value = GestureStateType.MOMENTUM;
         
-        // Transition to momentum state on JavaScript thread too
-        runOnJS(requestStateTransition)(GestureStateType.MOMENTUM, {
-          type: 'momentum',
-          timestamp: Date.now(),
-          pointerCount: 0,
-        });
-        
         isDecaying.value = true;
         velocityX.value = smoothedVelocity.x * 0.05; // Use smoothed velocity
         velocityY.value = smoothedVelocity.y * 0.05;
@@ -714,13 +694,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         // Update shared state immediately in worklet for thread synchronization
         gestureSharedState.value = GestureStateType.IDLE;
         
-        // Transition back to idle on JavaScript thread too
-        runOnJS(requestStateTransition)(GestureStateType.IDLE, {
-          type: 'momentum', 
-          timestamp: Date.now(),
-          pointerCount: 0,
-        });
-        
         // Debug state transition back to idle
         runOnJS(logGesture)('State Transition', {
           from: currentState,
@@ -740,8 +713,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         }
       }
       
-      // ✅ CORRECT: All gesture handlers use runOnJS for JavaScript calls
-      runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, scale.value);
+      // ✅ CORRECT: Use actual position, not constrained - let user see where they dragged
+      runOnJS(updateViewportState)(translateX.value, translateY.value, scale.value);
     });
 
   // Advanced Pinch gesture with state machine integration
@@ -790,17 +763,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         pointerCount
       });
       
-      // FIX: Directly update shared state and use simplified state
+      // FIX: Directly update shared state only (no redundant JS thread call)
       gestureSharedState.value = GestureStateType.PINCHING;
-      
-      // Also update JS thread for debugging
-      runOnJS(requestStateTransition)(GestureStateType.PINCHING, {
-        type: 'pinch',
-        timestamp: gestureStartTime,
-        pointerCount,
-        focalPoint: { x: event.focalX, y: event.focalY },
-        scale: event.scale,
-      });
       
       isDecaying.value = false;
       gestureStateIsActive.value = true;
@@ -882,13 +846,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       
       // Update shared state immediately in worklet for thread synchronization
       gestureSharedState.value = GestureStateType.IDLE;
-      
-      // Transition back to idle on JavaScript thread too
-      runOnJS(requestStateTransition)(GestureStateType.IDLE, {
-        type: 'pinch',
-        timestamp: Date.now(),
-        pointerCount: 0,
-      });
       
       // Debug state transition back to idle
       runOnJS(logGesture)('State Transition', {
