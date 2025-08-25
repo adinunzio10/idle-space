@@ -111,6 +111,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   beacons,
   onBeaconSelect,
   onMapPress,
+  showDebugOverlay = false,
   style,
 }) => {
   // Constants for galaxy content
@@ -1019,7 +1020,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   return (
     <View style={[{ width, height }, style]}>
       {/* Gesture Debug Overlay */}
-      {__DEV__ && (
+      {__DEV__ && showDebugOverlay && (
         <GestureDebugOverlay
           stateMachine={gestureStateMachine}
           enabled={true}

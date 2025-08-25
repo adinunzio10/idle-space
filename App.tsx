@@ -19,6 +19,8 @@ interface GalaxyMapScreenProps {
   selectedBeaconType: BeaconType;
   onBeaconTypeSelect: (type: BeaconType) => void;
   quantumData: number;
+  showDebugOverlay: boolean;
+  onToggleDebugOverlay: () => void;
 }
 
 const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
@@ -29,6 +31,8 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   selectedBeaconType,
   onBeaconTypeSelect,
   quantumData,
+  showDebugOverlay,
+  onToggleDebugOverlay,
 }) => {
   const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
@@ -49,7 +53,25 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
             >
               <Text className="text-white font-semibold">← Back</Text>
             </TouchableOpacity>
-            <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
+            <View className="flex-row items-center space-x-3">
+              <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
+              {__DEV__ && (
+                <TouchableOpacity
+                  onPress={onToggleDebugOverlay}
+                  className={`px-2 py-1 rounded border ${
+                    showDebugOverlay 
+                      ? 'bg-accent/20 border-accent' 
+                      : 'bg-surface border-text/20'
+                  }`}
+                >
+                  <Text className={`text-xs font-semibold ${
+                    showDebugOverlay ? 'text-accent' : 'text-text/60'
+                  }`}>
+                    DEBUG
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <Text className="text-accent text-sm font-semibold">
               {Math.floor(quantumData)} QD
             </Text>
@@ -113,6 +135,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           beacons={beacons}
           onBeaconSelect={onBeaconSelect}
           onMapPress={onMapPress}
+          showDebugOverlay={showDebugOverlay}
         />
         
         <StatusBar style="light" />
@@ -130,6 +153,7 @@ export default function App() {
   const [selectedBeaconType, setSelectedBeaconType] = useState<BeaconType>('pioneer');
   const [showSpecializationModal, setShowSpecializationModal] = useState(false);
   const [selectedBeaconForUpgrade, setSelectedBeaconForUpgrade] = useState<string | null>(null);
+  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -262,6 +286,8 @@ export default function App() {
           selectedBeaconType={selectedBeaconType}
           onBeaconTypeSelect={setSelectedBeaconType}
           quantumData={gameState?.resources.quantumData || 0}
+          showDebugOverlay={showDebugOverlay}
+          onToggleDebugOverlay={() => setShowDebugOverlay(!showDebugOverlay)}
         />
         
         <BeaconSpecializationModal

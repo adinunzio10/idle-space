@@ -42,6 +42,7 @@ export interface GalaxyMapProps {
   beacons: Beacon[];
   onBeaconSelect?: (beacon: Beacon) => void;
   onMapPress?: (position: Point2D) => void;
+  showDebugOverlay?: boolean;
 }
 
 export interface RenderingConfig {
