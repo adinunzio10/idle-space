@@ -112,7 +112,13 @@ export class GameController {
   }
 
   getGameState(): GameState | null {
-    return this.gameState ? { ...this.gameState } : null;
+    if (!this.gameState) return null;
+    
+    // Always return fresh resources from ResourceManager
+    return {
+      ...this.gameState,
+      resources: this.resourceManager.toGameStateFormat()
+    };
   }
 
   getResourceManager(): ResourceManager {
