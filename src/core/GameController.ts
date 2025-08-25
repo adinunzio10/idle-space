@@ -1,5 +1,7 @@
 import { AppState, AppStateStatus } from 'react-native';
 import { SaveManager } from './SaveManager';
+import { ResourceManager } from './ResourceManager';
+import { ResourceGenerationEngine } from './ResourceGenerationEngine';
 import { GameState, DEFAULT_RESOURCES, DEFAULT_PLAYER_SETTINGS, DEFAULT_PLAYER_STATISTICS } from '../storage/schemas/GameState';
 
 export interface GameControllerConfig {
@@ -11,6 +13,8 @@ export interface GameControllerConfig {
 export class GameController {
   private static instance: GameController | null = null;
   private saveManager: SaveManager;
+  private resourceManager: ResourceManager;
+  private generationEngine: ResourceGenerationEngine;
   private gameState: GameState | null = null;
   private autoSaveTimer: NodeJS.Timeout | null = null;
   private gameTimer: NodeJS.Timeout | null = null;
@@ -26,6 +30,8 @@ export class GameController {
 
   private constructor() {
     this.saveManager = SaveManager.getInstance();
+    this.resourceManager = ResourceManager.getInstance();
+    this.generationEngine = new ResourceGenerationEngine();
   }
 
   static getInstance(): GameController {
@@ -48,6 +54,9 @@ export class GameController {
         this.gameState = savedState;
         console.log('[GameController] Loaded existing game state');
         
+        // Load resources into ResourceManager
+        this.resourceManager.loadFromGameState(this.gameState.resources);
+        
         // Calculate offline time and apply offline progression
         await this.handleOfflineProgression();
       } else {
@@ -55,13 +64,22 @@ export class GameController {
         this.gameState = this.createNewGameState();
         console.log('[GameController] Created new game state');
         
+        // Load initial resources into ResourceManager
+        this.resourceManager.loadFromGameState(this.gameState.resources);
+        
         // Save initial state
         await this.saveManager.saveGameState(this.gameState);
       }
 
+      // Update generation engine with current game state
+      this.generationEngine.updateFromGameState(this.gameState);
+
       // Start automatic systems
       this.startAutoSave();
       this.startGameTimer();
+      
+      // Start resource generation
+      this.generationEngine.start();
       
       if (this.config.enableAppStateHandling) {
         this.setupAppStateHandling();
@@ -82,6 +100,9 @@ export class GameController {
       // Update last active time and save count
       this.gameState.player.lastActiveAt = Date.now();
       
+      // Sync resources from ResourceManager to GameState
+      this.gameState.resources = this.resourceManager.toGameStateFormat();
+      
       await this.saveManager.saveGameState(this.gameState);
       console.log('[GameController] Game saved manually');
     } catch (error) {
@@ -92,6 +113,14 @@ export class GameController {
 
   getGameState(): GameState | null {
     return this.gameState ? { ...this.gameState } : null;
+  }
+
+  getResourceManager(): ResourceManager {
+    return this.resourceManager;
+  }
+
+  getGenerationEngine(): ResourceGenerationEngine {
+    return this.generationEngine;
   }
 
   updateGameState(updates: Partial<GameState>): void {
@@ -110,20 +139,6 @@ export class GameController {
     this.saveManager.updateGameState(this.gameState);
   }
 
-  addResources(resources: Partial<NonNullable<typeof this.gameState>['resources']>): void {
-    if (!this.gameState) return;
-    
-    const updatedResources = { ...this.gameState.resources };
-    Object.entries(resources).forEach(([key, value]) => {
-      if (typeof value === 'number' && key in updatedResources) {
-        (updatedResources as any)[key] += value;
-      }
-    });
-    
-    updatedResources.lastUpdated = Date.now();
-    
-    this.updateGameState({ resources: updatedResources });
-  }
 
   async shutdown(): Promise<void> {
     try {
@@ -134,9 +149,10 @@ export class GameController {
         await this.saveGame();
       }
       
-      // Stop timers
+      // Stop timers and systems
       this.stopAutoSave();
       this.stopGameTimer();
+      this.generationEngine.stop();
       
       // Remove app state listener
       if (this.appStateSubscription) {
@@ -207,18 +223,11 @@ export class GameController {
   private processGameTick(): void {
     if (!this.gameState) return;
     
-    // Basic resource generation from beacons
-    let quantumDataGenerated = 0;
+    // Process resource generation using the new engine
+    this.generationEngine.processGenerationTick(1);
     
-    Object.values(this.gameState.beacons).forEach(beacon => {
-      if (beacon.status === 'active') {
-        quantumDataGenerated += beacon.productionRate * beacon.efficiency;
-      }
-    });
-    
-    if (quantumDataGenerated > 0) {
-      this.addResources({ quantumData: quantumDataGenerated });
-    }
+    // Update generation engine with current game state periodically
+    this.generationEngine.updateFromGameState(this.gameState);
   }
 
   private setupAppStateHandling(): void {
@@ -263,19 +272,8 @@ export class GameController {
       
       console.log(`[GameController] Processing ${offlineHours.toFixed(2)} hours of offline progression`);
       
-      // Calculate offline resource generation (50% efficiency)
-      let offlineQuantumData = 0;
-      
-      Object.values(this.gameState.beacons).forEach(beacon => {
-        if (beacon.status === 'active') {
-          offlineQuantumData += beacon.productionRate * beacon.efficiency * offlineSeconds * 0.5;
-        }
-      });
-      
-      if (offlineQuantumData > 0) {
-        this.addResources({ quantumData: Math.floor(offlineQuantumData) });
-        console.log(`[GameController] Generated ${Math.floor(offlineQuantumData)} quantum data offline`);
-      }
+      // Process offline resource generation using the generation engine
+      await this.processOfflineResourceGeneration(offlineSeconds);
       
       // Update game time
       this.gameState.gameTime += offlineSeconds;
@@ -284,6 +282,52 @@ export class GameController {
     
     // Update last active time
     this.gameState.player.lastActiveAt = now;
+  }
+
+  private async processOfflineResourceGeneration(offlineSeconds: number): Promise<void> {
+    if (!this.gameState) return;
+    
+    // Update generation engine with current game state
+    this.generationEngine.updateFromGameState(this.gameState);
+    
+    // Get current generation rates
+    const generationSummary = this.generationEngine.getGenerationSummary();
+    
+    // Calculate offline resources with 50% efficiency and time chunks
+    const offlineEfficiency = 0.5;
+    const chunkSize = 60; // Process in 1-minute chunks for accuracy
+    const totalChunks = Math.ceil(offlineSeconds / chunkSize);
+    
+    console.log(`[GameController] Processing ${totalChunks} chunks of offline progression`);
+    
+    for (let chunk = 0; chunk < totalChunks; chunk++) {
+      const chunkDuration = Math.min(chunkSize, offlineSeconds - (chunk * chunkSize));
+      
+      // Apply generation for this chunk
+      Object.entries(generationSummary).forEach(([resourceType, baseRate]) => {
+        if (baseRate.isGreaterThan(0)) {
+          const offlineGeneration = baseRate
+            .multipliedBy(chunkDuration)
+            .multipliedBy(offlineEfficiency);
+          
+          if (offlineGeneration.isGreaterThan(0)) {
+            this.resourceManager.addResource(resourceType as any, offlineGeneration);
+          }
+        }
+      });
+    }
+    
+    // Log offline resources generated
+    const totalGenerated = Object.entries(generationSummary)
+      .filter(([_, rate]) => rate.isGreaterThan(0))
+      .map(([resourceType, rate]) => {
+        const total = rate.multipliedBy(offlineSeconds).multipliedBy(offlineEfficiency);
+        return `${this.resourceManager.formatResourceValue(total)} ${resourceType}`;
+      });
+    
+    if (totalGenerated.length > 0) {
+      console.log(`[GameController] Generated offline: ${totalGenerated.join(', ')}`);
+    }
   }
 
   private createNewGameState(): GameState {

@@ -133,7 +133,8 @@ export default function App() {
   };
 
   const handleAddResources = () => {
-    gameController.addResources({ quantumData: 100 });
+    const resourceManager = gameController.getResourceManager();
+    resourceManager.addResource('quantumData', 100);
     const updatedState = gameController.getGameState();
     setGameState(updatedState);
   };

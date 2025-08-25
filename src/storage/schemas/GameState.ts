@@ -31,6 +31,7 @@ export interface Resources {
   quantumData: number;
   stellarEssence: number;
   voidFragments: number;
+  resonanceCrystals: number;
   chronosParticles: number;
   lastUpdated: number;
 }
@@ -163,6 +164,7 @@ export const DEFAULT_RESOURCES: Resources = {
   quantumData: 100,
   stellarEssence: 0,
   voidFragments: 0,
+  resonanceCrystals: 0,
   chronosParticles: 0,
   lastUpdated: Date.now(),
 };
