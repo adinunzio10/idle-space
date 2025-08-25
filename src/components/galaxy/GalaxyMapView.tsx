@@ -23,7 +23,7 @@
  * ✅ Using shared values only within worklet contexts
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedProps,
@@ -203,6 +203,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Performance monitoring hook
   const { startFrame, endFrame, getQualitySettings } = usePerformanceMonitor();
+
+  // Create a stable ref for updateViewportState to avoid circular dependencies
+  const updateViewportStateRef = useRef<((x: number, y: number, s: number) => void) | null>(null);
 
   // Spatial indexing for efficient beacon queries - now using QuadTree
   const spatialIndex = useMemo(() => {
@@ -424,6 +427,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     setRenderingState(newRenderingState);
     endFrame(); // End performance monitoring
   }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings]);
+
+  // Store the function in ref to prevent circular dependencies
+  updateViewportStateRef.current = updateViewportState;
 
   // Momentum physics frame callback
   // WORKLET PATTERN: useFrameCallback with runOnJS for state updates
@@ -1021,15 +1027,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Force update rendering state when beacons change
   React.useEffect(() => {
-    if (beaconUpdateTrigger !== undefined) {
+    if (beaconUpdateTrigger !== undefined && updateViewportStateRef.current) {
       // Force a viewport update to refresh spatial index and visible beacons
-      updateViewportState(
+      // Use ref to avoid circular dependency
+      updateViewportStateRef.current(
         translateX.value,
         translateY.value,
         scale.value
       );
     }
-  }, [beaconUpdateTrigger, updateViewportState]);
+  }, [beaconUpdateTrigger]);
 
   return (
     <View style={[{ width, height }, style]}>
