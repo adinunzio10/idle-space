@@ -456,7 +456,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         });
         
         runOnJS(logGesture)('State Transition', {
-          from: 'MOMENTUM_ACTIVE',
+          from: 'MOMENTUM',
           to: 'IDLE',
           reason: 'momentum_end'
         });
@@ -517,15 +517,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         return; // Exit early if palm detected
       }
       
-      // State machine transition (simplified) - only proceed if starting from IDLE
+      // Simplified state check - much more permissive
       const currentState = gestureSharedState.value;
       
-      if (currentState !== GestureStateType.IDLE) {
+      // Only block if we're already panning (avoid double pan start)
+      if (currentState === GestureStateType.PANNING) {
         debugGestureWorklet('Pan Start Blocked', { 
           currentState, 
-          reason: 'not_idle_state' 
+          reason: 'already_panning' 
         }, gestureStartTime, debugSharedValue);
-        return; // Don't start pan if not in IDLE state
+        return; 
       }
       
       // Update rapid touch tracking
@@ -547,8 +548,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         state: currentState
       });
       
-      // FIX: Use separate callback to avoid closure capture
-      runOnJS(requestStateTransition)(GestureStateType.PAN_STARTING, {
+      // FIX: Directly update shared state and use simplified state
+      gestureSharedState.value = GestureStateType.PANNING;
+      
+      // Also update JS thread for debugging
+      runOnJS(requestStateTransition)(GestureStateType.PANNING, {
         type: 'pan',
         timestamp: gestureStartTime,
         pointerCount: event.numberOfPointers || 1,
@@ -558,7 +562,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       // Debug state transition
       runOnJS(logGesture)('State Transition', {
         from: currentState,
-        to: 'PAN_STARTING',
+        to: 'PANNING',
         timestamp: gestureStartTime
       });
       
@@ -570,24 +574,12 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       velocityY.value = 0;
     })
     .onUpdate((event) => {
-      // Transition to active panning state only if in PAN_STARTING
+      // Simplified - we're already in PANNING state, no need to transition
       const currentTime = Date.now();
       
-      // Only transition to PAN_ACTIVE if currently in PAN_STARTING (do this once)
-      if (gestureSharedState.value === GestureStateType.PAN_STARTING) {
-        runOnJS(requestStateTransition)(GestureStateType.PAN_ACTIVE, {
-          type: 'pan',
-          timestamp: currentTime,
-          pointerCount: event.numberOfPointers || 1,
-          position: { x: event.x, y: event.y },
-        });
-        
-        // Debug state transition
-        runOnJS(logGesture)('State Transition', {
-          from: 'PAN_STARTING',
-          to: 'PAN_ACTIVE',
-          timestamp: currentTime
-        });
+      // Ensure we're still in panning state (might be interrupted)
+      if (gestureSharedState.value !== GestureStateType.PANNING) {
+        return; // Exit if state changed (e.g., pinch started)
       }
       
       // Update translation with elastic resistance at boundaries
@@ -693,10 +685,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       // Use research-based velocity threshold for momentum
       if (isVelocitySignificantForMomentum(smoothedVelocity)) {
         // Update shared state immediately in worklet for thread synchronization
-        gestureSharedState.value = GestureStateType.MOMENTUM_ACTIVE;
+        gestureSharedState.value = GestureStateType.MOMENTUM;
         
         // Transition to momentum state on JavaScript thread too
-        runOnJS(requestStateTransition)(GestureStateType.MOMENTUM_ACTIVE, {
+        runOnJS(requestStateTransition)(GestureStateType.MOMENTUM, {
           type: 'momentum',
           timestamp: Date.now(),
           pointerCount: 0,
@@ -709,7 +701,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         // Debug state transition to momentum
         runOnJS(logGesture)('State Transition', {
           from: currentState,
-          to: 'MOMENTUM_ACTIVE',
+          to: 'MOMENTUM',
           reason: 'momentum_start'
         });
         
@@ -776,15 +768,15 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         return;
       }
       
-      // State machine transition (simplified) - only proceed if starting from IDLE
+      // Simplified state check - allow pinch if not already pinching
       const currentState = gestureSharedState.value;
       
-      if (currentState !== GestureStateType.IDLE) {
+      if (currentState === GestureStateType.PINCHING) {
         debugGestureWorklet('Pinch Start Blocked', { 
           currentState, 
-          reason: 'not_idle_state' 
+          reason: 'already_pinching' 
         }, gestureStartTime, debugSharedValue);
-        return; // Don't start pinch if not in IDLE state
+        return; // Don't start pinch if already pinching
       }
       
       // Track performance
@@ -798,8 +790,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         pointerCount
       });
       
-      // FIX: Use separate callback to avoid closure capture
-      runOnJS(requestStateTransition)(GestureStateType.PINCH_STARTING, {
+      // FIX: Directly update shared state and use simplified state
+      gestureSharedState.value = GestureStateType.PINCHING;
+      
+      // Also update JS thread for debugging
+      runOnJS(requestStateTransition)(GestureStateType.PINCHING, {
         type: 'pinch',
         timestamp: gestureStartTime,
         pointerCount,
@@ -823,15 +818,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     .onUpdate((event) => {
       const currentTime = Date.now();
       
-      // Only transition to PINCH_ACTIVE if currently in PINCH_STARTING (do this once)
-      if (gestureSharedState.value === GestureStateType.PINCH_STARTING) {
-        runOnJS(requestStateTransition)(GestureStateType.PINCH_ACTIVE, {
-          type: 'pinch',
-          timestamp: currentTime,
-          pointerCount: event.numberOfPointers || 2,
-          focalPoint: { x: event.focalX, y: event.focalY },
-          scale: event.scale,
-        });
+      // Simplified - we're already in PINCHING state, no need to transition
+      // Ensure we're still in pinching state (might be interrupted)
+      if (gestureSharedState.value !== GestureStateType.PINCHING) {
+        return; // Exit if state changed (e.g., pan started)
       }
       
       // Enhanced scale clamping with worklet
@@ -1000,7 +990,14 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     .numberOfTaps(1)
     .maxDelay(tapThresholds.maxDuration) // Research-based 200ms (or extended for accessibility)
     .minPointers(tapThresholds.minPointers)
+    .onStart(() => {
+      // Set tapping state
+      gestureSharedState.value = GestureStateType.TAPPING;
+    })
     .onEnd((event: any) => {
+      // Reset to idle
+      gestureSharedState.value = GestureStateType.IDLE;
+      
       // ✅ CORRECT: Pass React state as parameters to avoid closure capture violations
       runOnJS(handleSingleTap)(
         event.x, 
@@ -1060,25 +1057,21 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, targetScale);
     });
 
-  // Advanced gesture composition with hierarchical conflict resolution
+  // Simplified gesture composition - let React Native Gesture Handler manage conflicts
   const composedGesture = Gesture.Race(
-    // Highest priority: Double tap (must be detected before single tap)
+    // Double tap must be detected first to prevent single tap
     doubleTapGesture,
     
-    // Medium priority: Exclusive gesture group
-    Gesture.Exclusive(
-      // Single tap has failure requirements - fails if pan or pinch starts
+    // Simple simultaneous pan + pinch - React Native handles the complexity
+    Gesture.Simultaneous(
+      // Single tap should fail if pan/pinch activates
       singleTapGesture
         .requireExternalGestureToFail(panGesture)
         .requireExternalGestureToFail(pinchGesture),
       
-      // Simultaneous pan + pinch for advanced navigation
-      Gesture.Simultaneous(
-        panGesture
-          .simultaneousWithExternalGesture(pinchGesture),
-        pinchGesture
-          .simultaneousWithExternalGesture(panGesture)
-      )
+      // Pan and pinch can work simultaneously 
+      panGesture.simultaneousWithExternalGesture(pinchGesture),
+      pinchGesture.simultaneousWithExternalGesture(panGesture)
     )
   );
 

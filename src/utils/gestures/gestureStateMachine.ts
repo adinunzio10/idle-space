@@ -14,101 +14,50 @@
 
 import { SharedValue } from 'react-native-reanimated';
 
-// Gesture state enumeration
+// Simplified gesture state enumeration - reduced from 12 to 5 essential states
 export enum GestureStateType {
   IDLE = 'IDLE',
-  TAP_PENDING = 'TAP_PENDING',
-  TAP_CONFIRMED = 'TAP_CONFIRMED',
-  DOUBLE_TAP_PENDING = 'DOUBLE_TAP_PENDING',
-  PAN_STARTING = 'PAN_STARTING',
-  PAN_ACTIVE = 'PAN_ACTIVE',
-  PINCH_STARTING = 'PINCH_STARTING',
-  PINCH_ACTIVE = 'PINCH_ACTIVE',
-  SIMULTANEOUS_PAN_PINCH = 'SIMULTANEOUS_PAN_PINCH',
-  MOMENTUM_ACTIVE = 'MOMENTUM_ACTIVE',
-  ELASTIC_BOUNCE = 'ELASTIC_BOUNCE',
-  CANCELLED = 'CANCELLED',
+  PANNING = 'PANNING',
+  PINCHING = 'PINCHING',
+  MOMENTUM = 'MOMENTUM',
+  TAPPING = 'TAPPING',
 }
 
-// Gesture priorities for conflict resolution
+// Simplified gesture priorities for conflict resolution
 export const GESTURE_PRIORITIES = {
   [GestureStateType.IDLE]: 0,
-  [GestureStateType.TAP_PENDING]: 1,
-  [GestureStateType.TAP_CONFIRMED]: 2,
-  [GestureStateType.DOUBLE_TAP_PENDING]: 3,
-  [GestureStateType.PAN_STARTING]: 4,
-  [GestureStateType.PAN_ACTIVE]: 5,
-  [GestureStateType.PINCH_STARTING]: 6,
-  [GestureStateType.PINCH_ACTIVE]: 7,
-  [GestureStateType.SIMULTANEOUS_PAN_PINCH]: 8, // Highest priority
-  [GestureStateType.MOMENTUM_ACTIVE]: 2,
-  [GestureStateType.ELASTIC_BOUNCE]: 3,
-  [GestureStateType.CANCELLED]: 0,
+  [GestureStateType.TAPPING]: 3,
+  [GestureStateType.PANNING]: 2,
+  [GestureStateType.PINCHING]: 4,
+  [GestureStateType.MOMENTUM]: 1,
 } as const;
 
-// Valid state transitions
+// Simplified valid state transitions - allow more flexible transitions
 const VALID_TRANSITIONS: Record<GestureStateType, GestureStateType[]> = {
   [GestureStateType.IDLE]: [
-    GestureStateType.TAP_PENDING,
-    GestureStateType.PAN_STARTING,
-    GestureStateType.PINCH_STARTING,
+    GestureStateType.IDLE, // FIX: Allow IDLE -> IDLE to prevent warnings
+    GestureStateType.TAPPING,
+    GestureStateType.PANNING,
+    GestureStateType.PINCHING,
   ],
-  [GestureStateType.TAP_PENDING]: [
-    GestureStateType.TAP_CONFIRMED,
-    GestureStateType.DOUBLE_TAP_PENDING,
-    GestureStateType.PAN_STARTING,
-    GestureStateType.CANCELLED,
+  [GestureStateType.TAPPING]: [
     GestureStateType.IDLE,
+    GestureStateType.PANNING, // Allow tap to become pan if moved too much
   ],
-  [GestureStateType.TAP_CONFIRMED]: [
+  [GestureStateType.PANNING]: [
     GestureStateType.IDLE,
-    GestureStateType.DOUBLE_TAP_PENDING,
+    GestureStateType.MOMENTUM,
+    GestureStateType.PINCHING, // Allow pan + pinch simultaneously
   ],
-  [GestureStateType.DOUBLE_TAP_PENDING]: [
+  [GestureStateType.PINCHING]: [
     GestureStateType.IDLE,
-    GestureStateType.CANCELLED,
+    GestureStateType.PANNING, // Allow pinch + pan simultaneously
   ],
-  [GestureStateType.PAN_STARTING]: [
-    GestureStateType.PAN_ACTIVE,
-    GestureStateType.SIMULTANEOUS_PAN_PINCH,
-    GestureStateType.CANCELLED,
+  [GestureStateType.MOMENTUM]: [
     GestureStateType.IDLE,
-  ],
-  [GestureStateType.PAN_ACTIVE]: [
-    GestureStateType.MOMENTUM_ACTIVE,
-    GestureStateType.SIMULTANEOUS_PAN_PINCH,
-    GestureStateType.ELASTIC_BOUNCE,
-    GestureStateType.IDLE,
-  ],
-  [GestureStateType.PINCH_STARTING]: [
-    GestureStateType.PINCH_ACTIVE,
-    GestureStateType.SIMULTANEOUS_PAN_PINCH,
-    GestureStateType.CANCELLED,
-    GestureStateType.IDLE,
-  ],
-  [GestureStateType.PINCH_ACTIVE]: [
-    GestureStateType.SIMULTANEOUS_PAN_PINCH,
-    GestureStateType.ELASTIC_BOUNCE,
-    GestureStateType.IDLE,
-  ],
-  [GestureStateType.SIMULTANEOUS_PAN_PINCH]: [
-    GestureStateType.PAN_ACTIVE,
-    GestureStateType.PINCH_ACTIVE,
-    GestureStateType.MOMENTUM_ACTIVE,
-    GestureStateType.ELASTIC_BOUNCE,
-    GestureStateType.IDLE,
-  ],
-  [GestureStateType.MOMENTUM_ACTIVE]: [
-    GestureStateType.PAN_STARTING,
-    GestureStateType.PINCH_STARTING,
-    GestureStateType.TAP_PENDING,
-    GestureStateType.IDLE,
-  ],
-  [GestureStateType.ELASTIC_BOUNCE]: [
-    GestureStateType.IDLE,
-  ],
-  [GestureStateType.CANCELLED]: [
-    GestureStateType.IDLE,
+    GestureStateType.PANNING, // Allow interrupting momentum with new pan
+    GestureStateType.PINCHING,
+    GestureStateType.TAPPING,
   ],
 };
 
@@ -338,20 +287,13 @@ export class GestureStateMachine {
       return 'allow';
     }
 
-    // Special cases for simultaneous gestures
+    // Special cases for simultaneous gestures - simplified
     if (this.shouldAllowSimultaneous(activeGestures, incomingGesture, eventData)) {
-      // Transition to simultaneous state if appropriate
-      if (
-        (activeGestures.includes(GestureStateType.PAN_ACTIVE) && incomingGesture === GestureStateType.PINCH_STARTING) ||
-        (activeGestures.includes(GestureStateType.PINCH_ACTIVE) && incomingGesture === GestureStateType.PAN_STARTING)
-      ) {
-        const resolution = 'override:' + GestureStateType.SIMULTANEOUS_PAN_PINCH;
-        
-        this.onConflictResolution?.(context, resolution);
-        this.performanceMetrics.conflictResolutionTime = Date.now() - startTime;
-        
-        return resolution;
-      }
+      // Just allow the transition - let React Native Gesture Handler handle simultaneity
+      const resolution = 'allow';
+      this.onConflictResolution?.(context, resolution);
+      this.performanceMetrics.conflictResolutionTime = Date.now() - startTime;
+      return resolution;
     }
 
     // Priority-based resolution
@@ -381,12 +323,12 @@ export class GestureStateMachine {
     incomingGesture: GestureStateType,
     eventData: GestureEventData
   ): boolean {
-    // Allow pan + pinch combinations
-    const hasPan = activeGestures.some(g => g === GestureStateType.PAN_ACTIVE || g === GestureStateType.PAN_STARTING);
-    const hasPinch = activeGestures.some(g => g === GestureStateType.PINCH_ACTIVE || g === GestureStateType.PINCH_STARTING);
+    // Allow pan + pinch combinations using simplified states
+    const hasPan = activeGestures.some(g => g === GestureStateType.PANNING);
+    const hasPinch = activeGestures.some(g => g === GestureStateType.PINCHING);
     
-    const incomingIsPan = incomingGesture === GestureStateType.PAN_STARTING || incomingGesture === GestureStateType.PAN_ACTIVE;
-    const incomingIsPinch = incomingGesture === GestureStateType.PINCH_STARTING || incomingGesture === GestureStateType.PINCH_ACTIVE;
+    const incomingIsPan = incomingGesture === GestureStateType.PANNING;
+    const incomingIsPinch = incomingGesture === GestureStateType.PINCHING;
 
     // Allow pan+pinch if we have appropriate pointer count
     if ((hasPan && incomingIsPinch) || (hasPinch && incomingIsPan)) {
@@ -409,15 +351,15 @@ export class GestureStateMachine {
       return 'allow';
     }
 
-    // For tap conflicts, use timing
-    if (incomingGesture === GestureStateType.TAP_PENDING) {
+    // For tap conflicts, use timing - simplified
+    if (incomingGesture === GestureStateType.TAPPING) {
       const lastTap = this.stateHistory
         .slice()
         .reverse()
-        .find(h => h.state === GestureStateType.TAP_CONFIRMED);
+        .find(h => h.state === GestureStateType.TAPPING);
       
       if (lastTap && (eventData.timestamp - lastTap.timestamp) < 300) {
-        return 'override:' + GestureStateType.DOUBLE_TAP_PENDING;
+        return 'allow'; // Allow double tap behavior in the gesture itself
       }
     }
 
@@ -428,16 +370,8 @@ export class GestureStateMachine {
   private areGesturesSimilar(gesture1: GestureStateType | undefined, gesture2: GestureStateType): boolean {
     if (!gesture1) return false;
 
-    // Group similar gestures
-    const panGestures = [GestureStateType.PAN_STARTING, GestureStateType.PAN_ACTIVE];
-    const pinchGestures = [GestureStateType.PINCH_STARTING, GestureStateType.PINCH_ACTIVE];
-    const tapGestures = [GestureStateType.TAP_PENDING, GestureStateType.TAP_CONFIRMED];
-
-    return (
-      (panGestures.includes(gesture1) && panGestures.includes(gesture2)) ||
-      (pinchGestures.includes(gesture1) && pinchGestures.includes(gesture2)) ||
-      (tapGestures.includes(gesture1) && tapGestures.includes(gesture2))
-    );
+    // Simplified - just check if they're the same type
+    return gesture1 === gesture2;
   }
 
   private performTransition(
@@ -464,8 +398,8 @@ export class GestureStateMachine {
   }
 
   private updateActiveGestures(from: GestureStateType, to: GestureStateType): void {
-    // Remove completed or cancelled gestures
-    if (to === GestureStateType.IDLE || to === GestureStateType.CANCELLED) {
+    // Remove completed gestures
+    if (to === GestureStateType.IDLE) {
       this.activeGestures.clear();
     } else {
       // Add new active gesture
@@ -481,11 +415,7 @@ export class GestureStateMachine {
   }
 
   private isActiveGesture(state: GestureStateType): boolean {
-    return ![
-      GestureStateType.IDLE,
-      GestureStateType.TAP_CONFIRMED,
-      GestureStateType.CANCELLED,
-    ].includes(state);
+    return state !== GestureStateType.IDLE;
   }
 
   private recordState(state: GestureStateType, timestamp: number, eventData?: GestureEventData): void {
@@ -519,39 +449,23 @@ export function createStateChecker(sharedState: SharedValue<GestureStateType>) {
       'worklet';
       const currentState = sharedState.value;
       
-      // Worklet-safe transition validation
-      // Since we can't access VALID_TRANSITIONS object in worklets,
-      // we'll implement basic transition logic directly
+      // Simplified worklet-safe transition validation
+      // Much more permissive to prevent blocking issues
       switch (currentState) {
         case GestureStateType.IDLE:
-          return toState === GestureStateType.TAP_PENDING ||
-                 toState === GestureStateType.PAN_STARTING ||
-                 toState === GestureStateType.PINCH_STARTING;
-        case GestureStateType.TAP_PENDING:
-          return toState === GestureStateType.TAP_CONFIRMED ||
-                 toState === GestureStateType.DOUBLE_TAP_PENDING ||
-                 toState === GestureStateType.PAN_STARTING ||
-                 toState === GestureStateType.CANCELLED ||
-                 toState === GestureStateType.IDLE;
-        case GestureStateType.PAN_STARTING:
-          return toState === GestureStateType.PAN_ACTIVE ||
-                 toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-                 toState === GestureStateType.CANCELLED ||
-                 toState === GestureStateType.IDLE;
-        case GestureStateType.PAN_ACTIVE:
-          return toState === GestureStateType.MOMENTUM_ACTIVE ||
-                 toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-                 toState === GestureStateType.ELASTIC_BOUNCE ||
-                 toState === GestureStateType.IDLE;
-        case GestureStateType.PINCH_STARTING:
-          return toState === GestureStateType.PINCH_ACTIVE ||
-                 toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-                 toState === GestureStateType.CANCELLED ||
-                 toState === GestureStateType.IDLE;
-        case GestureStateType.PINCH_ACTIVE:
-          return toState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-                 toState === GestureStateType.ELASTIC_BOUNCE ||
-                 toState === GestureStateType.IDLE;
+          return true; // IDLE can transition to any state
+        case GestureStateType.TAPPING:
+          return toState === GestureStateType.IDLE ||
+                 toState === GestureStateType.PANNING; // Tap can become pan
+        case GestureStateType.PANNING:
+          return toState === GestureStateType.IDLE ||
+                 toState === GestureStateType.MOMENTUM ||
+                 toState === GestureStateType.PINCHING; // Allow simultaneous pan+pinch
+        case GestureStateType.PINCHING:
+          return toState === GestureStateType.IDLE ||
+                 toState === GestureStateType.PANNING; // Allow simultaneous pan+pinch
+        case GestureStateType.MOMENTUM:
+          return true; // Momentum can be interrupted by any gesture
         default:
           return toState === GestureStateType.IDLE;
       }

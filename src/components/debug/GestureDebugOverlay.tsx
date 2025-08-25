@@ -46,20 +46,13 @@ interface TouchPoint {
   phase: 'began' | 'moved' | 'ended';
 }
 
-// State color mapping for visual feedback
+// Simplified state color mapping for visual feedback
 const STATE_COLORS: Record<GestureStateType, string> = {
   [GestureStateType.IDLE]: '#6B7280',
-  [GestureStateType.TAP_PENDING]: '#F59E0B',
-  [GestureStateType.TAP_CONFIRMED]: '#10B981',
-  [GestureStateType.DOUBLE_TAP_PENDING]: '#8B5CF6',
-  [GestureStateType.PAN_STARTING]: '#3B82F6',
-  [GestureStateType.PAN_ACTIVE]: '#2563EB',
-  [GestureStateType.PINCH_STARTING]: '#EC4899',
-  [GestureStateType.PINCH_ACTIVE]: '#BE185D',
-  [GestureStateType.SIMULTANEOUS_PAN_PINCH]: '#DC2626',
-  [GestureStateType.MOMENTUM_ACTIVE]: '#059669',
-  [GestureStateType.ELASTIC_BOUNCE]: '#7C2D12',
-  [GestureStateType.CANCELLED]: '#EF4444',
+  [GestureStateType.TAPPING]: '#F59E0B',
+  [GestureStateType.PANNING]: '#3B82F6',
+  [GestureStateType.PINCHING]: '#EC4899',
+  [GestureStateType.MOMENTUM]: '#059669',
 };
 
 export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({

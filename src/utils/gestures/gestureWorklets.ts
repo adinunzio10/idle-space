@@ -44,58 +44,35 @@ export function validateGestureTransitionWorklet(
   
   const current = currentState.value;
   
-  // Fast path for common transitions
+  // Simplified fast path for common transitions
   if (current === GestureStateType.IDLE) {
+    return true; // IDLE can transition to any state
+  }
+  
+  if (current === GestureStateType.TAPPING) {
     return (
-      targetState === GestureStateType.TAP_PENDING ||
-      targetState === GestureStateType.PAN_STARTING ||
-      targetState === GestureStateType.PINCH_STARTING
+      targetState === GestureStateType.IDLE ||
+      targetState === GestureStateType.PANNING
     );
   }
   
-  if (current === GestureStateType.TAP_PENDING) {
+  if (current === GestureStateType.PANNING) {
     return (
-      targetState === GestureStateType.TAP_CONFIRMED ||
-      targetState === GestureStateType.DOUBLE_TAP_PENDING ||
-      targetState === GestureStateType.PAN_STARTING ||
-      targetState === GestureStateType.CANCELLED ||
-      targetState === GestureStateType.IDLE
+      targetState === GestureStateType.IDLE ||
+      targetState === GestureStateType.MOMENTUM ||
+      targetState === GestureStateType.PINCHING
     );
   }
   
-  if (current === GestureStateType.PAN_STARTING) {
+  if (current === GestureStateType.PINCHING) {
     return (
-      targetState === GestureStateType.PAN_ACTIVE ||
-      targetState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-      targetState === GestureStateType.CANCELLED ||
-      targetState === GestureStateType.IDLE
+      targetState === GestureStateType.IDLE ||
+      targetState === GestureStateType.PANNING
     );
   }
   
-  if (current === GestureStateType.PAN_ACTIVE) {
-    return (
-      targetState === GestureStateType.MOMENTUM_ACTIVE ||
-      targetState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-      targetState === GestureStateType.ELASTIC_BOUNCE ||
-      targetState === GestureStateType.IDLE
-    );
-  }
-  
-  if (current === GestureStateType.PINCH_STARTING) {
-    return (
-      targetState === GestureStateType.PINCH_ACTIVE ||
-      targetState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-      targetState === GestureStateType.CANCELLED ||
-      targetState === GestureStateType.IDLE
-    );
-  }
-  
-  if (current === GestureStateType.PINCH_ACTIVE) {
-    return (
-      targetState === GestureStateType.SIMULTANEOUS_PAN_PINCH ||
-      targetState === GestureStateType.ELASTIC_BOUNCE ||
-      targetState === GestureStateType.IDLE
-    );
+  if (current === GestureStateType.MOMENTUM) {
+    return true; // Momentum can be interrupted by any gesture
   }
   
   // For other states, allow reasonable transitions
@@ -115,31 +92,24 @@ export function resolveGestureConflictWorklet(
   
   const current = currentState.value;
   
-  // Handle simultaneous pan + pinch
+  // Simplified simultaneous gesture handling
   if (pointerCount >= 2) {
     if (
-      (current === GestureStateType.PAN_ACTIVE && incomingGesture === GestureStateType.PINCH_STARTING) ||
-      (current === GestureStateType.PINCH_ACTIVE && incomingGesture === GestureStateType.PAN_STARTING)
+      (current === GestureStateType.PANNING && incomingGesture === GestureStateType.PINCHING) ||
+      (current === GestureStateType.PINCHING && incomingGesture === GestureStateType.PANNING)
     ) {
-      // Don't update shared state here - let JS state machine handle it
-      return GestureStateType.SIMULTANEOUS_PAN_PINCH;
+      // Allow both gestures simultaneously - let React Native Gesture Handler manage it
+      return incomingGesture;
     }
   }
   
-  // Priority-based resolution (simplified for worklet)
+  // Simplified priority-based resolution
   const priorities = {
     [GestureStateType.IDLE]: 0,
-    [GestureStateType.TAP_PENDING]: 1,
-    [GestureStateType.TAP_CONFIRMED]: 2,
-    [GestureStateType.DOUBLE_TAP_PENDING]: 3,
-    [GestureStateType.PAN_STARTING]: 4,
-    [GestureStateType.PAN_ACTIVE]: 5,
-    [GestureStateType.PINCH_STARTING]: 6,
-    [GestureStateType.PINCH_ACTIVE]: 7,
-    [GestureStateType.SIMULTANEOUS_PAN_PINCH]: 8,
-    [GestureStateType.MOMENTUM_ACTIVE]: 2,
-    [GestureStateType.ELASTIC_BOUNCE]: 3,
-    [GestureStateType.CANCELLED]: 0,
+    [GestureStateType.TAPPING]: 3,
+    [GestureStateType.PANNING]: 2,
+    [GestureStateType.PINCHING]: 4,
+    [GestureStateType.MOMENTUM]: 1,
   };
   
   const currentPriority = priorities[current] || 0;

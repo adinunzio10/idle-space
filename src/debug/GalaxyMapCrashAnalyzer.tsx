@@ -91,7 +91,7 @@ export const GalaxyMapCrashAnalyzer: React.FC = () => {
       analysisResults.push('\n3. Testing SharedValue assignments...');
       try {
         // Simulate typical gesture assignments
-        gestureSharedState.value = GestureStateType.PAN_STARTING;
+        gestureSharedState.value = GestureStateType.PANNING;
         analysisResults.push(`   ✅ Gesture state assignment: OK`);
         
         gestureStateIsActive.value = true;
@@ -120,7 +120,7 @@ export const GalaxyMapCrashAnalyzer: React.FC = () => {
       try {
         // Test rapid state changes (what happens during gesture)
         for (let i = 0; i < 10; i++) {
-          gestureSharedState.value = GestureStateType.PAN_ACTIVE;
+          gestureSharedState.value = GestureStateType.PANNING;
           translateX.value = Math.random() * 100;
           translateY.value = Math.random() * 100;
           scale.value = 1 + Math.random() * 2;
