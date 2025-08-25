@@ -1019,7 +1019,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   }, [viewportState.scale]);
 
   // Force update rendering state when beacons change
-  useEffect(() => {
+  React.useEffect(() => {
     if (beaconUpdateTrigger !== undefined) {
       // Force a viewport update to refresh spatial index and visible beacons
       updateViewportState(

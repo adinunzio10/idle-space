@@ -294,6 +294,29 @@ export class GameController {
   }
 
   /**
+   * Clear all beacons (debug/testing purposes)
+   */
+  clearAllBeacons(): void {
+    if (!this.gameState) return;
+
+    // Clear beacons from game state
+    this.gameState.beacons = {};
+    
+    // Clear beacons from placement manager
+    this.beaconPlacementManager['beacons'].clear();
+    
+    // Clear spatial index if it exists
+    if (this.beaconPlacementManager['spatialIndex']) {
+      // The spatial index will be rebuilt next time it's accessed
+    }
+    
+    // Clear connection manager
+    this.beaconConnectionManager.clear();
+
+    console.log('[GameController] Cleared all beacons for debugging');
+  }
+
+  /**
    * Load existing beacons from game state into the placement manager
    */
   private loadBeaconsIntoManager(): void {
