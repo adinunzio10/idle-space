@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { ResourceManager, ResourceType } from './ResourceManager';
 import { BeaconModifierManager } from './BeaconModifierManager';
-import { GameState, Beacon } from '../storage/schemas/GameState';
+import { GameState } from '../storage/schemas/GameState';
+import { Beacon } from '../entities/Beacon';
 
 export interface GenerationSource {
   id: string;
@@ -75,16 +76,61 @@ export class ResourceGenerationEngine {
     // Clear existing sources
     this.generationSources.clear();
 
+    // Convert GameState beacons to entity beacons for processing
+    const entityBeacons = Object.values(gameState.beacons).map(beaconData => {
+      return new Beacon({
+        id: beaconData.id,
+        position: { x: beaconData.x, y: beaconData.y },
+        level: beaconData.level,
+        type: beaconData.type,
+        specialization: beaconData.specialization || 'none',
+        status: beaconData.status || 'active',
+        connections: beaconData.connections || [],
+        generationRate: beaconData.generationRate || 1,
+        createdAt: beaconData.createdAt || Date.now(),
+        lastUpgraded: beaconData.lastUpgraded || Date.now(),
+        totalResourcesGenerated: beaconData.totalResourcesGenerated || 0,
+        upgradePendingAt: beaconData.upgradePendingAt,
+      });
+    });
+
     // Add beacon sources
-    Object.values(gameState.beacons).forEach(beacon => {
+    entityBeacons.forEach(beacon => {
       this.addBeaconSource(beacon);
     });
 
     // Detect and add pattern bonuses
-    this.detectPatternBonuses(gameState.beacons);
+    this.detectPatternBonuses(entityBeacons);
 
     // Update beacon modifiers
-    this.beaconModifierManager.updateBeaconModifiers(gameState.beacons);
+    this.beaconModifierManager.updateBeaconModifiers(entityBeacons);
+
+    // Apply pattern bonus modifiers
+    this.beaconModifierManager.addPatternBonusModifiers(
+      this.patternBonuses.map(pattern => ({
+        id: pattern.id,
+        beaconIds: pattern.beaconIds,
+        shape: pattern.shape,
+        bonusMultiplier: pattern.bonusMultiplier,
+        resourceTypes: pattern.resourceTypes,
+      }))
+    );
+  }
+
+  updateFromBeacons(beacons: Beacon[]): void {
+    // Clear existing sources
+    this.generationSources.clear();
+
+    // Add beacon sources
+    beacons.forEach(beacon => {
+      this.addBeaconSource(beacon);
+    });
+
+    // Detect and add pattern bonuses
+    this.detectPatternBonuses(beacons);
+
+    // Update beacon modifiers
+    this.beaconModifierManager.updateBeaconModifiers(beacons);
 
     // Apply pattern bonus modifiers
     this.beaconModifierManager.addPatternBonusModifiers(
@@ -103,7 +149,7 @@ export class ResourceGenerationEngine {
       id: `beacon_${beacon.id}`,
       type: 'beacon',
       baseGeneration: this.calculateBeaconGeneration(beacon),
-      efficiency: beacon.efficiency,
+      efficiency: beacon.getEfficiencyMultiplier(),
       active: beacon.status === 'active',
     };
 
@@ -113,28 +159,26 @@ export class ResourceGenerationEngine {
   private calculateBeaconGeneration(beacon: Beacon): Partial<Record<ResourceType, BigNumber>> {
     const generation: Partial<Record<ResourceType, BigNumber>> = {};
     
+    // Use the beacon's calculated generation rate
+    const baseRate = new BigNumber(beacon.generationRate);
+    
     // Base quantum data generation for all active beacons
-    generation.quantumData = new BigNumber(beacon.productionRate);
+    generation.quantumData = baseRate;
 
     // Specialized generation based on beacon type
     switch (beacon.type) {
       case 'harvester':
-        generation.stellarEssence = new BigNumber(beacon.productionRate * 0.1);
+        generation.stellarEssence = baseRate.multipliedBy(0.15);
         break;
-      case 'amplifier':
-        // Amplifiers boost nearby beacon generation (handled in modifiers)
-        generation.quantumData = generation.quantumData.multipliedBy(1.5);
+      case 'architect':
+        generation.voidFragments = baseRate.multipliedBy(0.1);
         break;
-      case 'relay':
-        generation.voidFragments = new BigNumber(Math.max(1, Math.floor(beacon.productionRate * 0.05)));
+      case 'pioneer':
+        // Balanced generation - small amounts of all resources
+        generation.stellarEssence = baseRate.multipliedBy(0.05);
+        generation.voidFragments = baseRate.multipliedBy(0.05);
         break;
     }
-
-    // Higher level beacons generate more
-    const levelMultiplier = new BigNumber(1 + (beacon.level - 1) * 0.25);
-    Object.keys(generation).forEach(resourceType => {
-      generation[resourceType as ResourceType] = generation[resourceType as ResourceType]!.multipliedBy(levelMultiplier);
-    });
 
     return generation;
   }
@@ -179,10 +223,10 @@ export class ResourceGenerationEngine {
     return totalBonus;
   }
 
-  private detectPatternBonuses(beacons: Record<string, Beacon>): void {
+  private detectPatternBonuses(beacons: Beacon[]): void {
     this.patternBonuses = [];
     
-    const activeBeacons = Object.values(beacons).filter(b => b.status === 'active');
+    const activeBeacons = beacons.filter(b => b.status === 'active');
     
     // Simple triangle detection
     const triangles = this.findTrianglePatterns(activeBeacons);

@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { ResourceManager, ResourceModifier, ResourceType } from './ResourceManager';
-import { Beacon } from '../storage/schemas/GameState';
+import { Beacon } from '../entities/Beacon';
+import { SPECIALIZATION_CONFIG } from '../types/beacon';
 
 export class BeaconModifierManager {
   private resourceManager: ResourceManager;
@@ -9,16 +10,23 @@ export class BeaconModifierManager {
     this.resourceManager = ResourceManager.getInstance();
   }
 
-  updateBeaconModifiers(beacons: Record<string, Beacon>): void {
+  updateBeaconModifiers(beacons: Record<string, Beacon> | Beacon[]): void {
     // Clear existing beacon modifiers
     this.clearBeaconModifiers();
 
+    // Convert to array if needed
+    const beaconArray = Array.isArray(beacons) ? beacons : Object.values(beacons);
+    const beaconMap = Array.isArray(beacons) 
+      ? beaconArray.reduce((map, beacon) => ({ ...map, [beacon.id]: beacon }), {})
+      : beacons;
+
     // Add modifiers for each active beacon
-    Object.values(beacons).forEach(beacon => {
+    beaconArray.forEach(beacon => {
       if (beacon.status === 'active') {
         this.addBeaconLevelModifiers(beacon);
         this.addBeaconTypeModifiers(beacon);
-        this.addBeaconConnectionModifiers(beacon, beacons);
+        this.addBeaconSpecializationModifiers(beacon);
+        this.addBeaconConnectionModifiers(beacon, beaconMap);
       }
     });
   }
@@ -30,7 +38,8 @@ export class BeaconModifierManager {
     activeModifiers.forEach(modifier => {
       if (modifier.source.startsWith('beacon_') || 
           modifier.source.startsWith('connection_') ||
-          modifier.source.startsWith('type_')) {
+          modifier.source.startsWith('type_') ||
+          modifier.source.startsWith('specialization_')) {
         this.resourceManager.removeModifier(modifier.id);
       }
     });
@@ -79,37 +88,53 @@ export class BeaconModifierManager {
         });
         break;
 
-      case 'amplifier':
-        // Amplifiers boost quantum data generation by 100%
-        modifiers.push({
-          id: `${baseId}_quantum`,
-          type: 'quantumData',
-          multiplier: new BigNumber(2),
-          flatBonus: new BigNumber(0),
-          source: `beacon_${beacon.id}`,
-          createdAt: Date.now(),
-        });
-        break;
-
-      case 'relay':
-        // Relays have 25% bonus to void fragments generation
+      case 'architect':
+        // Architects boost void fragments generation by 75%
         modifiers.push({
           id: `${baseId}_void`,
           type: 'voidFragments',
-          multiplier: new BigNumber(1.25),
+          multiplier: new BigNumber(1.75),
           flatBonus: new BigNumber(0),
           source: `beacon_${beacon.id}`,
           createdAt: Date.now(),
         });
         break;
 
-      case 'basic':
+      case 'pioneer':
       default:
-        // Basic beacons have no special modifiers
+        // Pioneers have balanced base generation (no special modifiers)
         break;
     }
 
     return modifiers;
+  }
+
+  private addBeaconSpecializationModifiers(beacon: Beacon): void {
+    if (beacon.specialization === 'none') return;
+
+    const specializationConfig = SPECIALIZATION_CONFIG[beacon.specialization];
+    const baseId = `specialization_${beacon.specialization}_${beacon.id}`;
+
+    // Apply efficiency bonus (affects all resource generation)
+    if (specializationConfig.efficiency > 1) {
+      const resourceTypes: ResourceType[] = ['quantumData', 'stellarEssence', 'voidFragments'];
+      
+      resourceTypes.forEach(resourceType => {
+        const modifier: ResourceModifier = {
+          id: `${baseId}_${resourceType}`,
+          type: resourceType,
+          multiplier: new BigNumber(specializationConfig.efficiency),
+          flatBonus: new BigNumber(0),
+          source: `specialization_${beacon.specialization}`,
+          createdAt: Date.now(),
+        };
+        
+        this.resourceManager.addModifier(modifier);
+      });
+    }
+
+    // Range specialization bonus is handled in connection logic
+    // Stability specialization bonus is handled in pattern bonus calculations
   }
 
   private addBeaconConnectionModifiers(beacon: Beacon, allBeacons: Record<string, Beacon>): void {
@@ -134,24 +159,24 @@ export class BeaconModifierManager {
       this.resourceManager.addModifier(modifier);
     });
 
-    // Special amplifier modifier: boosts nearby beacons
-    if (beacon.type === 'amplifier') {
-      this.addAmplifierBoostModifiers(beacon, allBeacons);
+    // Special architect modifier: boosts nearby beacons if range specialized
+    if (beacon.type === 'architect' && beacon.specialization === 'range') {
+      this.addArchitectBoostModifiers(beacon, allBeacons);
     }
   }
 
-  private addAmplifierBoostModifiers(amplifier: Beacon, allBeacons: Record<string, Beacon>): void {
-    // Amplifiers boost connected beacons by 50%
-    amplifier.connections.forEach(connectedBeaconId => {
+  private addArchitectBoostModifiers(architect: Beacon, allBeacons: Record<string, Beacon>): void {
+    // Range-specialized architects boost connected beacons by 30%
+    architect.connections.forEach(connectedBeaconId => {
       const connectedBeacon = allBeacons[connectedBeaconId];
       if (!connectedBeacon || connectedBeacon.status !== 'active') return;
 
       const modifier: ResourceModifier = {
-        id: `amplifier_boost_${amplifier.id}_${connectedBeaconId}`,
+        id: `architect_boost_${architect.id}_${connectedBeaconId}`,
         type: 'quantumData',
-        multiplier: new BigNumber(1.5),
+        multiplier: new BigNumber(1.3),
         flatBonus: new BigNumber(0),
-        source: `beacon_${amplifier.id}`,
+        source: `beacon_${architect.id}`,
         createdAt: Date.now(),
       };
 

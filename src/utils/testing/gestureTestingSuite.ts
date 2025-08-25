@@ -236,7 +236,7 @@ export class GestureTestingSuite {
     const performanceMetrics: GesturePerformanceMetrics[] = [];
 
     // Run each performance benchmark
-    for (const benchmarkName of Object.keys(PERFORMANCE_BENCHMARKS) as Array<keyof typeof PERFORMANCE_BENCHMARKS>) {
+    for (const benchmarkName of Object.keys(PERFORMANCE_BENCHMARKS) as (keyof typeof PERFORMANCE_BENCHMARKS)[]) {
       console.log(`  Running ${benchmarkName} benchmark...`);
       
       try {

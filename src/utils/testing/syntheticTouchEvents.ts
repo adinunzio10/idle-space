@@ -40,10 +40,10 @@ export interface GesturePattern {
   name: string;
   description: string;
   duration: number;
-  touchPoints: Array<{
+  touchPoints: {
     identifier: number;
-    path: Array<{ x: number; y: number; timestamp: number; force?: number }>;
-  }>;
+    path: { x: number; y: number; timestamp: number; force?: number }[];
+  }[];
   expectedBehavior: string;
 }
 
@@ -110,7 +110,7 @@ export class SyntheticTouchEventGenerator {
   private currentTouches = new Map<number, SyntheticTouchPoint>();
   private nextIdentifier = 0;
   private deviceProfile: DeviceTouchProfile;
-  private eventListeners: Array<(event: SyntheticTouchEvent) => void> = [];
+  private eventListeners: ((event: SyntheticTouchEvent) => void)[] = [];
 
   constructor(deviceProfileKey: keyof typeof DEVICE_TOUCH_PROFILES = 'iphone') {
     this.deviceProfile = DEVICE_TOUCH_PROFILES[deviceProfileKey];
@@ -498,7 +498,7 @@ export class SyntheticTouchEventGenerator {
    */
   async playGesturePattern(pattern: GesturePattern): Promise<void> {
     const startTime = Date.now();
-    const events: Array<{ timestamp: number; event: SyntheticTouchEvent }> = [];
+    const events: { timestamp: number; event: SyntheticTouchEvent }[] = [];
     
     // Convert pattern to events
     for (const touchPoint of pattern.touchPoints) {

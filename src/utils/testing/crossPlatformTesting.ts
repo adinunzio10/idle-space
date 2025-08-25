@@ -445,7 +445,7 @@ export class CrossPlatformGestureTester {
    * Test gesture recognition accuracy across different device sizes
    */
   async testDeviceSizeCompatibility(): Promise<{
-    results: Array<{ deviceSize: string; accuracy: number; issues: string[] }>;
+    results: { deviceSize: string; accuracy: number; issues: string[] }[];
     overallCompatibility: number;
   }> {
     const results = [];

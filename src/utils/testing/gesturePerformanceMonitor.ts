@@ -56,7 +56,7 @@ export interface GesturePerformanceMetrics {
   screenDensity: number;
   
   // Timestamps for detailed analysis
-  milestones: Array<{ name: string; timestamp: number }>;
+  milestones: { name: string; timestamp: number }[];
 }
 
 export interface PerformanceBenchmark {
@@ -573,14 +573,14 @@ export interface PerformanceReport {
     averageAccuracy: number;
     averageSmoothness: number;
   };
-  testResults: Array<{
+  testResults: {
     gestureType: string;
     duration: number;
     frameRate: number;
     responseTime: number;
     memoryDelta: number;
     passed: boolean;
-  }>;
+  }[];
   recommendations: string[];
 }
 

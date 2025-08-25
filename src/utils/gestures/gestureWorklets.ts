@@ -373,7 +373,7 @@ export function calculateFocalPointZoomWorklet(
  * Multi-touch center point calculation worklet
  */
 export function calculateCenterPointWorklet(
-  touches: Array<{ x: number; y: number }>
+  touches: { x: number; y: number }[]
 ): { x: number; y: number } {
   'worklet';
   

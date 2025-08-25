@@ -43,15 +43,18 @@ export interface Beacon {
   z: number; // for 3D depth if needed
   level: number;
   type: BeaconType;
+  specialization: BeaconSpecialization;
   status: BeaconStatus;
   connections: string[]; // IDs of connected beacons
   createdAt: number;
   lastUpgraded: number;
-  productionRate: number;
-  efficiency: number;
+  generationRate: number;
+  totalResourcesGenerated: number;
+  upgradePendingAt?: number;
 }
 
-export type BeaconType = 'basic' | 'harvester' | 'amplifier' | 'relay';
+export type BeaconType = 'pioneer' | 'harvester' | 'architect';
+export type BeaconSpecialization = 'none' | 'efficiency' | 'range' | 'stability';
 export type BeaconStatus = 'active' | 'inactive' | 'upgrading' | 'corrupted';
 
 export interface Probe {
