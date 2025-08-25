@@ -40,8 +40,8 @@ export const ConnectionRenderer: React.FC<ConnectionRendererProps> = memo(({
 
   // Generate the SVG path for the connection
   const pathData = useMemo(() => {
-    return generateConnectionPath(sourceScreen, targetScreen, connection.strength);
-  }, [sourceScreen, targetScreen, connection.strength]);
+    return generateConnectionPath(sourceScreen, targetScreen, connection.strength, connection.id);
+  }, [sourceScreen, targetScreen, connection.strength, connection.id]);
 
   // Determine colors based on connection state and patterns
   const colors = useMemo(() => {

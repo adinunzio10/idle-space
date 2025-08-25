@@ -152,7 +152,8 @@ function lineIntersectsRect(
 export function calculateConnectionCurve(
   source: Point2D,
   target: Point2D,
-  strength: number = 1
+  strength: number = 1,
+  connectionId?: string
 ): { start: Point2D; control1: Point2D; control2: Point2D; end: Point2D } {
   const dx = target.x - source.x;
   const dy = target.y - source.y;
@@ -171,7 +172,10 @@ export function calculateConnectionCurve(
   curveOffset *= (1 + strength * CURVE_CONFIG.CURVE_VARIATION);
   
   // Alternate curve direction based on connection properties for visual variety
-  const direction = Math.sin(source.x + target.x + source.y + target.y) > 0 ? 1 : -1;
+  // Use connection ID for stable direction if available, otherwise fall back to coordinate-based
+  const direction = connectionId 
+    ? (connectionId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 2 === 0 ? 1 : -1)
+    : (Math.sin(source.x + target.x + source.y + target.y) > 0 ? 1 : -1);
   curveOffset *= direction;
   
   // Calculate control points
@@ -199,9 +203,10 @@ export function calculateConnectionCurve(
 export function generateConnectionPath(
   source: Point2D,
   target: Point2D,
-  strength: number = 1
+  strength: number = 1,
+  connectionId?: string
 ): string {
-  const curve = calculateConnectionCurve(source, target, strength);
+  const curve = calculateConnectionCurve(source, target, strength, connectionId);
   
   return `M ${curve.start.x} ${curve.start.y} ` +
          `C ${curve.control1.x} ${curve.control1.y}, ` +
