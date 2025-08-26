@@ -117,20 +117,18 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
 
   // Convert galaxy coordinates to screen coordinates
   const animatedStyle = useAnimatedStyle(() => {
-    // Transform galaxy coordinates to screen coordinates using same logic as GalaxyMapView
-    // Galaxy coordinates are transformed by scale and translate, then centered on screen
-    const screenX = (probeX.value * scale.value) + translateX.value + screenWidth / 2;
-    const screenY = (probeY.value * scale.value) + translateY.value + screenHeight / 2;
+    // FIXED: Use same coordinate transformation as galaxy map SVG elements
+    // Remove the incorrect screenWidth/2 and screenHeight/2 offsets
+    const screenX = (probeX.value * scale.value) + translateX.value;
+    const screenY = (probeY.value * scale.value) + translateY.value;
     
-    // Debug the coordinate calculation (reduced frequency)
-    if (probe.travelProgress % 0.2 < 0.1) { // Log every ~20% progress
-      console.log(`[AnimatedProbe] Probe ${probe.id}: galaxy(${probeX.value.toFixed(1)}, ${probeY.value.toFixed(1)}) -> screen(${screenX.toFixed(1)}, ${screenY.toFixed(1)}), scale=${scale.value.toFixed(2)}, opacity=${opacity.value.toFixed(2)}`);
-    }
+    // Debug the coordinate calculation
+    console.log(`[AnimatedProbe] Probe ${probe.id}: galaxy(${probeX.value.toFixed(1)}, ${probeY.value.toFixed(1)}) -> screen(${screenX.toFixed(1)}, ${screenY.toFixed(1)}), scale=${scale.value.toFixed(2)}, opacity=${opacity.value.toFixed(2)}`);
     
     return {
       position: 'absolute',
-      left: screenX - 16, // Center the probe (32px width / 2)
-      top: screenY - 16,  // Center the probe (32px height / 2)
+      left: screenX - 24, // Center the probe (48px width / 2)
+      top: screenY - 24,  // Center the probe (48px height / 2)
       transform: [
         { scale: probeScale.value },
         { rotate: `${rotation.value}deg` }
@@ -147,7 +145,17 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
   
   return (
     <Animated.View style={animatedStyle}>
-      <View className="flex items-center justify-center w-8 h-8 relative">
+      <View className="flex items-center justify-center w-12 h-12 relative">
+        {/* DEBUG: Large visible background circle for testing */}
+        <View 
+          className="absolute inset-0 rounded-full border-4"
+          style={{
+            backgroundColor: '#FF0000', // Bright red for debugging
+            borderColor: '#FFFFFF',
+            opacity: 0.8,
+          }}
+        />
+        
         {/* Acceleration glow effect */}
         {isAccelerated && (
           <View 
@@ -164,21 +172,21 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
         
         {/* Probe icon - made larger and more visible */}
         <View 
-          className="flex items-center justify-center w-8 h-8 rounded-full border-2"
+          className="flex items-center justify-center w-8 h-8 rounded-full border-2 z-10"
           style={{
-            backgroundColor: config.color + '60', // More visible transparency
+            backgroundColor: config.color + '90', // More visible transparency
             borderColor: config.color,
             shadowColor: config.color,
             shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.5,
-            shadowRadius: 4,
-            elevation: 5,
+            shadowOpacity: 0.8,
+            shadowRadius: 6,
+            elevation: 8,
           }}
         >
           <View>
             {/* Use a larger colored circle */}
             <View 
-              className="w-3 h-3 rounded-full"
+              className="w-4 h-4 rounded-full"
               style={{ backgroundColor: config.color }}
             />
           </View>

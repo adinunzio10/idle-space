@@ -211,7 +211,26 @@ export default function App() {
         setProbes(updatedProbes);
       };
       
+      // FIXED: Set up probe deployment callback to create beacons
+      const handleProbeDeployment = (probe: ProbeInstance) => {
+        console.log(`[App] Probe ${probe.id} deployed at (${probe.targetPosition.x}, ${probe.targetPosition.y}), creating beacon`);
+        
+        // Create beacon at probe's target position using the probe's type
+        const result = gameController.placeBeacon(probe.targetPosition, probe.type);
+        
+        if (result.success) {
+          // Update game state to show the new beacon
+          const updatedState = gameController.getGameState();
+          setGameState(updatedState);
+          setBeaconVersion(prev => prev + 1); // Force re-render
+          console.log(`[App] Successfully created ${probe.type} beacon from probe at (${probe.targetPosition.x}, ${probe.targetPosition.y})`);
+        } else {
+          console.error(`[App] Failed to create beacon from probe:`, result.error);
+        }
+      };
+      
       probeManager.setOnProbeUpdate(handleProbeUpdate);
+      probeManager.setOnProbeDeployed(handleProbeDeployment);
       
       // Get initial probe state
       const initialProbeStatus = probeManager.getQueueStatus();
@@ -219,8 +238,9 @@ export default function App() {
       setProbes(allProbes);
       
       return () => {
-        // Clean up callback
+        // Clean up callbacks
         probeManager.setOnProbeUpdate(() => {});
+        probeManager.setOnProbeDeployed(() => {});
       };
     }
   }, [isInitialized, gameController]);
