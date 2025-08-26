@@ -82,6 +82,13 @@ export class ResourceManager {
     return true;
   }
 
+  setResource(type: ResourceType, amount: BigNumber | number): void {
+    const amountBN = amount instanceof BigNumber ? amount : new BigNumber(amount);
+    this.resources[type] = amountBN;
+    this.resources.lastUpdated = Date.now();
+    this.notifyChange();
+  }
+
   canAfford(costs: Partial<Record<ResourceType, BigNumber | number>>): boolean {
     return Object.entries(costs).every(([type, cost]) => {
       const costBN = cost instanceof BigNumber ? cost : new BigNumber(cost);

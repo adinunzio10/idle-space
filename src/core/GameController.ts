@@ -294,7 +294,7 @@ export class GameController {
   }
 
   /**
-   * Clear all beacons (debug/testing purposes)
+   * Clear all beacons and reset quantum data (debug/testing purposes)
    */
   clearAllBeacons(): void {
     if (!this.gameState) return;
@@ -313,7 +313,13 @@ export class GameController {
     // Clear connection manager
     this.beaconConnectionManager.clear();
 
-    console.log('[GameController] Cleared all beacons for debugging');
+    // Reset quantum data to 0
+    this.resourceManager.setResource('quantumData', 0);
+
+    // Update generation engine to reflect cleared state
+    this.generationEngine.updateFromGameState(this.gameState);
+
+    console.log('[GameController] Cleared all beacons and reset quantum data for debugging');
   }
 
   /**
