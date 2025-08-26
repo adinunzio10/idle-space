@@ -233,8 +233,8 @@ export default function App() {
         }
       };
       
-      probeManager.setOnProbeUpdate(handleProbeUpdate);
-      probeManager.setOnProbeDeployed(handleProbeDeployment);
+      const removeProbeUpdateCallback = probeManager.addProbeUpdateCallback(handleProbeUpdate);
+      const removeProbeDeployedCallback = probeManager.addProbeDeployedCallback(handleProbeDeployment);
       
       // Get initial probe state
       const initialProbeStatus = probeManager.getQueueStatus();
@@ -243,8 +243,8 @@ export default function App() {
       
       return () => {
         // Clean up callbacks
-        probeManager.setOnProbeUpdate(() => {});
-        probeManager.setOnProbeDeployed(() => {});
+        removeProbeUpdateCallback();
+        removeProbeDeployedCallback();
       };
     }
   }, [isInitialized, gameController]);

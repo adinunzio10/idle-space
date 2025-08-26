@@ -15,8 +15,8 @@ export class ProbeManager {
   private resourceManager: ResourceManager;
   private probeQueue: ProbeQueueItem[] = [];
   private activeProbes: Map<string, ProbeInstance> = new Map();
-  private onProbeUpdate?: (probes: ProbeInstance[]) => void;
-  private onProbeDeployed?: (probe: ProbeInstance) => void;
+  private onProbeUpdateCallbacks: Array<(probes: ProbeInstance[]) => void> = [];
+  private onProbeDeployedCallbacks: Array<(probe: ProbeInstance) => void> = [];
   private deploymentTimer: NodeJS.Timeout | null = null;
   private backgroundService: ProbeBackgroundService;
   private maxSimultaneousLaunches: number = 3; // Allow multiple simultaneous probe launches
@@ -155,18 +155,55 @@ export class ProbeManager {
   }
 
   /**
-   * Set callback for probe updates
+   * Register callback for probe updates
    */
-  setOnProbeUpdate(callback: (probes: ProbeInstance[]) => void): void {
-    console.log('[ProbeManager] setOnProbeUpdate callback registered');
-    this.onProbeUpdate = callback;
+  addProbeUpdateCallback(callback: (probes: ProbeInstance[]) => void): () => void {
+    console.log('[ProbeManager] addProbeUpdateCallback registered');
+    this.onProbeUpdateCallbacks.push(callback);
+    
+    // Return cleanup function
+    return () => {
+      const index = this.onProbeUpdateCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.onProbeUpdateCallbacks.splice(index, 1);
+        console.log('[ProbeManager] Probe update callback removed');
+      }
+    };
   }
 
   /**
-   * Set callback for probe deployment completion
+   * Register callback for probe deployment completion
+   */
+  addProbeDeployedCallback(callback: (probe: ProbeInstance) => void): () => void {
+    console.log('[ProbeManager] addProbeDeployedCallback registered');
+    this.onProbeDeployedCallbacks.push(callback);
+    
+    // Return cleanup function
+    return () => {
+      const index = this.onProbeDeployedCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.onProbeDeployedCallbacks.splice(index, 1);
+        console.log('[ProbeManager] Probe deployed callback removed');
+      }
+    };
+  }
+
+  /**
+   * @deprecated Use addProbeUpdateCallback instead
+   * Legacy method for backward compatibility
+   */
+  setOnProbeUpdate(callback: (probes: ProbeInstance[]) => void): void {
+    console.warn('[ProbeManager] setOnProbeUpdate is deprecated, use addProbeUpdateCallback instead');
+    this.addProbeUpdateCallback(callback);
+  }
+
+  /**
+   * @deprecated Use addProbeDeployedCallback instead
+   * Legacy method for backward compatibility
    */
   setOnProbeDeployed(callback: (probe: ProbeInstance) => void): void {
-    this.onProbeDeployed = callback;
+    console.warn('[ProbeManager] setOnProbeDeployed is deprecated, use addProbeDeployedCallback instead');
+    this.addProbeDeployedCallback(callback);
   }
 
   /**
@@ -274,9 +311,13 @@ export class ProbeManager {
           console.log(`[ProbeManager] Probe ${probeId} deployment completed`);
           
           // Notify deployment completion
-          if (this.onProbeDeployed) {
-            this.onProbeDeployed(probe);
-          }
+          this.onProbeDeployedCallbacks.forEach(callback => {
+            try {
+              callback(probe);
+            } catch (error) {
+              console.error('[ProbeManager] Error in probe deployed callback:', error);
+            }
+          });
 
           hasUpdates = true;
         }
@@ -292,15 +333,23 @@ export class ProbeManager {
    * Notify listeners of probe updates
    */
   private notifyProbeUpdate(): void {
-    if (this.onProbeUpdate) {
-      const allProbes = [
-        ...this.probeQueue.map(item => item.probe),
-        ...Array.from(this.activeProbes.values()),
-      ];
-      console.log('[ProbeManager] notifyProbeUpdate called with', allProbes.length, 'probes:', allProbes.map(p => `${p.type}(${p.status})`).join(', '));
-      this.onProbeUpdate(allProbes);
-    } else {
-      console.log('[ProbeManager] notifyProbeUpdate called but no callback set');
+    const allProbes = [
+      ...this.probeQueue.map(item => item.probe),
+      ...Array.from(this.activeProbes.values()),
+    ];
+    console.log('[ProbeManager] notifyProbeUpdate called with', allProbes.length, 'probes:', allProbes.map(p => `${p.type}(${p.status})`).join(', '), 'callbacks:', this.onProbeUpdateCallbacks.length);
+    
+    this.onProbeUpdateCallbacks.forEach((callback, index) => {
+      try {
+        callback(allProbes);
+        console.log(`[ProbeManager] Callback ${index} called successfully`);
+      } catch (error) {
+        console.error(`[ProbeManager] Error in probe update callback ${index}:`, error);
+      }
+    });
+    
+    if (this.onProbeUpdateCallbacks.length === 0) {
+      console.log('[ProbeManager] notifyProbeUpdate called but no callbacks registered');
     }
   }
 

@@ -35,7 +35,7 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
       setQueueStatus(probeManager.getQueueStatus());
     };
 
-    probeManager.setOnProbeUpdate(updateProbeStatus);
+    const removeProbeUpdateCallback = probeManager.addProbeUpdateCallback(updateProbeStatus);
 
     // Initial load
     setQueueStatus(probeManager.getQueueStatus());
@@ -47,6 +47,7 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
 
     return () => {
       clearInterval(interval);
+      removeProbeUpdateCallback();
     };
   }, [probeManager]);
 
