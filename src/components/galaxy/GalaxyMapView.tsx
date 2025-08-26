@@ -254,6 +254,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     y: number;
     timestamp: number;
     phase: 'began' | 'moved' | 'ended';
+    activeTouchesDataValue: string | null;
+    recentTouchesDataValue: string | null;
   }) => {
     const now = Date.now();
     
@@ -263,11 +265,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       let recentTouches: { x: number; y: number; timestamp: number }[] = [];
       
       try {
-        if (activeTouchesData.value) {
-          activeTouches = JSON.parse(activeTouchesData.value);
+        if (touchData.activeTouchesDataValue) {
+          activeTouches = JSON.parse(touchData.activeTouchesDataValue);
         }
-        if (recentTouchesData.value) {
-          recentTouches = JSON.parse(recentTouchesData.value);
+        if (touchData.recentTouchesDataValue) {
+          recentTouches = JSON.parse(touchData.recentTouchesDataValue);
         }
       } catch (parseError) {
         console.warn('Failed to parse touch data, resetting:', parseError);
@@ -621,6 +623,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         y: event.y,
         timestamp: Date.now(),
         phase: 'ended',
+        activeTouchesDataValue: activeTouchesData.value,
+        recentTouchesDataValue: recentTouchesData.value,
       });
       
       const finalVelocity = { x: velocityX.value, y: velocityY.value };
