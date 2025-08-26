@@ -29,7 +29,7 @@ interface AnimatedProbeProps {
   screenHeight: number;
 }
 
-const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
+const AnimatedProbe: React.FC<AnimatedProbeProps> = React.memo(({
   probe,
   scale,
   translateX,
@@ -201,7 +201,20 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
       </View>
     </Animated.View>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison for React.memo - re-render if probe properties change
+  const prevProbe = prevProps.probe;
+  const nextProbe = nextProps.probe;
+  
+  return (
+    prevProbe.id === nextProbe.id &&
+    prevProbe.status === nextProbe.status &&
+    prevProbe.travelProgress === nextProbe.travelProgress &&
+    prevProps.scale === nextProps.scale &&
+    prevProps.translateX === nextProps.translateX &&
+    prevProps.translateY === nextProps.translateY
+  );
+});
 
 export const ProbeAnimationRenderer: React.FC<ProbeAnimationRendererProps> = ({
   probes,
@@ -226,7 +239,7 @@ export const ProbeAnimationRenderer: React.FC<ProbeAnimationRendererProps> = ({
     <View className="absolute inset-0" pointerEvents="none">
       {activeProbes.map((probe) => (
         <AnimatedProbe
-          key={probe.id}
+          key={`${probe.id}-${probe.status}-${probe.travelProgress?.toFixed(3) || 0}`}
           probe={probe}
           scale={scale}
           translateX={translateX}

@@ -248,7 +248,7 @@ export class ProbeManager {
     this.deploymentTimer = setInterval(() => {
       this.processQueue();
       this.updateActiveProbes();
-    }, 1000); // Process every second
+    }, 100); // Process every 100ms for smoother animation
 
     console.log('[ProbeManager] Queue processing started');
   }
@@ -292,6 +292,7 @@ export class ProbeManager {
   private updateActiveProbes(): void {
     const now = Date.now();
     let hasUpdates = false;
+    const probesToRemove: string[] = [];
 
     for (const [probeId, probe] of this.activeProbes.entries()) {
       if (probe.status === 'launching' && probe.deploymentStartedAt) {
@@ -310,7 +311,7 @@ export class ProbeManager {
 
           console.log(`[ProbeManager] Probe ${probeId} deployment completed`);
           
-          // Notify deployment completion
+          // Notify deployment completion (only once when status changes)
           this.onProbeDeployedCallbacks.forEach(callback => {
             try {
               callback(probe);
@@ -321,7 +322,20 @@ export class ProbeManager {
 
           hasUpdates = true;
         }
+      } else if (probe.status === 'deployed' && probe.deploymentCompletedAt) {
+        // Remove probes that have been deployed for more than 5 seconds (longer than animation)
+        const timeSinceDeployment = now - probe.deploymentCompletedAt;
+        if (timeSinceDeployment > 5000) { // 5 seconds
+          probesToRemove.push(probeId);
+          hasUpdates = true;
+        }
       }
+    }
+
+    // Remove probes that have completed their lifecycle
+    for (const probeId of probesToRemove) {
+      this.activeProbes.delete(probeId);
+      console.log(`[ProbeManager] Removed completed probe ${probeId} from active probes`);
     }
 
     if (hasUpdates) {
