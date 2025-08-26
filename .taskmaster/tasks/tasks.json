@@ -854,11 +854,100 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 14,
+        "title": "Fix Web Gesture Handling and React Native Web Compatibility",
+        "description": "Resolve browser gesture conflicts and optimize React Native Web performance by preventing default browser behaviors, implementing proper touch-action CSS properties, and ensuring React Native Gesture Handler compatibility with web platforms.",
+        "details": "Implement comprehensive web gesture fixes: 1) Add CSS touch-action properties to galaxy map container (`touch-action: none` for gesture areas, `touch-action: pan-x pan-y` for scrollable content). 2) Prevent default browser events using preventDefault() on touchstart/touchmove/wheel events within gesture handlers. 3) Configure React Native Gesture Handler web-specific settings: enable simultaneous recognizers for web, adjust touch slop values for mouse/touch differences. 4) Implement web-optimized gesture worklets using conditional compilation for web platform. 5) Add pointer-events CSS management to prevent browser drag behaviors on galaxy elements. 6) Optimize WASM loading with lazy initialization and fallback to JavaScript for React Native Reanimated worklets. 7) Implement touch event pooling to reduce garbage collection on web. 8) Add viewport meta tags for proper mobile web scaling. 9) Configure webpack/Metro bundler for optimal web builds with code splitting. 10) Add web-specific gesture debugging tools and performance monitoring.",
+        "testStrategy": "Test gesture handling across all major browsers (Chrome, Firefox, Safari, Edge) on both desktop and mobile. Verify pan/zoom gestures work without triggering browser drag/scroll behaviors. Test touch-action CSS prevents default browser gestures while allowing custom ones. Performance test WASM loading times and fallback behavior. Validate gesture recognition accuracy with mouse vs touch inputs. Test rapid gesture sequences without event handler conflicts. Verify worklet execution stability on web platform. Cross-platform testing to ensure native mobile behavior remains unchanged. Memory profiling for touch event pooling effectiveness.",
+        "status": "pending",
+        "dependencies": [
+          12,
+          11
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement CSS touch-action properties for gesture areas",
+            "description": "Add CSS touch-action properties to galaxy map container and UI elements to prevent default browser gesture behaviors while allowing custom gestures.",
+            "dependencies": [],
+            "details": "Add `touch-action: none` to galaxy map gesture areas to prevent browser pan/zoom, `touch-action: pan-x pan-y` for scrollable content areas, and `touch-action: manipulation` for buttons. Configure NativeWind/Tailwind classes or inline styles for React Native Web components.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure React Native Gesture Handler for web platform",
+            "description": "Set up web-specific configuration for React Native Gesture Handler including simultaneous recognizers and touch sensitivity adjustments.",
+            "dependencies": [
+              "14.1"
+            ],
+            "details": "Enable simultaneous gesture recognizers for web platform, adjust touch slop values for mouse vs touch input differences, configure gesture handler props for web compatibility, and set up proper gesture state management for browser environments.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement event prevention and touch event handling",
+            "description": "Add preventDefault() calls and proper event handling to prevent browser default behaviors during gestures.",
+            "dependencies": [
+              "14.2"
+            ],
+            "details": "Implement preventDefault() on touchstart, touchmove, and wheel events within gesture handlers. Add pointer-events CSS management to prevent browser drag behaviors. Configure event capture and bubbling for optimal web performance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Optimize WASM loading and implement JavaScript fallbacks",
+            "description": "Implement lazy WASM initialization for React Native Reanimated worklets with JavaScript fallback for compatibility.",
+            "dependencies": [],
+            "details": "Add lazy WASM loading to reduce initial bundle size, implement fallback JavaScript implementations for worklet operations when WASM fails to load, and add conditional compilation for web platform optimizations in worklet code.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Configure Metro bundler for optimized web builds",
+            "description": "Set up Metro/webpack configuration for optimal React Native Web builds with code splitting and web-specific optimizations.",
+            "dependencies": [
+              "14.4"
+            ],
+            "details": "Configure Metro bundler with web-specific resolver settings, implement code splitting for web builds, optimize bundle size with proper tree-shaking, and add web platform-specific asset handling and viewport meta tags.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement cross-browser testing and compatibility",
+            "description": "Test gesture handling across major browsers and implement browser-specific compatibility fixes.",
+            "dependencies": [
+              "14.3",
+              "14.5"
+            ],
+            "details": "Test on Chrome, Firefox, Safari, and Edge on both desktop and mobile. Implement browser-specific polyfills and workarounds. Add touch event pooling to reduce garbage collection on web platforms.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Add web gesture debugging and performance monitoring",
+            "description": "Implement debugging tools and performance monitoring specifically for web platform gesture handling.",
+            "dependencies": [
+              "14.6"
+            ],
+            "details": "Create web-specific gesture debugging overlay, add performance monitoring for gesture latency and frame rates, implement logging for gesture event chains, and add memory usage tracking for web worklet operations.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-08-26T04:41:14.859Z",
+      "updated": "2025-08-26T06:53:13.396Z",
       "description": "Tasks for master context"
     }
   }
