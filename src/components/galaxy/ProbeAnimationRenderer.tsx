@@ -127,8 +127,8 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
     
     return {
       position: 'absolute',
-      left: screenX - 24, // Center the probe (48px width / 2)
-      top: screenY - 24,  // Center the probe (48px height / 2)
+      left: screenX - 20, // Center the probe (40px width / 2)
+      top: screenY - 20,  // Center the probe (40px height / 2)
       transform: [
         { scale: probeScale.value },
         { rotate: `${rotation.value}deg` }
@@ -145,17 +145,7 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
   
   return (
     <Animated.View style={animatedStyle}>
-      <View className="flex items-center justify-center w-12 h-12 relative">
-        {/* DEBUG: Large visible background circle for testing */}
-        <View 
-          className="absolute inset-0 rounded-full border-4"
-          style={{
-            backgroundColor: '#FF0000', // Bright red for debugging
-            borderColor: '#FFFFFF',
-            opacity: 0.8,
-          }}
-        />
-        
+      <View className="flex items-center justify-center w-10 h-10 relative">
         {/* Acceleration glow effect */}
         {isAccelerated && (
           <View 
@@ -170,21 +160,21 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
           />
         )}
         
-        {/* Probe icon - made larger and more visible */}
+        {/* Probe icon - styled as proper probe */}
         <View 
-          className="flex items-center justify-center w-8 h-8 rounded-full border-2 z-10"
+          className="flex items-center justify-center w-10 h-10 rounded-full border-2"
           style={{
-            backgroundColor: config.color + '90', // More visible transparency
+            backgroundColor: config.color + '40', // Semi-transparent background
             borderColor: config.color,
             shadowColor: config.color,
             shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.8,
-            shadowRadius: 6,
-            elevation: 8,
+            shadowOpacity: 0.6,
+            shadowRadius: 4,
+            elevation: 5,
           }}
         >
           <View>
-            {/* Use a larger colored circle */}
+            {/* Probe core */}
             <View 
               className="w-4 h-4 rounded-full"
               style={{ backgroundColor: config.color }}

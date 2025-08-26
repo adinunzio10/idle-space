@@ -296,7 +296,10 @@ export class ProbeManager {
         ...this.probeQueue.map(item => item.probe),
         ...Array.from(this.activeProbes.values()),
       ];
+      console.log('[ProbeManager] notifyProbeUpdate called with', allProbes.length, 'probes:', allProbes.map(p => `${p.type}(${p.status})`).join(', '));
       this.onProbeUpdate(allProbes);
+    } else {
+      console.log('[ProbeManager] notifyProbeUpdate called but no callback set');
     }
   }
 

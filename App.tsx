@@ -43,6 +43,8 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
   const headerHeight = 140 + insets.top; // Increased to accommodate beacon type selection
+
+  console.log('[GalaxyMapScreen] Received', probes.length, 'probes:', probes.map(p => `${p.type}(${p.status})`).join(', '));
   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -208,7 +210,9 @@ export default function App() {
       
       // Set up probe update callback
       const handleProbeUpdate = (updatedProbes: ProbeInstance[]) => {
+        console.log('[App] handleProbeUpdate called with', updatedProbes.length, 'probes:', updatedProbes.map(p => `${p.type}(${p.status}, progress=${p.travelProgress?.toFixed(2)})`).join(', '));
         setProbes(updatedProbes);
+        console.log('[App] setProbes called, state should update');
       };
       
       // FIXED: Set up probe deployment callback to create beacons
@@ -369,6 +373,8 @@ export default function App() {
     const selectedBeacon = selectedBeaconForUpgrade 
       ? gameState?.beacons[selectedBeaconForUpgrade]
       : null;
+
+    console.log('[App] Rendering GalaxyMapScreen with', probes.length, 'probes:', probes.map(p => `${p.type}(${p.status})`).join(', '));
 
     return (
       <SafeAreaProvider>
