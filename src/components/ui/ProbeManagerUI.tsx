@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { ProbeManager } from '../../core/ProbeManager';
 import { ProbeInstance, ProbeType, PROBE_TYPE_CONFIG } from '../../types/probe';
@@ -20,6 +21,7 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
   probeManager,
   onClose,
 }) => {
+  const insets = useSafeAreaInsets();
   const [queueStatus, setQueueStatus] = useState<ProbeQueueStatus>({
     queuedProbes: [],
     activeProbes: [],
@@ -121,7 +123,7 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
   };
 
   return (
-    <View className="flex-1 bg-surface rounded-t-xl overflow-hidden">
+    <View className="flex-1 bg-surface rounded-t-xl overflow-hidden" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="bg-background px-4 py-3 border-b border-text/10">
         <View className="flex-row justify-between items-center">
