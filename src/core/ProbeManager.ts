@@ -158,6 +158,7 @@ export class ProbeManager {
    * Set callback for probe updates
    */
   setOnProbeUpdate(callback: (probes: ProbeInstance[]) => void): void {
+    console.log('[ProbeManager] setOnProbeUpdate callback registered');
     this.onProbeUpdate = callback;
   }
 
