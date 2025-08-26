@@ -10,10 +10,13 @@ import { GalaxyMapView } from './src/components/galaxy/GalaxyMapView';
 import { Beacon } from './src/types/galaxy';
 import { BeaconType, BeaconSpecialization } from './src/types/beacon';
 import { BeaconSpecializationModal } from './src/components/ui/BeaconSpecializationModal';
+import { ProbeManagerUI } from './src/components/ui/ProbeManagerUI';
+import { ProbeInstance } from './src/types/probe';
 
 interface GalaxyMapScreenProps {
   onBack: () => void;
   beacons: Beacon[];
+  probes: ProbeInstance[];
   onBeaconSelect: (beacon: Beacon) => void;
   onMapPress: (position: { x: number; y: number }) => void;
   selectedBeaconType: BeaconType;
@@ -28,6 +31,7 @@ interface GalaxyMapScreenProps {
 const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   onBack,
   beacons,
+  probes,
   onBeaconSelect,
   onMapPress,
   selectedBeaconType,
@@ -148,6 +152,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           width={screenData.width}
           height={screenData.height - headerHeight}
           beacons={beacons}
+          probes={probes}
           onBeaconSelect={onBeaconSelect}
           onMapPress={onMapPress}
           showDebugOverlay={showDebugOverlay}
@@ -171,6 +176,8 @@ export default function App() {
   const [selectedBeaconForUpgrade, setSelectedBeaconForUpgrade] = useState<string | null>(null);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [beaconVersion, setBeaconVersion] = useState(0);
+  const [showProbeManager, setShowProbeManager] = useState(false);
+  const [probes, setProbes] = useState<ProbeInstance[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -206,6 +213,30 @@ export default function App() {
       setBeaconVersion(prev => prev + 1);
     }
   }, [showGalaxyMap, gameState]);
+
+  // Set up probe updates
+  useEffect(() => {
+    if (isInitialized && gameController) {
+      const probeManager = gameController.getProbeManager();
+      
+      // Set up probe update callback
+      const handleProbeUpdate = (updatedProbes: ProbeInstance[]) => {
+        setProbes(updatedProbes);
+      };
+      
+      probeManager.setOnProbeUpdate(handleProbeUpdate);
+      
+      // Get initial probe state
+      const initialProbeStatus = probeManager.getQueueStatus();
+      const allProbes = [...initialProbeStatus.queuedProbes, ...initialProbeStatus.activeProbes];
+      setProbes(allProbes);
+      
+      return () => {
+        // Clean up callback
+        probeManager.setOnProbeUpdate(() => {});
+      };
+    }
+  }, [isInitialized, gameController]);
 
   const handleSaveGame = async () => {
     try {
@@ -316,6 +347,7 @@ export default function App() {
         <GalaxyMapScreen 
           onBack={() => setShowGalaxyMap(false)}
           beacons={getBeaconsForMap()}
+          probes={probes}
           onBeaconSelect={handleBeaconSelect}
           onMapPress={handleMapPress}
           selectedBeaconType={selectedBeaconType}
@@ -337,6 +369,22 @@ export default function App() {
             setSelectedBeaconForUpgrade(null);
           }}
         />
+      </SafeAreaProvider>
+    );
+  }
+
+  // Show Probe Manager
+  if (showProbeManager) {
+    return (
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <View className="flex-1 bg-background">
+            <ProbeManagerUI
+              probeManager={gameController.getProbeManager()}
+              onClose={() => setShowProbeManager(false)}
+            />
+          </View>
+        </GestureHandlerRootView>
       </SafeAreaProvider>
     );
   }
@@ -378,6 +426,14 @@ export default function App() {
                   </Text>
                 </TouchableOpacity>
                 
+                <TouchableOpacity
+                  onPress={() => setShowProbeManager(true)}
+                  className="bg-primary px-6 py-3 rounded-lg border border-primary/50"
+                >
+                  <Text className="text-white font-semibold text-center">
+                    🚀 Probe Manager
+                  </Text>
+                </TouchableOpacity>
                 
                 <TouchableOpacity
                   onPress={handleSaveGame}

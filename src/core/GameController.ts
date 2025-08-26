@@ -4,6 +4,7 @@ import { ResourceManager } from './ResourceManager';
 import { ResourceGenerationEngine } from './ResourceGenerationEngine';
 import { BeaconPlacementManager } from './BeaconPlacementManager';
 import { BeaconConnectionManager } from './BeaconConnectionManager';
+import { ProbeManager } from './ProbeManager';
 import { GameState, DEFAULT_RESOURCES, DEFAULT_PLAYER_SETTINGS, DEFAULT_PLAYER_STATISTICS } from '../storage/schemas/GameState';
 import { BeaconType } from '../types/beacon';
 import { Point2D } from '../types/galaxy';
@@ -22,6 +23,7 @@ export class GameController {
   private generationEngine: ResourceGenerationEngine;
   private beaconPlacementManager: BeaconPlacementManager;
   private beaconConnectionManager: BeaconConnectionManager;
+  private probeManager: ProbeManager;
   private gameState: GameState | null = null;
   private autoSaveTimer: NodeJS.Timeout | null = null;
   private gameTimer: NodeJS.Timeout | null = null;
@@ -45,6 +47,7 @@ export class GameController {
       performanceMode: false,
     });
     this.beaconConnectionManager = new BeaconConnectionManager();
+    this.probeManager = ProbeManager.getInstance();
   }
 
   static getInstance(): GameController {
@@ -96,6 +99,9 @@ export class GameController {
       
       // Start resource generation
       this.generationEngine.start();
+      
+      // Initialize probe manager with background processing
+      await this.probeManager.initialize();
       
       if (this.config.enableAppStateHandling) {
         this.setupAppStateHandling();
@@ -151,6 +157,10 @@ export class GameController {
 
   getBeaconConnectionManager(): BeaconConnectionManager {
     return this.beaconConnectionManager;
+  }
+
+  getProbeManager(): ProbeManager {
+    return this.probeManager;
   }
 
   /**
@@ -383,6 +393,7 @@ export class GameController {
       this.stopAutoSave();
       this.stopGameTimer();
       this.generationEngine.stop();
+      await this.probeManager.stop();
       
       // Remove app state listener
       if (this.appStateSubscription) {

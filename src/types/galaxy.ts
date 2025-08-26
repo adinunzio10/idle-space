@@ -40,6 +40,7 @@ export interface GalaxyMapProps {
   width: number;
   height: number;
   beacons: Beacon[];
+  probes?: import('./probe').ProbeInstance[];
   onBeaconSelect?: (beacon: Beacon) => void;
   onMapPress?: (position: Point2D) => void;
   showDebugOverlay?: boolean;

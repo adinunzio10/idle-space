@@ -97,6 +97,7 @@ import BeaconRenderer from './BeaconRenderer';
 import BeaconClusterRenderer from './BeaconCluster';
 import ConnectionRenderer from './ConnectionRenderer';
 import StarField from './StarField';
+import { ProbeAnimationRenderer } from './ProbeAnimationRenderer';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -109,6 +110,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   width,
   height,
   beacons,
+  probes = [],
   onBeaconSelect,
   onMapPress,
   showDebugOverlay = false,
@@ -1143,6 +1145,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
               ))}
             </AnimatedG>
           </AnimatedSvg>
+          
+          {/* Probe Travel Animations - Render above SVG content */}
+          <ProbeAnimationRenderer
+            probes={probes}
+            scale={scale}
+            translateX={translateX}
+            translateY={translateY}
+            width={width}
+            height={height}
+          />
         </Animated.View>
       </GestureDetector>
     </View>
