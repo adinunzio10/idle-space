@@ -59,8 +59,8 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
     );
     
     probeScale.value = withSequence(
-      withTiming(0.2, { duration: 100 }),
-      withSpring(0.8, { damping: 15, stiffness: 200 })
+      withTiming(0.5, { duration: 100 }),
+      withSpring(1.2, { damping: 15, stiffness: 200 })
     );
     
     // Set rotation to face target
@@ -117,14 +117,20 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
 
   // Convert galaxy coordinates to screen coordinates
   const animatedStyle = useAnimatedStyle(() => {
-    // Transform galaxy coordinates to screen coordinates
+    // Transform galaxy coordinates to screen coordinates using same logic as GalaxyMapView
+    // Galaxy coordinates are transformed by scale and translate, then centered on screen
     const screenX = (probeX.value * scale.value) + translateX.value + screenWidth / 2;
     const screenY = (probeY.value * scale.value) + translateY.value + screenHeight / 2;
     
+    // Debug the coordinate calculation (reduced frequency)
+    if (probe.travelProgress % 0.2 < 0.1) { // Log every ~20% progress
+      console.log(`[AnimatedProbe] Probe ${probe.id}: galaxy(${probeX.value.toFixed(1)}, ${probeY.value.toFixed(1)}) -> screen(${screenX.toFixed(1)}, ${screenY.toFixed(1)}), scale=${scale.value.toFixed(2)}, opacity=${opacity.value.toFixed(2)}`);
+    }
+    
     return {
       position: 'absolute',
-      left: screenX - 12, // Center the probe (assuming 24px width)
-      top: screenY - 12,  // Center the probe (assuming 24px height)
+      left: screenX - 16, // Center the probe (32px width / 2)
+      top: screenY - 16,  // Center the probe (32px height / 2)
       transform: [
         { scale: probeScale.value },
         { rotate: `${rotation.value}deg` }
@@ -141,7 +147,7 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
   
   return (
     <Animated.View style={animatedStyle}>
-      <View className="flex items-center justify-center w-6 h-6 relative">
+      <View className="flex items-center justify-center w-8 h-8 relative">
         {/* Acceleration glow effect */}
         {isAccelerated && (
           <View 
@@ -150,24 +156,29 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = ({
               shadowColor: '#F59E0B',
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.8,
-              shadowRadius: 8,
+              shadowRadius: 12,
               elevation: 10,
             }}
           />
         )}
         
-        {/* Probe icon */}
+        {/* Probe icon - made larger and more visible */}
         <View 
-          className="flex items-center justify-center w-6 h-6 rounded-full border-2"
+          className="flex items-center justify-center w-8 h-8 rounded-full border-2"
           style={{
-            backgroundColor: config.color + '40', // Add transparency
+            backgroundColor: config.color + '60', // More visible transparency
             borderColor: config.color,
+            shadowColor: config.color,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.5,
+            shadowRadius: 4,
+            elevation: 5,
           }}
         >
           <View>
-            {/* Use a simple colored circle instead of emoji for better performance */}
+            {/* Use a larger colored circle */}
             <View 
-              className="w-2 h-2 rounded-full"
+              className="w-3 h-3 rounded-full"
               style={{ backgroundColor: config.color }}
             />
           </View>
@@ -202,11 +213,16 @@ export const ProbeAnimationRenderer: React.FC<ProbeAnimationRendererProps> = ({
   width,
   height,
 }) => {
+  // Debug logging (reduced verbosity)
+  console.log('[ProbeAnimationRenderer] Probes:', probes.length, 'Total');
+  
   // Only render probes that are actively traveling or recently deployed
   const activeProbes = probes.filter(probe => 
     probe.status === 'launching' || 
     (probe.status === 'deployed' && Date.now() - (probe.deploymentCompletedAt || 0) < 3000) // Show for 3 seconds after deployment
   );
+
+  console.log('[ProbeAnimationRenderer] Active probes:', activeProbes.length, activeProbes.map(p => `${p.type}(${p.status})`).join(', '));
 
   return (
     <View className="absolute inset-0" pointerEvents="none">

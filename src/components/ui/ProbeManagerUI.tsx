@@ -83,14 +83,20 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
 
   const launchDemoProbe = async (type: ProbeType) => {
     try {
-      // Launch probe at random position for demo
+      // Launch probe at random position for demo within galaxy bounds (0-2000)
       const randomPosition: Point2D = {
-        x: Math.random() * 2000 - 1000,
-        y: Math.random() * 2000 - 1000,
+        x: Math.random() * 1800 + 100, // 100-1900 to stay within bounds
+        y: Math.random() * 1800 + 100,
+      };
+      
+      // Start position near the galaxy center for visibility
+      const startPosition: Point2D = {
+        x: 1000, // Center of 2000x2000 galaxy
+        y: 1000,
       };
 
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const result = probeManager.queueProbe(type, randomPosition, 1);
+      const result = probeManager.queueProbe(type, randomPosition, 1, startPosition);
       
       if (result.success) {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
