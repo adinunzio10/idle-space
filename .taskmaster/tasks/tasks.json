@@ -793,7 +793,7 @@
         "description": "Investigate and resolve React Native Reanimated crashes occurring in galaxy map gesture handling, specifically JSI crashes in worklet execution and RNBetterPanGestureRecognizer context violations.",
         "details": "Debug the specific crash at facebook::jsi::Function::getHostFunction by analyzing worklet boundary violations in gesture handlers. Investigate worklet context isolation issues where JavaScript objects are being improperly serialized across worklet boundaries. Common causes include: SharedValue objects containing non-serializable JavaScript Map/Set objects, React state being accessed directly in worklets, gesture callbacks trying to call non-worklet functions synchronously. Fix by: replacing JavaScript Map objects with plain objects or arrays in SharedValue contexts, ensuring all gesture handler callbacks are properly marked as worklets or wrapped with runOnJS(), implementing proper error boundaries around worklet execution, adding worklet context validation to prevent cross-boundary violations. Use React Native Flipper and Chrome DevTools to trace worklet execution flow and identify memory leaks. Add comprehensive logging to gesture state machine transitions to isolate crash triggers.",
         "testStrategy": "Reproduce crash scenarios with rapid gesture combinations on galaxy map. Test gesture handlers under memory pressure and rapid state changes. Verify worklet execution stability with device rotation and app backgrounding. Use React Native debugging tools to monitor worklet memory usage and garbage collection. Test on both iOS and Android with debug/release builds. Create automated stress tests for gesture recognition with concurrent animations.",
-        "status": "pending",
+        "status": "cancelled",
         "dependencies": [
           11,
           12
@@ -858,7 +858,7 @@
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-08-25T03:08:03.166Z",
+      "updated": "2025-08-26T04:06:18.717Z",
       "description": "Tasks for master context"
     }
   }
