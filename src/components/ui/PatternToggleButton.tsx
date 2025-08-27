@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   withRepeat,
   interpolate,
+  runOnJS,
 } from 'react-native-reanimated';
 
 interface PatternToggleButtonProps {
@@ -48,7 +49,7 @@ export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
     })
     .onEnd(() => {
       scaleValue.value = withSpring(1, { damping: 15, stiffness: 400 });
-      onToggleVisualizations();
+      runOnJS(onToggleVisualizations)();
     });
 
   const longPressGesture = Gesture.LongPress()
@@ -58,7 +59,7 @@ export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
     })
     .onEnd(() => {
       scaleValue.value = withSpring(1, { damping: 15, stiffness: 400 });
-      onOpenPopup();
+      runOnJS(onOpenPopup)();
     });
 
   const combinedGesture = Gesture.Exclusive(longPressGesture, tapGesture);
