@@ -217,6 +217,70 @@ export class GameController {
   }
 
   /**
+   * Place a beacon with smart fallback to nearby positions if initial position fails
+   * Used primarily for probe deployments to handle placement conflicts
+   */
+  placeBeaconWithFallback(
+    targetPosition: Point2D, 
+    type: BeaconType
+  ): { success: boolean; beacon?: Beacon; error?: string; finalPosition?: Point2D } {
+    if (!this.gameState) {
+      return { success: false, error: 'Game not initialized' };
+    }
+
+    // Check if player has enough resources (base cost is 50 quantum data)
+    const cost = 50;
+    if (this.resourceManager.getResource('quantumData').isLessThan(cost)) {
+      return { success: false, error: 'Insufficient quantum data' };
+    }
+
+    // Attempt to place the beacon with fallback
+    const result = this.beaconPlacementManager.placeBeaconWithFallback(targetPosition, type);
+    
+    if (result.success && result.beacon) {
+      // Deduct resources
+      this.resourceManager.subtractResource('quantumData', cost);
+      
+      // Add beacon to game state
+      this.gameState.beacons[result.beacon.id] = {
+        id: result.beacon.id,
+        x: result.beacon.position.x,
+        y: result.beacon.position.y,
+        z: 0,
+        level: result.beacon.level,
+        type: result.beacon.type,
+        specialization: result.beacon.specialization,
+        status: result.beacon.status,
+        connections: result.beacon.connections,
+        createdAt: result.beacon.createdAt,
+        lastUpgraded: result.beacon.lastUpgraded,
+        generationRate: result.beacon.generationRate,
+        totalResourcesGenerated: result.beacon.totalResourcesGenerated,
+      };
+
+      // Update player statistics
+      this.gameState.player.statistics.beaconsPlaced++;
+
+      // Update beacon connection manager with all beacons
+      this.updateBeaconConnections();
+
+      // Update generation engine
+      this.generationEngine.updateFromGameState(this.gameState);
+
+      const finalPos = result.finalPosition || result.beacon.position;
+      const wasRelocated = finalPos.x !== targetPosition.x || finalPos.y !== targetPosition.y;
+      
+      if (wasRelocated) {
+        console.log(`[GameController] Placed ${type} beacon at fallback position (${finalPos.x}, ${finalPos.y}) instead of target (${targetPosition.x}, ${targetPosition.y})`);
+      } else {
+        console.log(`[GameController] Placed ${type} beacon at target position (${finalPos.x}, ${finalPos.y})`);
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Get all placed beacons
    */
   getBeacons(): Record<string, Beacon> {

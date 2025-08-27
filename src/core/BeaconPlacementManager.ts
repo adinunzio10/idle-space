@@ -81,6 +81,75 @@ export class BeaconPlacementManager {
   }
 
   /**
+   * Place a beacon with smart fallback to nearby positions if initial position fails
+   */
+  public placeBeaconWithFallback(
+    targetPosition: Point2D,
+    type: BeaconType,
+    level: number = 1,
+    maxAttempts: number = 12
+  ): { success: boolean; beacon?: Beacon; error?: string; finalPosition?: Point2D } {
+    // First try the exact target position
+    const directResult = this.placeBeacon(targetPosition, type, level);
+    if (directResult.success) {
+      return { ...directResult, finalPosition: targetPosition };
+    }
+
+    // If direct placement fails, try spiral search for alternative positions
+    const alternativePosition = this.findNearbyValidPosition(targetPosition, type, maxAttempts);
+    if (!alternativePosition) {
+      return {
+        success: false,
+        error: `No valid position found near target (${targetPosition.x}, ${targetPosition.y}). Original error: ${directResult.error}`,
+      };
+    }
+
+    // Try placing at the alternative position
+    const fallbackResult = this.placeBeacon(alternativePosition, type, level);
+    if (fallbackResult.success) {
+      return { ...fallbackResult, finalPosition: alternativePosition };
+    }
+
+    return {
+      success: false,
+      error: `Failed to place beacon even with fallback positions. Last error: ${fallbackResult.error}`,
+    };
+  }
+
+  /**
+   * Find a valid position near the target using spiral search pattern
+   */
+  private findNearbyValidPosition(
+    targetPosition: Point2D,
+    type: BeaconType,
+    maxAttempts: number = 12
+  ): Point2D | null {
+    const minDistance = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[type];
+    const searchRadius = minDistance * 0.8; // Start with 80% of minimum distance
+    const angleStep = (2 * Math.PI) / 8; // 8 directions (N, NE, E, SE, S, SW, W, NW)
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const radius = searchRadius * (1 + (attempt - 1) * 0.3); // Gradually increase radius
+      
+      // Try 8 directions at current radius
+      for (let i = 0; i < 8; i++) {
+        const angle = i * angleStep;
+        const testPosition: Point2D = {
+          x: targetPosition.x + radius * Math.cos(angle),
+          y: targetPosition.y + radius * Math.sin(angle),
+        };
+
+        const validation = this.validator.isValidPosition(testPosition, type);
+        if (validation.isValid) {
+          return testPosition;
+        }
+      }
+    }
+
+    return null; // No valid position found
+  }
+
+  /**
    * Remove a beacon
    */
   public removeBeacon(beaconId: string): boolean {

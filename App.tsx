@@ -178,17 +178,27 @@ export default function App() {
   const handleProbeDeployment = useCallback((probe: ProbeInstance) => {
     console.log(`[App] Probe ${probe.id} deployed at (${probe.targetPosition.x}, ${probe.targetPosition.y}), creating beacon`);
     
-    // Create beacon at probe's target position using the probe's type
-    const result = gameController.placeBeacon(probe.targetPosition, probe.type);
+    // Create beacon at probe's target position using the probe's type with smart fallback
+    const result = gameController.placeBeaconWithFallback(probe.targetPosition, probe.type);
     
-    if (result.success) {
+    if (result.success && result.beacon) {
       // Update game state to show the new beacon
       const updatedState = gameController.getGameState();
       setGameState(updatedState);
       setBeaconVersion(prev => prev + 1); // Force re-render
-      console.log(`[App] Successfully created ${probe.type} beacon from probe at (${probe.targetPosition.x}, ${probe.targetPosition.y})`);
+      
+      const finalPos = result.finalPosition || result.beacon.position;
+      const wasRelocated = finalPos.x !== probe.targetPosition.x || finalPos.y !== probe.targetPosition.y;
+      
+      if (wasRelocated) {
+        console.log(`[App] Probe ${probe.id}: Created ${probe.type} beacon at adjusted position (${finalPos.x.toFixed(1)}, ${finalPos.y.toFixed(1)}) - original target was too close to existing beacon`);
+        // TODO: Add visual notification for user about beacon relocation
+      } else {
+        console.log(`[App] Probe ${probe.id}: Successfully created ${probe.type} beacon at target position (${finalPos.x.toFixed(1)}, ${finalPos.y.toFixed(1)})`);
+      }
     } else {
-      console.error(`[App] Failed to create beacon from probe:`, result.error);
+      console.error(`[App] Probe ${probe.id}: Failed to create beacon even with fallback positions - ${result.error}`);
+      // TODO: Add visual error notification for user
     }
   }, [gameController]);
 
