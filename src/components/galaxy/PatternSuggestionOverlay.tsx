@@ -64,7 +64,7 @@ export const PatternSuggestionOverlay: React.FC<PatternSuggestionOverlayProps> =
 }) => {
   // Filter suggestions based on display mode and visibility
   const visibleSuggestions = useMemo(() => {
-    if (!suggestionState.isVisible) return [];
+    if (!suggestionState.mapVisualizationsVisible) return [];
     
     let filtered = suggestions.filter(s => 
       !suggestionState.dismissedSuggestions.has(s.id)
@@ -112,7 +112,7 @@ export const PatternSuggestionOverlay: React.FC<PatternSuggestionOverlayProps> =
     }
   }, [onSuggestionInteraction]);
 
-  if (!suggestionState.isVisible || visibleSuggestions.length === 0) {
+  if (!suggestionState.mapVisualizationsVisible || visibleSuggestions.length === 0) {
     return null;
   }
 
@@ -498,15 +498,19 @@ BonusIndicator.displayName = 'BonusIndicator';
 export const usePatternSuggestionState = (
   initialState: Partial<PatternSuggestionState> = {}
 ): [PatternSuggestionState, {
-  show: () => void;
-  hide: () => void;
+  showPopup: () => void;
+  hidePopup: () => void;
+  showMapVisualizations: () => void;
+  hideMapVisualizations: () => void;
+  toggleMapVisualizations: () => void;
   selectSuggestion: (suggestion: PatternSuggestion | null) => void;
   hoverSuggestion: (suggestion: PatternSuggestion | null) => void;
   dismissSuggestion: (suggestionId: string) => void;
   setDisplayMode: (mode: PatternSuggestionState['displayMode']) => void;
 }] => {
   const [state, setState] = React.useState<PatternSuggestionState>({
-    isVisible: true,
+    popupVisible: true,
+    mapVisualizationsVisible: true,
     selectedSuggestion: null,
     hoveredSuggestion: null,
     dismissedSuggestions: new Set(),
@@ -516,8 +520,11 @@ export const usePatternSuggestionState = (
   });
 
   const actions = useMemo(() => ({
-    show: () => setState(s => ({ ...s, isVisible: true })),
-    hide: () => setState(s => ({ ...s, isVisible: false })),
+    showPopup: () => setState(s => ({ ...s, popupVisible: true })),
+    hidePopup: () => setState(s => ({ ...s, popupVisible: false })),
+    showMapVisualizations: () => setState(s => ({ ...s, mapVisualizationsVisible: true })),
+    hideMapVisualizations: () => setState(s => ({ ...s, mapVisualizationsVisible: false })),
+    toggleMapVisualizations: () => setState(s => ({ ...s, mapVisualizationsVisible: !s.mapVisualizationsVisible })),
     selectSuggestion: (suggestion: PatternSuggestion | null) => 
       setState(s => ({ ...s, selectedSuggestion: suggestion })),
     hoverSuggestion: (suggestion: PatternSuggestion | null) => 

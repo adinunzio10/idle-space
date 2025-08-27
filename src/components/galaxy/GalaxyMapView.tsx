@@ -99,6 +99,7 @@ import ConnectionRenderer from './ConnectionRenderer';
 import PatternRenderer, { usePatternRenderingQuality } from './PatternRenderer';
 import { PatternSuggestionOverlay, usePatternSuggestionState } from './PatternSuggestionOverlay';
 import { PlacementHintSystem } from '../ui/PlacementHintSystem';
+import { PatternToggleButton } from '../ui/PatternToggleButton';
 import StarField from './StarField';
 import { ProbeAnimationRenderer } from './ProbeAnimationRenderer';
 import { PatternSuggestionEngine } from '../../utils/patterns/PatternSuggestionEngine';
@@ -244,9 +245,15 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Pattern suggestion state management
   const [suggestionState, suggestionActions] = usePatternSuggestionState({
-    isVisible: true,
+    popupVisible: true,
+    mapVisualizationsVisible: true,
     displayMode: 'best',
   });
+
+  // Check if Pattern Opportunities popup is currently visible (not map visualizations)
+  const isPatternHintPopupVisible = useMemo(() => {
+    return suggestionState.popupVisible && (patternAnalysis?.suggestedPositions?.length || 0) > 0;
+  }, [suggestionState.popupVisible, patternAnalysis?.suggestedPositions?.length]);
 
   // Pattern rendering quality settings based on performance
   const patternRenderingQuality = usePatternRenderingQuality(
@@ -460,7 +467,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     setRenderingState(newRenderingState);
     
     // Update pattern suggestions when patterns change (throttled for performance)
-    if (patterns.length > 0 && suggestionState.isVisible) {
+    if (patterns.length > 0 && (suggestionState.popupVisible || suggestionState.mapVisualizationsVisible)) {
       try {
         const analysis = suggestionEngine.analyzePatternOpportunities(beacons);
         setPatternAnalysis(analysis);
@@ -927,13 +934,15 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     suggestionActions.selectSuggestion(suggestion);
   }, [onMapPress, suggestionActions]);
 
-  const handleHintDismiss = useCallback((suggestionId: string) => {
-    suggestionActions.dismissSuggestion(suggestionId);
-  }, [suggestionActions]);
 
   // Handle single tap - worklet-safe callback that receives necessary data as parameters
   // WORKLET PATTERN: Pass React state as parameters instead of closure capture
-  const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[]) => {
+  const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[], isPopupVisible: boolean) => {
+    // Don't process taps if the Pattern Opportunities popup is visible
+    if (isPopupVisible) {
+      return;
+    }
+    
     const screenPoint: Point2D = { x: tapX, y: tapY };
     const currentViewport: ViewportState = {
       translateX: currentTranslateX,
@@ -997,7 +1006,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     } else if (onMapPress) {
       onMapPress(galaxyPoint);
     }
-  }, [beacons, onBeaconSelect, onMapPress]);
+  }, [beacons, onBeaconSelect, onMapPress, isPatternHintPopupVisible]);
 
   // Single tap for beacon/cluster selection or map interaction with optimized thresholds
   const tapThresholds = gestureConfig.getTapThresholds();
@@ -1023,7 +1032,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         viewportState.bounds,
         renderingState.clusters,
         renderingState.connections,
-        renderingState.visibleBeacons
+        renderingState.visibleBeacons,
+        isPatternHintPopupVisible
       );
     });
 
@@ -1261,13 +1271,21 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
           {/* Pattern placement hint system - Floating UI overlay */}
           <PlacementHintSystem
             analysis={patternAnalysis}
-            isVisible={suggestionState.isVisible && (patternAnalysis?.suggestedPositions?.length || 0) > 0}
-            maxHints={3}
+            isVisible={suggestionState.popupVisible && (patternAnalysis?.suggestedPositions?.length || 0) > 0}
             onHintPress={handleHintPress}
-            onHintDismiss={handleHintDismiss}
             onSuggestionInteraction={handleSuggestionInteraction}
+            onClose={suggestionActions.hidePopup}
             position="top"
             enableAnimations={!renderingState.performanceMode}
+          />
+
+          {/* Pattern toggle button - Always available when patterns exist */}
+          <PatternToggleButton
+            patternCount={patternAnalysis?.suggestedPositions?.length || 0}
+            isMapVisualizationsVisible={suggestionState.mapVisualizationsVisible}
+            onToggleVisualizations={suggestionActions.toggleMapVisualizations}
+            onOpenPopup={suggestionActions.showPopup}
+            position="bottom-right"
           />
         </Animated.View>
       </GestureDetector>

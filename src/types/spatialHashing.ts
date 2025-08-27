@@ -224,7 +224,8 @@ export interface PlacementHintConfig {
  * Pattern suggestion UI state
  */
 export interface PatternSuggestionState {
-  isVisible: boolean;
+  popupVisible: boolean;
+  mapVisualizationsVisible: boolean;
   selectedSuggestion: PatternSuggestion | null;
   hoveredSuggestion: PatternSuggestion | null;
   dismissedSuggestions: Set<string>;

@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -30,8 +30,8 @@ interface PlacementHintSystemProps {
   isVisible: boolean;
   maxHints?: number;
   onHintPress?: (suggestion: PatternSuggestion) => void;
-  onHintDismiss?: (suggestionId: string) => void;
   onSuggestionInteraction?: (event: SuggestionInteractionEvent) => void;
+  onClose?: () => void;
   position?: 'top' | 'bottom' | 'left' | 'right' | 'floating';
   enableAnimations?: boolean;
 }
@@ -41,20 +41,19 @@ export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(({
   isVisible,
   maxHints = DEFAULT_PLACEMENT_HINT_CONFIG.maxHints,
   onHintPress,
-  onHintDismiss,
   onSuggestionInteraction,
+  onClose,
   position = 'top',
   enableAnimations = true,
 }) => {
-  // Filter and prioritize suggestions
+  // Filter and prioritize suggestions (show all, no limit)
   const displayedHints = useMemo(() => {
     if (!analysis || !analysis.suggestedPositions) return [];
     
     return analysis.suggestedPositions
       .filter(s => s.potentialBonus >= DEFAULT_PLACEMENT_HINT_CONFIG.minBonusThreshold)
-      .sort((a, b) => b.priority - a.priority)
-      .slice(0, maxHints);
-  }, [analysis, maxHints]);
+      .sort((a, b) => b.priority - a.priority);
+  }, [analysis]);
 
   // Animation value for container visibility
   const containerAnimation = useSharedValue(0);
@@ -95,16 +94,33 @@ export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(({
       containerAnimatedStyle,
     ]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pattern Opportunities</Text>
-        <Text style={styles.headerSubtitle}>
-          {analysis?.totalPotentialBonus ? 
-            `+${analysis.totalPotentialBonus.toFixed(1)}× total bonus potential` : 
-            'Complete patterns for bonus multipliers'
-          }
-        </Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Pattern Opportunities</Text>
+            <Text style={styles.headerSubtitle}>
+              {analysis?.totalPotentialBonus ? 
+                `+${analysis.totalPotentialBonus.toFixed(1)}× total bonus potential` : 
+                'Complete patterns for bonus multipliers'
+              }
+            </Text>
+          </View>
+          {onClose && (
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       
-      <View style={styles.hintsContainer}>
+      <ScrollView 
+        style={styles.hintsContainer}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+      >
         {displayedHints.map((hint, index) => (
           <HintCard
             key={hint.id}
@@ -120,18 +136,9 @@ export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(({
                 timestamp: Date.now(),
               });
             }}
-            onDismiss={() => {
-              onHintDismiss?.(hint.id);
-              onSuggestionInteraction?.({
-                type: 'dismiss',
-                suggestion: hint,
-                position: hint.suggestedPosition,
-                timestamp: Date.now(),
-              });
-            }}
           />
         ))}
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 });
@@ -146,7 +153,6 @@ interface HintCardProps {
   index: number;
   enableAnimations: boolean;
   onPress: () => void;
-  onDismiss: () => void;
 }
 
 const HintCard: React.FC<HintCardProps> = memo(({
@@ -154,7 +160,6 @@ const HintCard: React.FC<HintCardProps> = memo(({
   index,
   enableAnimations,
   onPress,
-  onDismiss,
 }) => {
   const cardAnimation = useSharedValue(0);
   const pressAnimation = useSharedValue(0);
@@ -244,14 +249,6 @@ const HintCard: React.FC<HintCardProps> = memo(({
             color="#F59E0B"
           />
         </View>
-      </TouchableOpacity>
-      
-      <TouchableOpacity
-        style={styles.dismissButton}
-        onPress={onDismiss}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.dismissButtonText}>×</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -364,6 +361,17 @@ const styles = {
     paddingBottom: 12,
   },
 
+  headerContent: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'flex-start' as const,
+  },
+
+  headerText: {
+    flex: 1,
+    marginRight: 12,
+  },
+
   headerTitle: {
     fontSize: 18,
     fontWeight: '600' as any,
@@ -376,12 +384,28 @@ const styles = {
     color: '#9CA3AF',
   },
 
+  closeButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(107, 114, 128, 0.3)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+
+  closeButtonText: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    fontWeight: 'bold' as any,
+  },
+
   hintsContainer: {
-    gap: 12,
+    maxHeight: 300,
   },
 
   hintCard: {
     position: 'relative' as const,
+    marginBottom: 12,
   },
 
   hintCardTouchable: {
@@ -471,24 +495,6 @@ const styles = {
   metricValue: {
     fontSize: 14,
     fontWeight: '600' as any,
-  },
-
-  dismissButton: {
-    position: 'absolute' as const,
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(107, 114, 128, 0.3)',
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-
-  dismissButtonText: {
-    fontSize: 16,
-    color: '#9CA3AF',
-    fontWeight: 'bold' as any,
   },
 };
 
