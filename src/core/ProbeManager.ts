@@ -222,9 +222,14 @@ export class ProbeManager {
       for (const probeId of completedProbeIds) {
         const probe = this.activeProbes.get(probeId);
         if (probe) {
-          probe.status = 'deployed';
-          probe.deploymentCompletedAt = Date.now();
-          probe.travelProgress = 1;
+          const deployedProbe = {
+            ...probe,
+            status: 'deployed' as const,
+            deploymentCompletedAt: Date.now(),
+            travelProgress: 1
+          };
+          this.activeProbes.set(probeId, deployedProbe);
+          this.deployedProbeIds.add(probeId); // Mark as deployed to prevent duplicate callbacks
         }
       }
       
@@ -267,11 +272,14 @@ export class ProbeManager {
       const nextItem = this.probeQueue.shift()!;
       const probe = nextItem.probe;
 
-      // Start deployment
-      probe.status = 'launching';
-      probe.deploymentStartedAt = Date.now();
+      // Start deployment - create new object to avoid mutation
+      const launchingProbe = {
+        ...probe,
+        status: 'launching' as const,
+        deploymentStartedAt: Date.now()
+      };
       
-      this.activeProbes.set(probe.id, probe);
+      this.activeProbes.set(probe.id, launchingProbe);
       
       console.log(`[ProbeManager] Started deploying ${probe.type} probe ${probe.id} (slot ${i + 1}/${this.maxSimultaneousLaunches})`);
     }
@@ -302,13 +310,19 @@ export class ProbeManager {
         const elapsed = (now - probe.deploymentStartedAt) / 1000;
         const progress = Math.min(elapsed / adjustedDeploymentTime, 1);
 
-        probe.travelProgress = progress;
+        // Create new probe object with updated progress (avoid worklet warnings)
+        const updatedProbe = { ...probe, travelProgress: progress };
+        this.activeProbes.set(probeId, updatedProbe);
 
         if (progress >= 1) {
-          // Probe deployment completed
-          probe.status = 'deployed';
-          probe.deploymentCompletedAt = now;
-          probe.travelProgress = 1;
+          // Probe deployment completed - create new object with final status
+          const deployedProbe = {
+            ...updatedProbe,
+            status: 'deployed' as const,
+            deploymentCompletedAt: now,
+            travelProgress: 1
+          };
+          this.activeProbes.set(probeId, deployedProbe);
 
           console.log(`[ProbeManager] Probe ${probeId} deployment completed`);
           
@@ -319,13 +333,16 @@ export class ProbeManager {
             
             this.onProbeDeployedCallbacks.forEach(callback => {
               try {
-                callback(probe);
+                callback(deployedProbe);
               } catch (error) {
                 console.error('[ProbeManager] Error in probe deployed callback:', error);
               }
             });
           }
 
+          hasUpdates = true;
+        } else if (updatedProbe !== probe) {
+          // Progress updated but not complete
           hasUpdates = true;
         }
       } else if (probe.status === 'deployed' && probe.deploymentCompletedAt) {
