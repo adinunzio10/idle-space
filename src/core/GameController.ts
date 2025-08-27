@@ -45,6 +45,7 @@ export class GameController {
       bounds: { minX: -10000, minY: -10000, maxX: 10000, maxY: 10000 },
       enableSpatialIndexing: true,
       performanceMode: false,
+      enablePatternSuggestions: true,
     });
     this.beaconConnectionManager = new BeaconConnectionManager();
     this.probeManager = ProbeManager.getInstance();

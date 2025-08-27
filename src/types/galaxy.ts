@@ -99,6 +99,43 @@ export interface GeometricPattern {
   center: Point2D;
   bonus: number; // Multiplier from this pattern
   isComplete: boolean;
+  renderInfo?: PatternRenderInfo;
+}
+
+export interface PatternRenderInfo {
+  shouldRender: boolean;
+  isVisible: boolean;
+  screenBounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
+  estimatedScreenSize: number; // Approximate size in screen pixels
+  lodLevel: number; // Level of detail for this pattern
+  animationState: PatternAnimationState;
+  visualPriority: number; // 0-10, higher = more important to render
+  lastUpdateFrame: number;
+}
+
+export interface PatternAnimationState {
+  formationProgress: number; // 0-1, pattern formation animation
+  isAnimating: boolean;
+  hasFormed: boolean; // Whether formation animation has completed
+  pulsePhase: number; // 0-1, continuous pulse for active patterns
+  glowIntensity: number; // 0-1, glow effect intensity
+  shimmerProgress: number; // 0-1, shimmer animation for complex patterns
+  bonusFlashActive: boolean; // Whether bonus flash effect is active
+  particlesActive: boolean; // Whether particle effects are active
+  lastAnimationUpdate: number; // Timestamp of last animation update
+}
+
+export interface PatternOverlapInfo {
+  overlapsWithPatterns: string[]; // IDs of overlapping patterns
+  overlapType: 'none' | 'vertex' | 'edge' | 'partial' | 'nested' | 'identical';
+  overlapSeverity: number; // 0-1, how much this pattern overlaps
+  renderOrder: number; // Z-index for overlapping patterns
+  blendMode: 'normal' | 'multiply' | 'overlay' | 'soft-light';
 }
 
 export interface RenderingState {

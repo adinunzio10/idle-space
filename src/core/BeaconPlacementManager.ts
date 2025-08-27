@@ -1,18 +1,24 @@
-import { Point2D } from '../types/galaxy';
+import { Point2D, PatternType } from '../types/galaxy';
 import { 
   BeaconType,
   BeaconValidationResult,
   BeaconPlacementInfo,
   BEACON_PLACEMENT_CONFIG,
 } from '../types/beacon';
+import {
+  PatternSuggestion,
+  PatternCompletionAnalysis,
+} from '../types/spatialHashing';
 import { Beacon, BeaconFactory } from '../entities';
 import { PlacementValidator, PlacementBounds, PlacementConfig } from '../utils/spatial/PlacementValidator';
 import { QuadTreeSpatialIndex } from '../utils/spatial/quadtree';
+import { PatternDetector } from '../utils/patterns/detection';
 
 export interface PlacementManagerConfig {
   bounds: PlacementBounds;
   enableSpatialIndexing: boolean;
   performanceMode: boolean;
+  enablePatternSuggestions: boolean;
 }
 
 export class BeaconPlacementManager {
@@ -20,6 +26,7 @@ export class BeaconPlacementManager {
   private spatialIndex: QuadTreeSpatialIndex | null;
   private beacons: Map<string, Beacon>;
   private config: PlacementManagerConfig;
+  private patternDetector: PatternDetector | null;
 
   constructor(config: PlacementManagerConfig) {
     this.config = config;
@@ -42,6 +49,11 @@ export class BeaconPlacementManager {
           width: config.bounds.maxX - config.bounds.minX,
           height: config.bounds.maxY - config.bounds.minY,
         })
+      : null;
+    
+    // Initialize pattern detector for suggestions
+    this.patternDetector = config.enablePatternSuggestions 
+      ? new PatternDetector()
       : null;
   }
 
@@ -411,19 +423,222 @@ export class BeaconPlacementManager {
   }
 
   /**
-   * Get performance metrics
+   * Get pattern suggestions for optimal beacon placement
+   */
+  public getPatternSuggestions(): PatternSuggestion[] {
+    if (!this.patternDetector || !this.config.enablePatternSuggestions) {
+      return [];
+    }
+
+    const beacons = this.getAllBeacons();
+    return this.patternDetector.getPatternSuggestions(beacons);
+  }
+
+  /**
+   * Get comprehensive pattern completion analysis
+   */
+  public getPatternCompletionAnalysis(): PatternCompletionAnalysis | null {
+    if (!this.patternDetector || !this.config.enablePatternSuggestions) {
+      return null;
+    }
+
+    const beacons = this.getAllBeacons();
+    return this.patternDetector.getPatternCompletionAnalysis(beacons);
+  }
+
+  /**
+   * Get strategic placement recommendations based on resources and game phase
+   */
+  public getStrategicRecommendations(
+    availableResources: number,
+    gamePhase: 'early' | 'mid' | 'late' = 'mid'
+  ): PatternSuggestion[] {
+    if (!this.patternDetector || !this.config.enablePatternSuggestions) {
+      return [];
+    }
+
+    const beacons = this.getAllBeacons();
+    return this.patternDetector.getStrategicRecommendations(
+      beacons,
+      availableResources,
+      gamePhase
+    );
+  }
+
+  /**
+   * Get pattern suggestions for a specific area
+   */
+  public getAreaPatternSuggestions(
+    centerPosition: Point2D,
+    radius: number
+  ): PatternSuggestion[] {
+    if (!this.patternDetector || !this.config.enablePatternSuggestions) {
+      return [];
+    }
+
+    const beacons = this.getAllBeacons();
+    const analysis = this.patternDetector.getPatternCompletionAnalysis(beacons);
+    
+    return analysis.suggestedPositions.filter(suggestion => {
+      const distance = Math.sqrt(
+        Math.pow(suggestion.suggestedPosition.x - centerPosition.x, 2) +
+        Math.pow(suggestion.suggestedPosition.y - centerPosition.y, 2)
+      );
+      return distance <= radius;
+    });
+  }
+
+  /**
+   * Evaluate placement quality based on pattern formation potential
+   */
+  public evaluatePlacementQuality(position: Point2D, type: BeaconType): {
+    isValid: boolean;
+    patternPotential: number;
+    expectedBonus: number;
+    suggestions: string[];
+  } {
+    // Basic validation first
+    const validation = this.validatePlacement(position, type);
+    
+    if (!validation.isValid) {
+      return {
+        isValid: false,
+        patternPotential: 0,
+        expectedBonus: 0,
+        suggestions: [`Invalid placement: ${validation.reasons.join(', ')}`],
+      };
+    }
+
+    if (!this.patternDetector || !this.config.enablePatternSuggestions) {
+      return {
+        isValid: true,
+        patternPotential: 0.5, // Default neutral potential
+        expectedBonus: 1,
+        suggestions: ['Pattern analysis not available'],
+      };
+    }
+
+    // Create temporary beacon for analysis
+    const tempBeacon = BeaconFactory.create({
+      position,
+      type,
+      level: 1,
+    });
+
+    const beacons = [...this.getAllBeacons(), tempBeacon];
+    const analysis = this.patternDetector.getPatternCompletionAnalysis(beacons);
+
+    // Calculate metrics
+    const nearbyPatterns = analysis.suggestedPositions.filter(s => {
+      const distance = Math.sqrt(
+        Math.pow(s.suggestedPosition.x - position.x, 2) +
+        Math.pow(s.suggestedPosition.y - position.y, 2)
+      );
+      return distance < 200; // Within pattern formation range
+    });
+
+    const patternPotential = Math.min(1, nearbyPatterns.length / 3); // Normalize to 0-1
+    const expectedBonus = nearbyPatterns.length > 0 
+      ? nearbyPatterns.reduce((sum, s) => sum + s.potentialBonus, 0) / nearbyPatterns.length
+      : 1;
+
+    // Generate suggestions
+    const suggestions: string[] = [];
+    if (nearbyPatterns.length === 0) {
+      suggestions.push('No immediate pattern opportunities nearby');
+    } else {
+      suggestions.push(`${nearbyPatterns.length} pattern(s) could be completed nearby`);
+      if (expectedBonus > 2) {
+        suggestions.push(`High bonus potential: ${expectedBonus.toFixed(1)}×`);
+      }
+    }
+
+    return {
+      isValid: true,
+      patternPotential,
+      expectedBonus,
+      suggestions,
+    };
+  }
+
+  /**
+   * Get positions that would maximize pattern formation
+   */
+  public findOptimalPatternPositions(
+    searchArea: { center: Point2D; radius: number },
+    type: BeaconType,
+    count: number = 3
+  ): { position: Point2D; score: number; patterns: PatternType[] }[] {
+    if (!this.patternDetector || !this.config.enablePatternSuggestions) {
+      return this.findOptimalPositions(searchArea.center, searchArea.radius, type, count)
+        .map(pos => ({ position: pos, score: 0.5, patterns: [] }));
+    }
+
+    const beacons = this.getAllBeacons();
+    const analysis = this.patternDetector.getPatternCompletionAnalysis(beacons);
+
+    // Filter suggestions within search area
+    const candidatePositions = analysis.suggestedPositions
+      .filter(suggestion => {
+        const distance = Math.sqrt(
+          Math.pow(suggestion.suggestedPosition.x - searchArea.center.x, 2) +
+          Math.pow(suggestion.suggestedPosition.y - searchArea.center.y, 2)
+        );
+        return distance <= searchArea.radius;
+      })
+      .map(suggestion => ({
+        position: suggestion.suggestedPosition,
+        score: suggestion.priority,
+        patterns: [suggestion.type],
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, count);
+
+    // If we don't have enough pattern-based suggestions, fill with regular optimal positions
+    if (candidatePositions.length < count) {
+      const regularPositions = this.findOptimalPositions(
+        searchArea.center,
+        searchArea.radius,
+        type,
+        count - candidatePositions.length
+      ).map(pos => ({
+        position: pos,
+        score: 0.3,
+        patterns: [] as PatternType[],
+      }));
+
+      candidatePositions.push(...regularPositions);
+    }
+
+    return candidatePositions;
+  }
+
+  /**
+   * Get performance metrics including pattern analysis
    */
   public getMetrics(): {
     beaconCount: number;
     spatialIndexEnabled: boolean;
     performanceMode: boolean;
     bounds: PlacementBounds;
+    patternSuggestionsEnabled: boolean;
+    patternMetrics?: any;
   } {
-    return {
+    const baseMetrics = {
       beaconCount: this.beacons.size,
       spatialIndexEnabled: this.spatialIndex !== null,
       performanceMode: this.config.performanceMode,
       bounds: this.config.bounds,
+      patternSuggestionsEnabled: this.config.enablePatternSuggestions,
     };
+
+    if (this.patternDetector && this.config.enablePatternSuggestions) {
+      return {
+        ...baseMetrics,
+        patternMetrics: this.patternDetector.getSpatialMetrics(),
+      };
+    }
+
+    return baseMetrics;
   }
 }

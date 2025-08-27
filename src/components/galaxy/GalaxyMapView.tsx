@@ -96,8 +96,14 @@ import { gestureConfig, GESTURE_THRESHOLDS } from '../../constants/gestures';
 import BeaconRenderer from './BeaconRenderer';
 import BeaconClusterRenderer from './BeaconCluster';
 import ConnectionRenderer from './ConnectionRenderer';
+import PatternRenderer, { usePatternRenderingQuality } from './PatternRenderer';
+import { PatternSuggestionOverlay, usePatternSuggestionState } from './PatternSuggestionOverlay';
+import { PlacementHintSystem } from '../ui/PlacementHintSystem';
 import StarField from './StarField';
 import { ProbeAnimationRenderer } from './ProbeAnimationRenderer';
+import { PatternSuggestionEngine } from '../../utils/patterns/PatternSuggestionEngine';
+import { SpatialPatternCache } from '../../utils/patterns/SpatialPatternCache';
+import { SpatialHashMap } from '../../utils/spatial/SpatialHashMap';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -203,6 +209,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     performanceMode: false,
   });
 
+  // Pattern completion analysis state
+  const [patternAnalysis, setPatternAnalysis] = useState<any>(null);
+  const [patternSuggestions, setPatternSuggestions] = useState<any[]>([]);
+
   // Performance monitoring hook
   const { startFrame, endFrame, getQualitySettings } = usePerformanceMonitor();
 
@@ -224,6 +234,25 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Pattern detector for geometric patterns
   const patternDetector = useMemo(() => new PatternDetector(), []);
+
+  // Spatial hashing components for pattern suggestions
+  const spatialHashMap = useMemo(() => new SpatialHashMap(), []);
+  const spatialCache = useMemo(() => new SpatialPatternCache(), []);
+  const suggestionEngine = useMemo(() => 
+    new PatternSuggestionEngine(spatialHashMap), [spatialHashMap]
+  );
+
+  // Pattern suggestion state management
+  const [suggestionState, suggestionActions] = usePatternSuggestionState({
+    isVisible: true,
+    displayMode: 'best',
+  });
+
+  // Pattern rendering quality settings based on performance
+  const patternRenderingQuality = usePatternRenderingQuality(
+    renderingState.patterns.length,
+    viewportState.scale
+  );
 
   // Initialize performance monitoring
   React.useEffect(() => {
@@ -429,6 +458,18 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     };
     
     setRenderingState(newRenderingState);
+    
+    // Update pattern suggestions when patterns change (throttled for performance)
+    if (patterns.length > 0 && suggestionState.isVisible) {
+      try {
+        const analysis = suggestionEngine.analyzePatternOpportunities(beacons);
+        setPatternAnalysis(analysis);
+        setPatternSuggestions(analysis.suggestedPositions || []);
+      } catch (error) {
+        console.warn('Failed to analyze pattern opportunities:', error);
+      }
+    }
+    
     endFrame(); // End performance monitoring
   }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings]);
 
@@ -859,6 +900,37 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       runOnJS(updateViewportState)(translateX.value, translateY.value, clampedScale);
     });
 
+  // Handle pattern suggestion interactions
+  const handleSuggestionInteraction = useCallback((event: any) => {
+    switch (event.type) {
+      case 'select':
+        suggestionActions.selectSuggestion(event.suggestion);
+        // Auto-place beacon at suggested position if onMapPress is available
+        if (onMapPress) {
+          onMapPress(event.position);
+        }
+        break;
+      case 'dismiss':
+        suggestionActions.dismissSuggestion(event.suggestion.id);
+        break;
+      case 'hover':
+        suggestionActions.hoverSuggestion(event.suggestion);
+        break;
+    }
+  }, [suggestionActions, onMapPress]);
+
+  // Handle placement hint interactions
+  const handleHintPress = useCallback((suggestion: any) => {
+    if (onMapPress) {
+      onMapPress(suggestion.suggestedPosition);
+    }
+    suggestionActions.selectSuggestion(suggestion);
+  }, [onMapPress, suggestionActions]);
+
+  const handleHintDismiss = useCallback((suggestionId: string) => {
+    suggestionActions.dismissSuggestion(suggestionId);
+  }, [suggestionActions]);
+
   // Handle single tap - worklet-safe callback that receives necessary data as parameters
   // WORKLET PATTERN: Pass React state as parameters instead of closure capture
   const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[]) => {
@@ -1122,6 +1194,20 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
                   );
                 })}
 
+              {/* Render geometric patterns (after connections, before beacons) */}
+              <PatternRenderer
+                patterns={renderingState.patterns}
+                beacons={beacons}
+                viewportState={viewportState}
+                screenWidth={width}
+                screenHeight={height}
+                qualitySettings={patternRenderingQuality}
+                onPatternPress={(pattern) => {
+                  // TODO: Add pattern info modal or tooltip
+                  console.log('Pattern pressed:', pattern);
+                }}
+              />
+
               {/* Render beacon clusters */}
               {renderingState.clusters.map((cluster) => (
                 <BeaconClusterRenderer
@@ -1147,6 +1233,18 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
                   onPress={onBeaconSelect}
                 />
               ))}
+
+              {/* Pattern suggestion overlay */}
+              <PatternSuggestionOverlay
+                suggestions={patternSuggestions}
+                beacons={beacons}
+                viewportState={viewportState}
+                suggestionState={suggestionState}
+                onSuggestionInteraction={handleSuggestionInteraction}
+                showGhostBeacons={true}
+                showPatternPreviews={true}
+                enableAnimations={!renderingState.performanceMode}
+              />
             </AnimatedG>
           </AnimatedSvg>
           
@@ -1158,6 +1256,18 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
             translateY={translateY}
             width={width}
             height={height}
+          />
+          
+          {/* Pattern placement hint system - Floating UI overlay */}
+          <PlacementHintSystem
+            analysis={patternAnalysis}
+            isVisible={suggestionState.isVisible && (patternAnalysis?.suggestedPositions?.length || 0) > 0}
+            maxHints={3}
+            onHintPress={handleHintPress}
+            onHintDismiss={handleHintDismiss}
+            onSuggestionInteraction={handleSuggestionInteraction}
+            position="top"
+            enableAnimations={!renderingState.performanceMode}
           />
         </Animated.View>
       </GestureDetector>

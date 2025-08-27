@@ -1,4 +1,8 @@
 import { Point2D, Beacon } from '../../types/galaxy';
+import { GeometryUtils } from './GeometryUtils';
+
+// Create a global geometry utilities instance
+const geometryUtils = new GeometryUtils();
 
 /**
  * Calculate the center point of a set of beacons
@@ -8,44 +12,22 @@ export function calculateCentroid(beacons: Beacon[]): Point2D {
     return { x: 0, y: 0 };
   }
   
-  const sum = beacons.reduce(
-    (acc, beacon) => ({
-      x: acc.x + beacon.position.x,
-      y: acc.y + beacon.position.y,
-    }),
-    { x: 0, y: 0 }
-  );
-  
-  return {
-    x: sum.x / beacons.length,
-    y: sum.y / beacons.length,
-  };
+  const points = beacons.map(beacon => beacon.position);
+  return geometryUtils.polygonCentroid(points);
 }
 
 /**
  * Calculate distance between two points
  */
 export function distance(point1: Point2D, point2: Point2D): number {
-  const dx = point2.x - point1.x;
-  const dy = point2.y - point1.y;
-  return Math.sqrt(dx * dx + dy * dy);
+  return geometryUtils.distance(point1, point2);
 }
 
 /**
  * Calculate the angle between three points (angle at middle point)
  */
 export function angleBetweenPoints(point1: Point2D, center: Point2D, point2: Point2D): number {
-  const angle1 = Math.atan2(point1.y - center.y, point1.x - center.x);
-  const angle2 = Math.atan2(point2.y - center.y, point2.x - center.x);
-  
-  let angle = angle2 - angle1;
-  
-  // Normalize to [0, 2π]
-  while (angle < 0) angle += 2 * Math.PI;
-  while (angle >= 2 * Math.PI) angle -= 2 * Math.PI;
-  
-  // Return the smaller angle
-  return Math.min(angle, 2 * Math.PI - angle);
+  return geometryUtils.angleBetweenPoints(point1, center, point2);
 }
 
 /**
@@ -54,10 +36,10 @@ export function angleBetweenPoints(point1: Point2D, center: Point2D, point2: Poi
 export function isRegularPolygon(points: Point2D[], tolerance: number = 0.2): boolean {
   if (points.length < 3) return false;
   
-  const center = calculateCentroid(points.map(p => ({ id: '', position: p, level: 1, type: 'pioneer', connections: [] })));
+  const center = geometryUtils.polygonCentroid(points);
   
   // Check if all points are roughly equidistant from center
-  const distances = points.map(point => distance(point, center));
+  const distances = points.map(point => geometryUtils.distance(point, center));
   const avgDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
   
   for (const dist of distances) {
@@ -73,7 +55,7 @@ export function isRegularPolygon(points: Point2D[], tolerance: number = 0.2): bo
     const nextIndex = (i + 1) % points.length;
     const prevIndex = (i - 1 + points.length) % points.length;
     
-    const angle = angleBetweenPoints(points[prevIndex], points[i], points[nextIndex]);
+    const angle = geometryUtils.angleBetweenPoints(points[prevIndex], points[i], points[nextIndex]);
     const expectedInternalAngle = Math.PI - expectedAngle;
     
     if (Math.abs(angle - expectedInternalAngle) > tolerance) {
@@ -88,15 +70,7 @@ export function isRegularPolygon(points: Point2D[], tolerance: number = 0.2): bo
  * Sort points in clockwise order around their centroid
  */
 export function sortPointsClockwise(points: Point2D[]): Point2D[] {
-  if (points.length <= 2) return [...points];
-  
-  const center = calculateCentroid(points.map(p => ({ id: '', position: p, level: 1, type: 'pioneer', connections: [] })));
-  
-  return [...points].sort((a, b) => {
-    const angleA = Math.atan2(a.y - center.y, a.x - center.x);
-    const angleB = Math.atan2(b.y - center.y, b.x - center.x);
-    return angleA - angleB;
-  });
+  return geometryUtils.sortPointsClockwise(points);
 }
 
 /**
@@ -107,11 +81,7 @@ export function isTriangle(points: Point2D[]): boolean {
   
   // Check that no three points are collinear
   const [p1, p2, p3] = points;
-  const area = Math.abs(
-    (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2
-  );
-  
-  return area > 1; // Minimum area threshold
+  return !geometryUtils.areCollinear(p1, p2, p3);
 }
 
 /**
@@ -121,13 +91,13 @@ export function isSquare(points: Point2D[], tolerance: number = 0.2): boolean {
   if (points.length !== 4) return false;
   
   // Sort points in clockwise order
-  const sortedPoints = sortPointsClockwise(points);
+  const sortedPoints = geometryUtils.sortPointsClockwise(points);
   
   // Check if opposite sides are equal and parallel
   const sides = [];
   for (let i = 0; i < 4; i++) {
     const nextIndex = (i + 1) % 4;
-    sides.push(distance(sortedPoints[i], sortedPoints[nextIndex]));
+    sides.push(geometryUtils.distance(sortedPoints[i], sortedPoints[nextIndex]));
   }
   
   // All sides should be roughly equal
@@ -142,7 +112,7 @@ export function isSquare(points: Point2D[], tolerance: number = 0.2): boolean {
   for (let i = 0; i < 4; i++) {
     const prevIndex = (i - 1 + 4) % 4;
     const nextIndex = (i + 1) % 4;
-    const angle = angleBetweenPoints(sortedPoints[prevIndex], sortedPoints[i], sortedPoints[nextIndex]);
+    const angle = geometryUtils.angleBetweenPoints(sortedPoints[prevIndex], sortedPoints[i], sortedPoints[nextIndex]);
     
     if (Math.abs(angle - Math.PI / 2) > tolerance) {
       return false;
