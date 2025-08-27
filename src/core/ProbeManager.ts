@@ -15,11 +15,12 @@ export class ProbeManager {
   private resourceManager: ResourceManager;
   private probeQueue: ProbeQueueItem[] = [];
   private activeProbes: Map<string, ProbeInstance> = new Map();
-  private onProbeUpdateCallbacks: Array<(probes: ProbeInstance[]) => void> = [];
-  private onProbeDeployedCallbacks: Array<(probe: ProbeInstance) => void> = [];
+  private onProbeUpdateCallbacks: ((probes: ProbeInstance[]) => void)[] = [];
+  private onProbeDeployedCallbacks: ((probe: ProbeInstance) => void)[] = [];
   private deploymentTimer: NodeJS.Timeout | null = null;
   private backgroundService: ProbeBackgroundService;
   private maxSimultaneousLaunches: number = 3; // Allow multiple simultaneous probe launches
+  private deployedProbeIds: Set<string> = new Set(); // Track probes that have already fired deployment callbacks
 
   // Use shared probe configuration from types
 
@@ -311,14 +312,19 @@ export class ProbeManager {
 
           console.log(`[ProbeManager] Probe ${probeId} deployment completed`);
           
-          // Notify deployment completion (only once when status changes)
-          this.onProbeDeployedCallbacks.forEach(callback => {
-            try {
-              callback(probe);
-            } catch (error) {
-              console.error('[ProbeManager] Error in probe deployed callback:', error);
-            }
-          });
+          // Notify deployment completion (only once per probe)
+          if (!this.deployedProbeIds.has(probeId)) {
+            this.deployedProbeIds.add(probeId);
+            console.log(`[ProbeManager] Firing deployment callback for probe ${probeId} (first time)`);
+            
+            this.onProbeDeployedCallbacks.forEach(callback => {
+              try {
+                callback(probe);
+              } catch (error) {
+                console.error('[ProbeManager] Error in probe deployed callback:', error);
+              }
+            });
+          }
 
           hasUpdates = true;
         }
@@ -335,6 +341,7 @@ export class ProbeManager {
     // Remove probes that have completed their lifecycle
     for (const probeId of probesToRemove) {
       this.activeProbes.delete(probeId);
+      this.deployedProbeIds.delete(probeId); // Clean up tracking
       console.log(`[ProbeManager] Removed completed probe ${probeId} from active probes`);
     }
 
@@ -412,6 +419,7 @@ export class ProbeManager {
   clear(): void {
     this.probeQueue = [];
     this.activeProbes.clear();
+    this.deployedProbeIds.clear();
     this.notifyProbeUpdate();
     console.log('[ProbeManager] All probes cleared');
   }

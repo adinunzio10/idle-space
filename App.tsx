@@ -167,6 +167,7 @@ export default function App() {
   const [beaconVersion, setBeaconVersion] = useState(0);
   const [showProbeManager, setShowProbeManager] = useState(false);
   const [probes, setProbes] = useState<ProbeInstance[]>([]);
+  const [processedProbeIds] = useState(() => new Set<string>()); // Track probes that have already created beacons
 
   // Create stable callback references using useCallback
   const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
@@ -176,7 +177,16 @@ export default function App() {
   }, []);
 
   const handleProbeDeployment = useCallback((probe: ProbeInstance) => {
+    // Check if we've already processed this probe
+    if (processedProbeIds.has(probe.id)) {
+      console.log(`[App] Probe ${probe.id} already processed, skipping beacon creation`);
+      return;
+    }
+    
     console.log(`[App] Probe ${probe.id} deployed at (${probe.targetPosition.x}, ${probe.targetPosition.y}), creating beacon`);
+    
+    // Mark probe as processed to prevent duplicates
+    processedProbeIds.add(probe.id);
     
     // Create beacon at probe's target position using the probe's type with smart fallback
     const result = gameController.placeBeaconWithFallback(probe.targetPosition, probe.type);
@@ -198,9 +208,11 @@ export default function App() {
       }
     } else {
       console.error(`[App] Probe ${probe.id}: Failed to create beacon even with fallback positions - ${result.error}`);
+      // Remove from processed set if beacon creation failed, so it can be retried
+      processedProbeIds.delete(probe.id);
       // TODO: Add visual error notification for user
     }
-  }, [gameController]);
+  }, [gameController, processedProbeIds]);
 
   useEffect(() => {
     let mounted = true;
