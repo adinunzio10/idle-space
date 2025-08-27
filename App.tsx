@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import './global.css';
 import { GameController } from './src/core/GameController';
 import { GameState } from './src/storage/schemas/GameState';
@@ -168,17 +168,60 @@ export default function App() {
   const [showProbeManager, setShowProbeManager] = useState(false);
   const [probes, setProbes] = useState<ProbeInstance[]>([]);
 
+  // Create stable callback references using useCallback
+  const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
+    console.log('[App] handleProbeUpdate called with', updatedProbes.length, 'probes:', updatedProbes.map(p => `${p.type}(${p.status}, progress=${p.travelProgress?.toFixed(2)})`).join(', '));
+    setProbes(updatedProbes);
+    console.log('[App] setProbes called, state should update');
+  }, []);
+
+  const handleProbeDeployment = useCallback((probe: ProbeInstance) => {
+    console.log(`[App] Probe ${probe.id} deployed at (${probe.targetPosition.x}, ${probe.targetPosition.y}), creating beacon`);
+    
+    // Create beacon at probe's target position using the probe's type
+    const result = gameController.placeBeacon(probe.targetPosition, probe.type);
+    
+    if (result.success) {
+      // Update game state to show the new beacon
+      const updatedState = gameController.getGameState();
+      setGameState(updatedState);
+      setBeaconVersion(prev => prev + 1); // Force re-render
+      console.log(`[App] Successfully created ${probe.type} beacon from probe at (${probe.targetPosition.x}, ${probe.targetPosition.y})`);
+    } else {
+      console.error(`[App] Failed to create beacon from probe:`, result.error);
+    }
+  }, [gameController]);
+
   useEffect(() => {
     let mounted = true;
+    let removeProbeUpdateCallback: (() => void) | null = null;
+    let removeProbeDeployedCallback: (() => void) | null = null;
 
     const initializeGame = async () => {
       try {
+        // CRITICAL FIX: Register probe callbacks BEFORE initializing ProbeManager
+        const probeManager = gameController.getProbeManager();
+        
+        console.log('[App] Registering probe callbacks before ProbeManager initialization');
+        removeProbeUpdateCallback = probeManager.addProbeUpdateCallback(handleProbeUpdate);
+        removeProbeDeployedCallback = probeManager.addProbeDeployedCallback(handleProbeDeployment);
+        
+        // Get initial probe state before starting processing
+        const initialProbeStatus = probeManager.getQueueStatus();
+        const allProbes = [...initialProbeStatus.queuedProbes, ...initialProbeStatus.activeProbes];
+        if (mounted) {
+          setProbes(allProbes);
+        }
+        
+        // Now initialize GameController (which calls probeManager.initialize())
         await gameController.initialize();
+        
         if (mounted) {
           const state = gameController.getGameState();
           setGameState(state);
           setBeaconVersion(prev => prev + 1); // Trigger beacon re-render
           setIsInitialized(true);
+          console.log('[App] Game initialization complete with probe callbacks registered');
         }
       } catch (err) {
         console.error('Failed to initialize game:', err);
@@ -192,9 +235,18 @@ export default function App() {
 
     return () => {
       mounted = false;
+      // Clean up callbacks before shutting down
+      if (removeProbeUpdateCallback) {
+        removeProbeUpdateCallback();
+        console.log('[App] Removed probe update callback during cleanup');
+      }
+      if (removeProbeDeployedCallback) {
+        removeProbeDeployedCallback();
+        console.log('[App] Removed probe deployed callback during cleanup');
+      }
       gameController.shutdown();
     };
-  }, [gameController]);
+  }, [gameController, handleProbeUpdate, handleProbeDeployment]);
 
   // Trigger beacon re-render when galaxy map becomes visible
   useEffect(() => {
@@ -203,51 +255,7 @@ export default function App() {
     }
   }, [showGalaxyMap, gameState]);
 
-  // Set up probe updates
-  useEffect(() => {
-    if (isInitialized && gameController) {
-      const probeManager = gameController.getProbeManager();
-      
-      // Set up probe update callback
-      const handleProbeUpdate = (updatedProbes: ProbeInstance[]) => {
-        console.log('[App] handleProbeUpdate called with', updatedProbes.length, 'probes:', updatedProbes.map(p => `${p.type}(${p.status}, progress=${p.travelProgress?.toFixed(2)})`).join(', '));
-        setProbes(updatedProbes);
-        console.log('[App] setProbes called, state should update');
-      };
-      
-      // FIXED: Set up probe deployment callback to create beacons
-      const handleProbeDeployment = (probe: ProbeInstance) => {
-        console.log(`[App] Probe ${probe.id} deployed at (${probe.targetPosition.x}, ${probe.targetPosition.y}), creating beacon`);
-        
-        // Create beacon at probe's target position using the probe's type
-        const result = gameController.placeBeacon(probe.targetPosition, probe.type);
-        
-        if (result.success) {
-          // Update game state to show the new beacon
-          const updatedState = gameController.getGameState();
-          setGameState(updatedState);
-          setBeaconVersion(prev => prev + 1); // Force re-render
-          console.log(`[App] Successfully created ${probe.type} beacon from probe at (${probe.targetPosition.x}, ${probe.targetPosition.y})`);
-        } else {
-          console.error(`[App] Failed to create beacon from probe:`, result.error);
-        }
-      };
-      
-      const removeProbeUpdateCallback = probeManager.addProbeUpdateCallback(handleProbeUpdate);
-      const removeProbeDeployedCallback = probeManager.addProbeDeployedCallback(handleProbeDeployment);
-      
-      // Get initial probe state
-      const initialProbeStatus = probeManager.getQueueStatus();
-      const allProbes = [...initialProbeStatus.queuedProbes, ...initialProbeStatus.activeProbes];
-      setProbes(allProbes);
-      
-      return () => {
-        // Clean up callbacks
-        removeProbeUpdateCallback();
-        removeProbeDeployedCallback();
-      };
-    }
-  }, [isInitialized, gameController]);
+  // Note: Probe callback registration moved to main initialization useEffect above
 
   const handleSaveGame = async () => {
     try {
