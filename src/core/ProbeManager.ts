@@ -326,6 +326,11 @@ export class ProbeManager {
           this.activeProbes.set(probeId, updatedProbe);
           hasUpdates = true;
 
+          // Debug logging for probe progress (temporary)
+          if (progress > 0.9) { // Only log when close to completion
+            console.log(`[ProbeManager] Probe ${probeId} progress: ${(progress * 100).toFixed(1)}% (${elapsed.toFixed(1)}s / ${adjustedDeploymentTime.toFixed(1)}s)`);
+          }
+
           if (progress >= 1) {
             // Probe deployment completed - create new object with final status
             const deployedProbe = {
@@ -357,6 +362,7 @@ export class ProbeManager {
         // Remove probes that have been deployed for more than 5 seconds (longer than animation)
         const timeSinceDeployment = now - probe.deploymentCompletedAt;
         if (timeSinceDeployment > 5000) { // 5 seconds
+          console.log(`[ProbeManager] Scheduling probe ${probeId} for removal (deployed ${(timeSinceDeployment / 1000).toFixed(1)}s ago)`);
           probesToRemove.push(probeId);
           hasUpdates = true;
         }
