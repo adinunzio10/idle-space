@@ -263,9 +263,16 @@ export class ProbeManager {
    * Process the probe queue - enhanced to support multiple simultaneous launches
    */
   private processQueue(): void {
+    // Early exit if nothing to process
+    if (this.probeQueue.length === 0 && this.activeProbes.size === 0) {
+      return;
+    }
+
     // Count currently launching probes
     const launchingProbes = Array.from(this.activeProbes.values()).filter(p => p.status === 'launching');
     const availableLaunchSlots = this.maxSimultaneousLaunches - launchingProbes.length;
+    
+    let needsSync = false;
     
     // Start as many probes as we have available slots
     for (let i = 0; i < availableLaunchSlots && this.probeQueue.length > 0; i++) {
@@ -280,25 +287,27 @@ export class ProbeManager {
       };
       
       this.activeProbes.set(probe.id, launchingProbe);
+      needsSync = true;
       
       console.log(`[ProbeManager] Started deploying ${probe.type} probe ${probe.id} (slot ${i + 1}/${this.maxSimultaneousLaunches})`);
     }
     
-    if (availableLaunchSlots > 0 && this.probeQueue.length === 0) {
-      // No more probes to launch, sync with background service
+    // Only sync and notify if there were actual changes
+    if (needsSync) {
       this.backgroundService.syncProbeQueue(Array.from(this.activeProbes.values()));
-    } else if (availableLaunchSlots === 0) {
-      // All launch slots are busy, sync current state
-      this.backgroundService.syncProbeQueue(Array.from(this.activeProbes.values()));
+      this.notifyProbeUpdate();
     }
-    
-    this.notifyProbeUpdate();
   }
 
   /**
    * Update progress of active probes
    */
   private updateActiveProbes(): void {
+    // Early exit if no active probes
+    if (this.activeProbes.size === 0) {
+      return;
+    }
+
     const now = Date.now();
     let hasUpdates = false;
     const probesToRemove: string[] = [];
@@ -310,40 +319,39 @@ export class ProbeManager {
         const elapsed = (now - probe.deploymentStartedAt) / 1000;
         const progress = Math.min(elapsed / adjustedDeploymentTime, 1);
 
-        // Create new probe object with updated progress (avoid worklet warnings)
-        const updatedProbe = { ...probe, travelProgress: progress };
-        this.activeProbes.set(probeId, updatedProbe);
+        // Only update if progress actually changed
+        if (Math.abs(progress - (probe.travelProgress || 0)) > 0.001) { // Use small threshold to avoid floating point issues
+          // Create new probe object with updated progress (avoid worklet warnings)
+          const updatedProbe = { ...probe, travelProgress: progress };
+          this.activeProbes.set(probeId, updatedProbe);
+          hasUpdates = true;
 
-        if (progress >= 1) {
-          // Probe deployment completed - create new object with final status
-          const deployedProbe = {
-            ...updatedProbe,
-            status: 'deployed' as const,
-            deploymentCompletedAt: now,
-            travelProgress: 1
-          };
-          this.activeProbes.set(probeId, deployedProbe);
+          if (progress >= 1) {
+            // Probe deployment completed - create new object with final status
+            const deployedProbe = {
+              ...updatedProbe,
+              status: 'deployed' as const,
+              deploymentCompletedAt: now,
+              travelProgress: 1
+            };
+            this.activeProbes.set(probeId, deployedProbe);
 
-          console.log(`[ProbeManager] Probe ${probeId} deployment completed`);
-          
-          // Notify deployment completion (only once per probe)
-          if (!this.deployedProbeIds.has(probeId)) {
-            this.deployedProbeIds.add(probeId);
-            console.log(`[ProbeManager] Firing deployment callback for probe ${probeId} (first time)`);
+            console.log(`[ProbeManager] Probe ${probeId} deployment completed`);
             
-            this.onProbeDeployedCallbacks.forEach(callback => {
-              try {
-                callback(deployedProbe);
-              } catch (error) {
-                console.error('[ProbeManager] Error in probe deployed callback:', error);
-              }
-            });
+            // Notify deployment completion (only once per probe)
+            if (!this.deployedProbeIds.has(probeId)) {
+              this.deployedProbeIds.add(probeId);
+              console.log(`[ProbeManager] Firing deployment callback for probe ${probeId} (first time)`);
+              
+              this.onProbeDeployedCallbacks.forEach(callback => {
+                try {
+                  callback(deployedProbe);
+                } catch (error) {
+                  console.error('[ProbeManager] Error in probe deployed callback:', error);
+                }
+              });
+            }
           }
-
-          hasUpdates = true;
-        } else if (updatedProbe !== probe) {
-          // Progress updated but not complete
-          hasUpdates = true;
         }
       } else if (probe.status === 'deployed' && probe.deploymentCompletedAt) {
         // Remove probes that have been deployed for more than 5 seconds (longer than animation)
