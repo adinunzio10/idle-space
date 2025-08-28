@@ -167,7 +167,7 @@ export default function App() {
   const [showSpecializationModal, setShowSpecializationModal] = useState(false);
   const [selectedBeaconForUpgrade, setSelectedBeaconForUpgrade] = useState<string | null>(null);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
-  const [selectedBeacon, setSelectedBeacon] = useState<Beacon | null>(null);
+  const [selectedBeaconId, setSelectedBeaconId] = useState<string | null>(null);
   const [beaconVersion, setBeaconVersion] = useState(0);
   const [showProbeManager, setShowProbeManager] = useState(false);
   const [probes, setProbes] = useState<ProbeInstance[]>([]);
@@ -304,7 +304,7 @@ export default function App() {
 
   const handleBeaconSelect = (beacon: Beacon) => {
     console.log('Selected beacon:', beacon);
-    setSelectedBeacon(beacon);
+    setSelectedBeaconId(beacon.id);
     // TODO: Re-enable upgrade popup when upgrade system is implemented
     // setSelectedBeaconForUpgrade(beacon.id);
     // setShowSpecializationModal(true);
@@ -421,6 +421,11 @@ export default function App() {
 
   if (showGalaxyMap) {
     console.log('[App] Rendering GalaxyMapScreen with', probes.length, 'probes:', probes.map(p => `${p.type}(${p.status})`).join(', '));
+
+    // Get the current selected beacon data from game state
+    const selectedBeacon = selectedBeaconId && gameState 
+      ? getBeaconsForMap().find(b => b.id === selectedBeaconId) || null
+      : null;
 
     return (
       <SafeAreaProvider>

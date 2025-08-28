@@ -999,20 +999,23 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     // Calculate dynamic hit radius using gesture configuration
     const hitRadius = getConfiguredHitRadius(20, currentScale); // Use configured hit radius
     
+    // Create beacon map for fresh data lookup
+    const beaconMap = new Map(beacons.map(b => [b.id, b]));
+    
     // Check if tap hits any cluster first (they're larger)
     for (const cluster of clusters) {
       if (isPointInCluster(galaxyPoint, cluster)) {
         // Handle cluster tap - could expand cluster or show cluster info
         if (onBeaconSelect && cluster.beacons.length > 0) {
-          // For now, select the first beacon in the cluster
-          onBeaconSelect(cluster.beacons[0]);
+          // Get fresh beacon data from the beacons array instead of using stale reference
+          const freshBeacon = beaconMap.get(cluster.beacons[0].id) || cluster.beacons[0];
+          onBeaconSelect(freshBeacon);
         }
         return; // Early return if cluster was hit
       }
     }
     
     // Check if tap hits any connection first
-    const beaconMap = new Map(beacons.map(b => [b.id, b]));
     let selectedConnection = null;
     
     for (const connection of connections) {
@@ -1032,7 +1035,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     if (!selectedConnection) {
       for (const beacon of visibleBeacons) {
         if (isPointInHitArea(galaxyPoint, beacon.position, hitRadius)) {
-          selectedBeacon = beacon;
+          // Get fresh beacon data from the beacons array instead of using stale reference
+          selectedBeacon = beaconMap.get(beacon.id) || beacon;
           break; // Select first hit beacon
         }
       }
