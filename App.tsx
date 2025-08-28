@@ -46,7 +46,6 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   const screenData = Dimensions.get('window');
   const headerHeight = 140 + insets.top; // Increased to accommodate beacon type selection
 
-  console.log('[GalaxyMapScreen] Received', probes.length, 'probes:', probes.map(p => `${p.type}(${p.status})`).join(', '));
   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -176,19 +175,15 @@ export default function App() {
 
   // Create stable callback references using useCallback
   const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
-    console.log('[App] handleProbeUpdate called with', updatedProbes.length, 'probes:', updatedProbes.map(p => `${p.type}(${p.status}, progress=${p.travelProgress?.toFixed(2)})`).join(', '));
     setProbes(updatedProbes);
-    console.log('[App] setProbes called, state should update');
   }, []);
 
   const handleProbeDeployment = useCallback((probe: ProbeInstance) => {
     // Check if we've already processed this probe
     if (processedProbeIds.has(probe.id)) {
-      console.log(`[App] Probe ${probe.id} already processed, skipping beacon creation`);
       return;
     }
     
-    console.log(`[App] Probe ${probe.id} deployed at (${probe.targetPosition.x}, ${probe.targetPosition.y}), creating beacon`);
     
     // Mark probe as processed to prevent duplicates
     processedProbeIds.add(probe.id);
@@ -206,10 +201,8 @@ export default function App() {
       const wasRelocated = finalPos.x !== probe.targetPosition.x || finalPos.y !== probe.targetPosition.y;
       
       if (wasRelocated) {
-        console.log(`[App] Probe ${probe.id}: Created ${probe.type} beacon at adjusted position (${finalPos.x.toFixed(1)}, ${finalPos.y.toFixed(1)}) - original target was too close to existing beacon`);
         // TODO: Add visual notification for user about beacon relocation
       } else {
-        console.log(`[App] Probe ${probe.id}: Successfully created ${probe.type} beacon at target position (${finalPos.x.toFixed(1)}, ${finalPos.y.toFixed(1)})`);
       }
     } else {
       console.error(`[App] Probe ${probe.id}: Failed to create beacon even with fallback positions - ${result.error}`);
@@ -229,7 +222,6 @@ export default function App() {
         // CRITICAL FIX: Register probe callbacks BEFORE initializing ProbeManager
         const probeManager = gameController.getProbeManager();
         
-        console.log('[App] Registering probe callbacks before ProbeManager initialization');
         removeProbeUpdateCallback = probeManager.addProbeUpdateCallback(handleProbeUpdate);
         removeProbeDeployedCallback = probeManager.addProbeDeployedCallback(handleProbeDeployment);
         
@@ -248,7 +240,6 @@ export default function App() {
           setGameState(state);
           setBeaconVersion(prev => prev + 1); // Trigger beacon re-render
           setIsInitialized(true);
-          console.log('[App] Game initialization complete with probe callbacks registered');
         }
       } catch (err) {
         console.error('Failed to initialize game:', err);
@@ -265,11 +256,9 @@ export default function App() {
       // Clean up callbacks before shutting down
       if (removeProbeUpdateCallback) {
         removeProbeUpdateCallback();
-        console.log('[App] Removed probe update callback during cleanup');
       }
       if (removeProbeDeployedCallback) {
         removeProbeDeployedCallback();
-        console.log('[App] Removed probe deployed callback during cleanup');
       }
       gameController.shutdown();
     };
@@ -420,7 +409,6 @@ export default function App() {
 
 
   if (showGalaxyMap) {
-    console.log('[App] Rendering GalaxyMapScreen with', probes.length, 'probes:', probes.map(p => `${p.type}(${p.status})`).join(', '));
 
     // Get the current selected beacon data from game state
     const selectedBeacon = selectedBeaconId && gameState 

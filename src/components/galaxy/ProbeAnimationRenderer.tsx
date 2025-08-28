@@ -221,16 +221,11 @@ export const ProbeAnimationRenderer: React.FC<ProbeAnimationRendererProps> = ({
   width,
   height,
 }) => {
-  // Debug logging (reduced verbosity)
-  console.log('[ProbeAnimationRenderer] Probes:', probes.length, 'Total');
-  
   // Only render probes that are actively traveling or recently deployed
   const activeProbes = probes.filter(probe => 
     probe.status === 'launching' || 
     (probe.status === 'deployed' && Date.now() - (probe.deploymentCompletedAt || 0) < 5000) // Show for 5 seconds after deployment (matches ProbeManager)
   );
-
-  console.log('[ProbeAnimationRenderer] Active probes:', activeProbes.length, activeProbes.map(p => `${p.type}(${p.status})`).join(', '));
 
   return (
     <View className="absolute inset-0" pointerEvents="none">

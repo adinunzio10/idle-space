@@ -289,7 +289,6 @@ export class ProbeManager {
       this.activeProbes.set(probe.id, launchingProbe);
       needsSync = true;
       
-      console.log(`[ProbeManager] Started deploying ${probe.type} probe ${probe.id} (slot ${i + 1}/${this.maxSimultaneousLaunches})`);
     }
     
     // Only sync and notify if there were actual changes
@@ -328,7 +327,6 @@ export class ProbeManager {
 
           // Debug logging for probe progress (temporary)
           if (progress > 0.9) { // Only log when close to completion
-            console.log(`[ProbeManager] Probe ${probeId} progress: ${(progress * 100).toFixed(1)}% (${elapsed.toFixed(1)}s / ${adjustedDeploymentTime.toFixed(1)}s)`);
           }
 
           if (progress >= 1) {
@@ -341,12 +339,10 @@ export class ProbeManager {
             };
             this.activeProbes.set(probeId, deployedProbe);
 
-            console.log(`[ProbeManager] Probe ${probeId} deployment completed`);
             
             // Notify deployment completion (only once per probe)
             if (!this.deployedProbeIds.has(probeId)) {
               this.deployedProbeIds.add(probeId);
-              console.log(`[ProbeManager] Firing deployment callback for probe ${probeId} (first time)`);
               
               this.onProbeDeployedCallbacks.forEach(callback => {
                 try {
@@ -362,7 +358,6 @@ export class ProbeManager {
         // Remove probes that have been deployed for more than 5 seconds (longer than animation)
         const timeSinceDeployment = now - probe.deploymentCompletedAt;
         if (timeSinceDeployment > 5000) { // 5 seconds
-          console.log(`[ProbeManager] Scheduling probe ${probeId} for removal (deployed ${(timeSinceDeployment / 1000).toFixed(1)}s ago)`);
           probesToRemove.push(probeId);
           hasUpdates = true;
         }
@@ -373,7 +368,6 @@ export class ProbeManager {
     for (const probeId of probesToRemove) {
       this.activeProbes.delete(probeId);
       this.deployedProbeIds.delete(probeId); // Clean up tracking
-      console.log(`[ProbeManager] Removed completed probe ${probeId} from active probes`);
     }
 
     if (hasUpdates) {
@@ -389,19 +383,16 @@ export class ProbeManager {
       ...this.probeQueue.map(item => item.probe),
       ...Array.from(this.activeProbes.values()),
     ];
-    console.log('[ProbeManager] notifyProbeUpdate called with', allProbes.length, 'probes:', allProbes.map(p => `${p.type}(${p.status})`).join(', '), 'callbacks:', this.onProbeUpdateCallbacks.length);
     
     this.onProbeUpdateCallbacks.forEach((callback, index) => {
       try {
         callback(allProbes);
-        console.log(`[ProbeManager] Callback ${index} called successfully`);
       } catch (error) {
         console.error(`[ProbeManager] Error in probe update callback ${index}:`, error);
       }
     });
     
     if (this.onProbeUpdateCallbacks.length === 0) {
-      console.log('[ProbeManager] notifyProbeUpdate called but no callbacks registered');
     }
   }
 
