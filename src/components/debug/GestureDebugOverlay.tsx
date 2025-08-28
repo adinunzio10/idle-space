@@ -20,6 +20,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   interpolateColor,
+  useDerivedValue,
 } from 'react-native-reanimated';
 
 import {
@@ -69,6 +70,9 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
   // Animated values for visual feedback
   const stateIndicatorScale = useSharedValue(1);
   const conflictIndicatorOpacity = useSharedValue(0);
+  
+  // Convert React state to shared value for worklet access
+  const currentStateShared = useDerivedValue(() => debugInfo?.currentState ?? GestureStateType.IDLE);
 
   // Update debug info periodically
   useEffect(() => {
@@ -114,8 +118,7 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
 
   // Animated styles
   const stateIndicatorStyle = useAnimatedStyle(() => {
-    const currentState = debugInfo?.currentState ?? GestureStateType.IDLE;
-    const color = STATE_COLORS[currentState];
+    const color = STATE_COLORS[currentStateShared.value];
     
     return {
       transform: [{ scale: stateIndicatorScale.value }],

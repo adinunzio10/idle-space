@@ -9,6 +9,7 @@ import Animated, {
   interpolate,
   Easing,
   runOnJS,
+  useDerivedValue,
 } from 'react-native-reanimated';
 
 import {
@@ -57,6 +58,9 @@ export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(({
 
   // Animation value for container visibility
   const containerAnimation = useSharedValue(0);
+  
+  // Convert React prop to shared value for worklet access
+  const positionShared = useDerivedValue(() => position);
 
   useEffect(() => {
     if (enableAnimations) {
@@ -74,7 +78,7 @@ export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(({
     const translateY = interpolate(
       containerAnimation.value,
       [0, 1],
-      [position === 'top' ? -100 : position === 'bottom' ? 100 : 0, 0]
+      [positionShared.value === 'top' ? -100 : positionShared.value === 'bottom' ? 100 : 0, 0]
     );
 
     return {

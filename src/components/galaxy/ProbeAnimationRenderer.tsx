@@ -122,9 +122,6 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = React.memo(({
     const screenX = (probeX.value * scale.value) + translateX.value;
     const screenY = (probeY.value * scale.value) + translateY.value;
     
-    // Debug the coordinate calculation
-    console.log(`[AnimatedProbe] Probe ${probe.id}: galaxy(${probeX.value.toFixed(1)}, ${probeY.value.toFixed(1)}) -> screen(${screenX.toFixed(1)}, ${screenY.toFixed(1)}), scale=${scale.value.toFixed(2)}, opacity=${opacity.value.toFixed(2)}`);
-    
     return {
       position: 'absolute',
       left: screenX - 20, // Center the probe (40px width / 2)

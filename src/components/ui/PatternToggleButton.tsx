@@ -9,6 +9,7 @@ import Animated, {
   withRepeat,
   interpolate,
   runOnJS,
+  useDerivedValue,
 } from 'react-native-reanimated';
 
 interface PatternToggleButtonProps {
@@ -28,6 +29,9 @@ export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
 }) => {
   const scaleValue = useSharedValue(1);
   const pulseValue = useSharedValue(0);
+  
+  // Convert React prop to shared value for worklet access
+  const isVisibleShared = useDerivedValue(() => isMapVisualizationsVisible);
 
   // Start pulsing animation when new patterns are detected
   React.useEffect(() => {
@@ -69,9 +73,16 @@ export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
     const pulseScale = interpolate(pulseValue.value, [0, 1], [1, 1.1]);
     const glowOpacity = interpolate(pulseValue.value, [0, 1], [0.3, 0.8]);
     
+    // Include active button styles when visible
+    const activeStyles = isVisibleShared.value ? {
+      backgroundColor: '#4F46E5',
+      borderColor: '#6366F1',
+    } : {};
+    
     return {
       transform: [{ scale: scaleValue.value * pulseScale }],
-      shadowOpacity: isMapVisualizationsVisible ? 0.8 : glowOpacity,
+      shadowOpacity: isVisibleShared.value ? 0.8 : glowOpacity,
+      ...activeStyles,
     };
   });
 
@@ -98,7 +109,6 @@ export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
       <GestureDetector gesture={combinedGesture}>
         <Animated.View style={[
           styles.button,
-          isMapVisualizationsVisible && styles.buttonActive,
           buttonStyle
         ]}>
           <View style={styles.iconContainer}>

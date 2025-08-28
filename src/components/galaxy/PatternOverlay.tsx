@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import {
   Path,
   Polygon,
@@ -19,6 +19,8 @@ import Animated, {
   withSequence,
   interpolate,
   Easing,
+  useAnimatedReaction,
+  runOnJS,
 } from 'react-native-reanimated';
 
 import { GeometricPattern, Beacon, ViewportState } from '../../types/galaxy';
@@ -62,6 +64,9 @@ export const PatternOverlay: React.FC<PatternOverlayProps> = memo(({
   const pulseProgress = useSharedValue(0);
   const glowIntensity = useSharedValue(0);
   const shimmerProgress = useSharedValue(0);
+  
+  // React state to track visibility (synced from shared value to avoid render-time .value access)
+  const [isVisible, setIsVisible] = useState(false);
 
   // Get pattern configuration
   const patternConfig = PATTERN_VISUAL_CONFIG.EFFECTS[pattern.type];
@@ -157,6 +162,14 @@ export const PatternOverlay: React.FC<PatternOverlayProps> = memo(({
     }
   }, [isActive, enableAnimations, patternConfig.hasShimmer, formationProgress, pulseProgress, glowIntensity, shimmerProgress]);
 
+  // Sync shared value to React state to avoid render-time .value access
+  useAnimatedReaction(
+    () => formationProgress.value > 0,
+    (current) => {
+      runOnJS(setIsVisible)(current);
+    }
+  );
+
   // Animated properties for the main pattern
   const animatedPolygonProps = useAnimatedProps(() => {
     const scale = interpolate(
@@ -208,7 +221,7 @@ export const PatternOverlay: React.FC<PatternOverlayProps> = memo(({
   const shimmerGradientId = `pattern-shimmer-${pattern.id}`;
 
   // Don't render if no points or too small
-  if (screenPoints.length < 3 || formationProgress.value === 0) {
+  if (screenPoints.length < 3 || !isVisible) {
     return null;
   }
 
