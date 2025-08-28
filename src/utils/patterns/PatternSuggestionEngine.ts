@@ -17,6 +17,7 @@ import { calculateCentroid } from './geometry';
 import { SpatialHashMap } from '../spatial/SpatialHashMap';
 import { GeometricTolerance, DEFAULT_TOLERANCE } from '../../types/geometry';
 import { PlacementValidator } from '../spatial/PlacementValidator';
+import { ShapeDetector } from './detection';
 
 /**
  * Pattern completion analysis and suggestion engine
@@ -28,6 +29,7 @@ export class PatternSuggestionEngine {
   private cachedAnalysis: Map<string, { analysis: PatternCompletionAnalysis; timestamp: number }>;
   private tolerance: GeometricTolerance;
   private placementValidator: PlacementValidator | null;
+  private shapeDetector: ShapeDetector;
 
   constructor(
     spatialHash: SpatialHashMap,
@@ -40,6 +42,7 @@ export class PatternSuggestionEngine {
     this.cachedSuggestions = new Map();
     this.cachedAnalysis = new Map();
     this.placementValidator = placementValidator || null;
+    this.shapeDetector = new ShapeDetector();
   }
 
   /**
@@ -523,30 +526,154 @@ export class PatternSuggestionEngine {
       // Find the 4th corner of a square given 3 corners
       const [p1, p2, p3] = existingPositions;
       
-      // Calculate potential 4th corners
+      // Calculate potential 4th corners using parallelogram completion
       const candidates = [
         { x: p1.x + p3.x - p2.x, y: p1.y + p3.y - p2.y },
         { x: p2.x + p3.x - p1.x, y: p2.y + p3.y - p1.y },
         { x: p1.x + p2.x - p3.x, y: p1.y + p2.y - p3.y },
       ];
       
-      // Find the candidate that creates the most square-like shape
-      let bestCandidate = candidates[0];
-      let bestScore = -1;
+      // Validate each candidate using the same logic as pattern detection
+      const validCandidates = candidates.filter(candidate => {
+        const testPoints = existingPositions.concat([candidate]);
+        
+        // Create temporary beacons for validation (just need positions and IDs)
+        const tempBeacons: Beacon[] = testPoints.map((pos, idx) => ({
+          id: `temp-${idx}`,
+          position: pos,
+          level: 1,
+          type: 'pioneer',
+          specialization: 'none',
+          status: 'active',
+          connections: [],
+          createdAt: Date.now(),
+          lastUpgraded: Date.now(),
+          generationRate: 1.0,
+          totalResourcesGenerated: 0,
+        }));
+        
+        const beaconIds = tempBeacons.map(b => b.id);
+        
+        // Use the public detectSquare method which includes all validation
+        return this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
+      });
       
-      for (const candidate of candidates) {
-        const score = this.evaluateSquareness(existingPositions.concat([candidate]));
-        if (score > bestScore) {
-          bestScore = score;
-          bestCandidate = candidate;
+      // If we have valid candidates, pick the best one
+      if (validCandidates.length > 0) {
+        let bestCandidate = validCandidates[0];
+        let bestScore = -1;
+        
+        for (const candidate of validCandidates) {
+          const score = this.evaluateSquareness(existingPositions.concat([candidate]));
+          if (score > bestScore) {
+            bestScore = score;
+            bestCandidate = candidate;
+          }
         }
+        
+        return [bestCandidate];
       }
       
-      return [bestCandidate];
+      // If no parallelogram candidates work, try alternative approaches
+      const alternativeCandidates = this.generateAlternativeSquareCandidates(existingPositions, minDistance);
+      
+      for (const candidate of alternativeCandidates) {
+        const testPoints = existingPositions.concat([candidate]);
+        
+        // Create temporary beacons for validation
+        const tempBeacons: Beacon[] = testPoints.map((pos, idx) => ({
+          id: `temp-${idx}`,
+          position: pos,
+          level: 1,
+          type: 'pioneer',
+          specialization: 'none',
+          status: 'active',
+          connections: [],
+          createdAt: Date.now(),
+          lastUpgraded: Date.now(),
+          generationRate: 1.0,
+          totalResourcesGenerated: 0,
+        }));
+        
+        const beaconIds = tempBeacons.map(b => b.id);
+        
+        if (this.shapeDetector.detectSquare(tempBeacons, beaconIds, false)) {
+          return [candidate];
+        }
+      }
     }
     
     // Fallback for other cases
     return this.calculateCentroidBasedPositions(existingPositions, 'square', missing, minDistance);
+  }
+
+  /**
+   * Generate alternative square candidates using different geometric approaches
+   */
+  private generateAlternativeSquareCandidates(existingPositions: Point2D[], minDistance: number): Point2D[] {
+    const candidates: Point2D[] = [];
+    const [p1, p2, p3] = existingPositions;
+    
+    // Method 1: Try different distances based on existing side lengths
+    const distances = [
+      this.geometryUtils.distance(p1, p2),
+      this.geometryUtils.distance(p2, p3), 
+      this.geometryUtils.distance(p3, p1)
+    ];
+    const avgDistance = distances.reduce((sum, d) => sum + d, 0) / distances.length;
+    
+    // Try positions at the average distance from each point
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * Math.PI) / 4; // 8 directions around each point
+      
+      candidates.push({
+        x: p1.x + avgDistance * Math.cos(angle),
+        y: p1.y + avgDistance * Math.sin(angle)
+      });
+      
+      candidates.push({
+        x: p2.x + avgDistance * Math.cos(angle),
+        y: p2.y + avgDistance * Math.sin(angle)
+      });
+      
+      candidates.push({
+        x: p3.x + avgDistance * Math.cos(angle),
+        y: p3.y + avgDistance * Math.sin(angle)
+      });
+    }
+    
+    // Method 2: Try perpendicular extensions from each side's midpoint
+    const midpoints = [
+      { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
+      { x: (p2.x + p3.x) / 2, y: (p2.y + p3.y) / 2 },
+      { x: (p3.x + p1.x) / 2, y: (p3.y + p1.y) / 2 }
+    ];
+    
+    const perpVectors = [
+      { x: -(p2.y - p1.y), y: p2.x - p1.x }, // perpendicular to p1-p2
+      { x: -(p3.y - p2.y), y: p3.x - p2.x }, // perpendicular to p2-p3  
+      { x: -(p1.y - p3.y), y: p1.x - p3.x }  // perpendicular to p3-p1
+    ];
+    
+    for (let i = 0; i < 3; i++) {
+      const len = Math.sqrt(perpVectors[i].x ** 2 + perpVectors[i].y ** 2);
+      if (len > 0) {
+        const normalized = { x: perpVectors[i].x / len, y: perpVectors[i].y / len };
+        
+        // Try both directions from midpoint
+        candidates.push({
+          x: midpoints[i].x + normalized.x * avgDistance,
+          y: midpoints[i].y + normalized.y * avgDistance
+        });
+        
+        candidates.push({
+          x: midpoints[i].x - normalized.x * avgDistance,
+          y: midpoints[i].y - normalized.y * avgDistance
+        });
+      }
+    }
+    
+    return candidates;
   }
 
   /**
