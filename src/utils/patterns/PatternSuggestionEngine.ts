@@ -30,6 +30,7 @@ export class PatternSuggestionEngine {
   private tolerance: GeometricTolerance;
   private placementValidator: PlacementValidator | null;
   private shapeDetector: ShapeDetector;
+  private lastTriangleKey?: string;
 
   constructor(
     spatialHash: SpatialHashMap,
@@ -546,7 +547,14 @@ export class PatternSuggestionEngine {
       // Find the 4th corner of a square given 3 corners
       const [p1, p2, p3] = existingPositions;
       
-      console.log(`[PatternSuggestion] Square completion for triangle: P1(${p1.x},${p1.y}), P2(${p2.x},${p2.y}), P3(${p3.x},${p3.y})`);
+      // Only log if this is a new calculation (avoid spam during map panning)
+      const triangleKey = `${p1.x},${p1.y}|${p2.x},${p2.y}|${p3.x},${p3.y}`;
+      const isNewCalculation = !this.lastTriangleKey || this.lastTriangleKey !== triangleKey;
+      
+      if (isNewCalculation) {
+        console.log(`[PatternSuggestion] Square completion for triangle: P1(${p1.x},${p1.y}), P2(${p2.x},${p2.y}), P3(${p3.x},${p3.y})`);
+        this.lastTriangleKey = triangleKey;
+      }
       
       // Calculate potential 4th corners using parallelogram completion
       const candidates = [
@@ -555,7 +563,9 @@ export class PatternSuggestionEngine {
         { x: p1.x + p2.x - p3.x, y: p1.y + p2.y - p3.y },
       ];
       
-      console.log(`[PatternSuggestion] Parallelogram candidates:`, candidates.map((c, i) => `${i + 1}: (${c.x},${c.y})`).join(', '));
+      if (isNewCalculation) {
+        console.log(`[PatternSuggestion] Parallelogram candidates:`, candidates.map((c, i) => `${i + 1}: (${c.x},${c.y})`).join(', '));
+      }
       
       // Validate each candidate using the same logic as pattern detection
       const validCandidates = candidates.filter((candidate, index) => {
@@ -580,26 +590,34 @@ export class PatternSuggestionEngine {
         
         // Use the public detectSquare method which includes all validation
         const isValid = this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
-        console.log(`[PatternSuggestion] Candidate ${index + 1} (${candidate.x},${candidate.y}) validation: ${isValid ? 'VALID' : 'INVALID'}`);
+        if (isNewCalculation) {
+          console.log(`[PatternSuggestion] Candidate ${index + 1} (${candidate.x},${candidate.y}) validation: ${isValid ? 'VALID' : 'INVALID'}`);
+        }
         return isValid;
       });
       
       // If we have valid candidates, pick the best one
       if (validCandidates.length > 0) {
-        console.log(`[PatternSuggestion] Found ${validCandidates.length} valid parallelogram candidates`);
+        if (isNewCalculation) {
+          console.log(`[PatternSuggestion] Found ${validCandidates.length} valid parallelogram candidates`);
+        }
         let bestCandidate = validCandidates[0];
         let bestScore = -1;
         
         for (const candidate of validCandidates) {
           const score = this.evaluateSquareness(existingPositions.concat([candidate]));
-          console.log(`[PatternSuggestion] Candidate (${candidate.x},${candidate.y}) squareness score: ${score.toFixed(4)}`);
+          if (isNewCalculation) {
+            console.log(`[PatternSuggestion] Candidate (${candidate.x},${candidate.y}) squareness score: ${score.toFixed(4)}`);
+          }
           if (score > bestScore) {
             bestScore = score;
             bestCandidate = candidate;
           }
         }
         
-        console.log(`[PatternSuggestion] Selected best parallelogram candidate: (${bestCandidate.x},${bestCandidate.y}) with score ${bestScore.toFixed(4)}`);
+        if (isNewCalculation) {
+          console.log(`[PatternSuggestion] Selected best parallelogram candidate: (${bestCandidate.x},${bestCandidate.y}) with score ${bestScore.toFixed(4)}`);
+        }
         return [bestCandidate];
       }
       
