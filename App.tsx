@@ -357,7 +357,6 @@ export default function App() {
       const updatedState = gameController.getGameState();
       setGameState(updatedState);
       setBeaconVersion(prev => prev + 1); // Force re-render
-      console.log(`Placed ${selectedBeaconType} beacon at (${position.x}, ${position.y})`);
     } else {
       console.error('Failed to place beacon:', result.error);
       // TODO: Show error message to user
