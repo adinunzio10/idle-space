@@ -73,7 +73,7 @@ import {
   calculateFocalPointZoomWorklet,
   debugGestureWorklet,
 } from '../../utils/gestures/gestureWorklets';
-import GestureDebugOverlay from '../debug/GestureDebugOverlay';
+import DebugOverlay from '../debug/DebugOverlay';
 import { QuadTreeSpatialIndex } from '../../utils/spatial/quadtree';
 import { performanceMonitor, usePerformanceMonitor } from '../../utils/performance/monitor';
 import { 
@@ -124,6 +124,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   onBeaconSelect,
   onMapPress,
   showDebugOverlay = false,
+  selectedBeacon = null,
   beaconUpdateTrigger,
   style,
 }) => {
@@ -1171,10 +1172,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   return (
     <View style={[{ width, height }, style]}>
-      {/* Gesture Debug Overlay */}
+      {/* Debug Overlay */}
       {__DEV__ && showDebugOverlay && (
-        <GestureDebugOverlay
+        <DebugOverlay
           stateMachine={gestureStateMachine}
+          selectedBeacon={selectedBeacon}
           enabled={true}
           position="top-left"
           compact={false}
@@ -1283,7 +1285,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
                   beacon={beacon}
                   lodInfo={lodRenderInfo}
                   viewportState={viewportState}
-                  onPress={onBeaconSelect}
                 />
               ))}
 

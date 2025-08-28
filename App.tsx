@@ -24,6 +24,7 @@ interface GalaxyMapScreenProps {
   quantumData: number;
   showDebugOverlay: boolean;
   onToggleDebugOverlay: () => void;
+  selectedBeacon?: Beacon | null;
   beaconVersion: number;
 }
 
@@ -38,6 +39,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   quantumData,
   showDebugOverlay,
   onToggleDebugOverlay,
+  selectedBeacon = null,
   beaconVersion,
 }) => {
   const insets = useSafeAreaInsets();
@@ -145,6 +147,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           onBeaconSelect={onBeaconSelect}
           onMapPress={onMapPress}
           showDebugOverlay={showDebugOverlay}
+          selectedBeacon={selectedBeacon}
           beaconUpdateTrigger={beaconVersion}
         />
         
@@ -164,6 +167,7 @@ export default function App() {
   const [showSpecializationModal, setShowSpecializationModal] = useState(false);
   const [selectedBeaconForUpgrade, setSelectedBeaconForUpgrade] = useState<string | null>(null);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
+  const [selectedBeacon, setSelectedBeacon] = useState<Beacon | null>(null);
   const [beaconVersion, setBeaconVersion] = useState(0);
   const [showProbeManager, setShowProbeManager] = useState(false);
   const [probes, setProbes] = useState<ProbeInstance[]>([]);
@@ -300,6 +304,7 @@ export default function App() {
 
   const handleBeaconSelect = (beacon: Beacon) => {
     console.log('Selected beacon:', beacon);
+    setSelectedBeacon(beacon);
     // TODO: Re-enable upgrade popup when upgrade system is implemented
     // setSelectedBeaconForUpgrade(beacon.id);
     // setShowSpecializationModal(true);
@@ -415,10 +420,6 @@ export default function App() {
 
 
   if (showGalaxyMap) {
-    const selectedBeacon = selectedBeaconForUpgrade 
-      ? gameState?.beacons[selectedBeaconForUpgrade]
-      : null;
-
     console.log('[App] Rendering GalaxyMapScreen with', probes.length, 'probes:', probes.map(p => `${p.type}(${p.status})`).join(', '));
 
     return (
@@ -434,6 +435,7 @@ export default function App() {
           quantumData={gameState?.resources.quantumData || 0}
           showDebugOverlay={showDebugOverlay}
           onToggleDebugOverlay={() => setShowDebugOverlay(!showDebugOverlay)}
+          selectedBeacon={selectedBeacon}
           beaconVersion={beaconVersion}
         />
         

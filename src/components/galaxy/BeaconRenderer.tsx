@@ -18,14 +18,12 @@ interface BeaconRendererProps {
   beacon: Beacon;
   lodInfo: LODRenderInfo;
   viewportState: ViewportState;
-  onPress?: (beacon: Beacon) => void;
 }
 
 export const BeaconRenderer: React.FC<BeaconRendererProps> = memo(({
   beacon,
   lodInfo,
   viewportState,
-  onPress,
 }) => {
   // Convert galaxy coordinates to screen coordinates
   const screenPosition = galaxyToScreen(beacon.position, viewportState);
@@ -87,7 +85,7 @@ export const BeaconRenderer: React.FC<BeaconRendererProps> = memo(({
   }, [beacon.level, finalSize, screenPosition, colors, viewportState.scale]);
   
   return (
-    <G onPress={onPress ? () => onPress(beacon) : undefined}>
+    <G>
       <Defs>
         {/* Glow gradient */}
         <RadialGradient

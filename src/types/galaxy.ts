@@ -44,6 +44,7 @@ export interface GalaxyMapProps {
   onBeaconSelect?: (beacon: Beacon) => void;
   onMapPress?: (position: Point2D) => void;
   showDebugOverlay?: boolean;
+  selectedBeacon?: Beacon | null;
   beaconUpdateTrigger?: number;
 }
 
