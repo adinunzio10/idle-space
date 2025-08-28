@@ -300,8 +300,9 @@ export default function App() {
 
   const handleBeaconSelect = (beacon: Beacon) => {
     console.log('Selected beacon:', beacon);
-    setSelectedBeaconForUpgrade(beacon.id);
-    setShowSpecializationModal(true);
+    // TODO: Re-enable upgrade popup when upgrade system is implemented
+    // setSelectedBeaconForUpgrade(beacon.id);
+    // setShowSpecializationModal(true);
   };
 
   const handleSpecializationSelect = (beaconId: string, specialization: BeaconSpecialization) => {
