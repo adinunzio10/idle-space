@@ -981,7 +981,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Handle single tap - worklet-safe callback that receives necessary data as parameters
   // WORKLET PATTERN: Pass React state as parameters instead of closure capture
-  const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[], isPopupVisible: boolean) => {
+  const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[], beaconsArray: any[], isPopupVisible: boolean) => {
     // Don't process taps if the Pattern Opportunities popup is visible
     if (isPopupVisible) {
       return;
@@ -999,8 +999,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     // Calculate dynamic hit radius using gesture configuration
     const hitRadius = getConfiguredHitRadius(20, currentScale); // Use configured hit radius
     
-    // Create beacon map for fresh data lookup
-    const beaconMap = new Map(beacons.map(b => [b.id, b]));
+    // Create beacon map for fresh data lookup using passed beaconsArray
+    const beaconMap = new Map(beaconsArray.map(b => [b.id, b]));
     
     // Check if tap hits any cluster first (they're larger)
     for (const cluster of clusters) {
@@ -1015,42 +1015,41 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       }
     }
     
-    // Check if tap hits any connection first
-    let selectedConnection = null;
-    
-    for (const connection of connections) {
-      const sourceBeacon = beaconMap.get(connection.sourceId);
-      const targetBeacon = beaconMap.get(connection.targetId);
-      
-      if (sourceBeacon && targetBeacon) {
-        if (isPointNearConnection(galaxyPoint, sourceBeacon.position, targetBeacon.position, hitRadius)) {
-          selectedConnection = connection;
-          break;
-        }
-      }
-    }
-    
-    // Check if tap hits any visible beacon
+    // Check if tap hits any visible beacon first (higher priority)
     let selectedBeacon = null;
-    if (!selectedConnection) {
-      for (const beacon of visibleBeacons) {
-        if (isPointInHitArea(galaxyPoint, beacon.position, hitRadius)) {
-          // Get fresh beacon data from the beacons array instead of using stale reference
-          selectedBeacon = beaconMap.get(beacon.id) || beacon;
-          break; // Select first hit beacon
+    for (const beacon of visibleBeacons) {
+      if (isPointInHitArea(galaxyPoint, beacon.position, hitRadius)) {
+        // Get fresh beacon data from the beacons array instead of using stale reference
+        selectedBeacon = beaconMap.get(beacon.id) || beacon;
+        break; // Select first hit beacon
+      }
+    }
+    
+    // Only check connections if no beacon was directly hit
+    let selectedConnection = null;
+    if (!selectedBeacon) {
+      for (const connection of connections) {
+        const sourceBeacon = beaconMap.get(connection.sourceId);
+        const targetBeacon = beaconMap.get(connection.targetId);
+        
+        if (sourceBeacon && targetBeacon) {
+          if (isPointNearConnection(galaxyPoint, sourceBeacon.position, targetBeacon.position, hitRadius)) {
+            selectedConnection = connection;
+            break;
+          }
         }
       }
     }
     
-    if (selectedConnection) {
+    if (selectedBeacon && onBeaconSelect) {
+      onBeaconSelect(selectedBeacon);
+    } else if (selectedConnection) {
       // Handle connection selection - could show connection info
       // For now, select the source beacon
       const sourceBeacon = beaconMap.get(selectedConnection.sourceId);
       if (sourceBeacon && onBeaconSelect) {
         onBeaconSelect(sourceBeacon);
       }
-    } else if (selectedBeacon && onBeaconSelect) {
-      onBeaconSelect(selectedBeacon);
     } else if (onMapPress) {
       onMapPress(galaxyPoint);
     }
@@ -1081,6 +1080,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         renderingState.clusters,
         renderingState.connections,
         renderingState.visibleBeacons,
+        beacons,
         isPatternHintPopupVisible
       );
     });
