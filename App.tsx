@@ -168,6 +168,7 @@ export default function App() {
   const [showProbeManager, setShowProbeManager] = useState(false);
   const [probes, setProbes] = useState<ProbeInstance[]>([]);
   const [processedProbeIds] = useState(() => new Set<string>()); // Track probes that have already created beacons
+  const [lastPlacement, setLastPlacement] = useState<{ position: { x: number; y: number } | null; timestamp: number }>({ position: null, timestamp: 0 });
 
   // Create stable callback references using useCallback
   const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
@@ -341,9 +342,22 @@ export default function App() {
   };
 
   const handleMapPress = (position: { x: number; y: number }) => {
+    // Check for duplicate placement attempts (safety check)
+    const now = Date.now();
+    if (lastPlacement.position && 
+        Math.abs(lastPlacement.position.x - position.x) < 0.1 && 
+        Math.abs(lastPlacement.position.y - position.y) < 0.1 && 
+        now - lastPlacement.timestamp < 200) {
+      console.warn('Duplicate placement attempt prevented:', position);
+      return;
+    }
+
     const result = gameController.placeBeacon(position, selectedBeaconType);
     
     if (result.success) {
+      // Track successful placement
+      setLastPlacement({ position, timestamp: now });
+      
       // Refresh game state to show the new beacon
       const updatedState = gameController.getGameState();
       setGameState(updatedState);

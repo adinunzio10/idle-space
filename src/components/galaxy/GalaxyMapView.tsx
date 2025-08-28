@@ -950,10 +950,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     switch (event.type) {
       case 'select':
         suggestionActions.selectSuggestion(event.suggestion);
-        // Auto-place beacon at suggested position if onMapPress is available
-        if (onMapPress) {
-          onMapPress(event.position);
-        }
         break;
       case 'dismiss':
         suggestionActions.dismissSuggestion(event.suggestion.id);

@@ -125,7 +125,7 @@ export class ShapeDetector {
     if (points.length !== 4) return false;
 
     // Basic square validation using existing function
-    const tolerance = adaptiveTolerance ? this.getAdaptiveTolerance(beacons) : 0.2;
+    const tolerance = adaptiveTolerance ? this.getAdaptiveTolerance(beacons) : 0.3;
     if (!isSquare(points, tolerance)) return false;
 
     // Enhanced validation with more sophisticated checks
@@ -199,7 +199,7 @@ export class ShapeDetector {
    * @returns Adaptive tolerance value
    */
   private getAdaptiveTolerance(beacons: Beacon[]): number {
-    if (beacons.length < 3) return 0.3; // High tolerance for sparse networks
+    if (beacons.length < 3) return 0.35; // High tolerance for sparse networks
 
     // Calculate average distance between beacons
     let totalDistance = 0;
@@ -307,7 +307,7 @@ export class ShapeDetector {
     const side = distance(sortedPoints[0], sortedPoints[1]);
     
     const expectedDiagonal = side * Math.sqrt(2);
-    const tolerance = adaptiveTolerance ? this.getAdaptiveTolerance([]) : 0.2;
+    const tolerance = adaptiveTolerance ? this.getAdaptiveTolerance([]) : 0.35;
     
     const diagonal1Error = Math.abs(diagonal1 - expectedDiagonal) / expectedDiagonal;
     const diagonal2Error = Math.abs(diagonal2 - expectedDiagonal) / expectedDiagonal;
