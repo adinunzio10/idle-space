@@ -62,7 +62,9 @@ export interface PatternSuggestion {
   id: string;
   type: PatternType;
   suggestedPosition: Point2D;
-  requiredBeacons: string[]; // IDs of beacons needed to complete pattern
+  requiredBeacons: string[]; // IDs of existing beacons that are part of the pattern
+  newBeaconsNeeded: number; // Number of new beacons needed to complete pattern
+  allMissingPositions: Point2D[]; // All positions where beacons need to be placed
   potentialBonus: number;
   completionPercentage: number; // 0.0 to 1.0
   priority: number; // Higher = more important

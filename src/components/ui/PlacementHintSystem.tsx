@@ -219,7 +219,7 @@ const HintCard: React.FC<HintCardProps> = memo(({
           <View style={styles.hintCardInfo}>
             <Text style={styles.hintCardTitle}>Complete {patternName}</Text>
             <Text style={styles.hintCardSubtitle}>
-              {suggestion.requiredBeacons.length} beacon{suggestion.requiredBeacons.length !== 1 ? 's' : ''} needed
+              {suggestion.newBeaconsNeeded} beacon{suggestion.newBeaconsNeeded !== 1 ? 's' : ''} needed
             </Text>
           </View>
           

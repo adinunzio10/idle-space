@@ -966,8 +966,17 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Handle placement hint interactions
   const handleHintPress = useCallback((suggestion: any) => {
-    if (onMapPress) {
-      onMapPress(suggestion.suggestedPosition);
+    if (onMapPress && suggestion.allMissingPositions && suggestion.allMissingPositions.length > 1) {
+      // Place multiple beacons with small delays to avoid race conditions
+      suggestion.allMissingPositions.forEach((position: any, index: number) => {
+        setTimeout(() => {
+          onMapPress(position);
+        }, index * 50); // 50ms delay between placements
+      });
+    } else if (onMapPress) {
+      // Single position placement (either only one missing or fallback)
+      const position = suggestion.allMissingPositions?.[0] || suggestion.suggestedPosition;
+      onMapPress(position);
     }
     suggestionActions.selectSuggestion(suggestion);
   }, [onMapPress, suggestionActions]);

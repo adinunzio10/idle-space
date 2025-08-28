@@ -176,6 +176,8 @@ export class PatternSuggestionEngine {
           type: groupSuggestions[0].type, // Use the highest priority pattern type
           suggestedPosition: position,
           requiredBeacons: [...new Set(groupSuggestions.flatMap(s => s.requiredBeacons))],
+          newBeaconsNeeded: Math.max(...groupSuggestions.map(s => s.newBeaconsNeeded)),
+          allMissingPositions: groupSuggestions.flatMap(s => s.allMissingPositions),
           potentialBonus: combinedBonus,
           completionPercentage: Math.max(...groupSuggestions.map(s => s.completionPercentage)),
           priority: combinedPriority + 0.5, // Bonus for multi-pattern
@@ -303,17 +305,26 @@ export class PatternSuggestionEngine {
     const suggestions: PatternSuggestion[] = [];
     
     for (const pattern of incompletePatterns) {
-      for (const position of pattern.missingPositions) {
+      // Create one suggestion per incomplete pattern, not per position
+      if (pattern.missingPositions.length > 0) {
+        const requiredBeaconCount = this.getRequiredBeaconCount(pattern.type);
+        const newBeaconsNeeded = requiredBeaconCount - pattern.existingBeacons.length;
+        
+        // Use the first missing position as the primary suggested position
+        const primaryPosition = pattern.missingPositions[0];
+        
         const suggestion: PatternSuggestion = {
-          id: `${pattern.id}-pos-${position.x}-${position.y}`,
+          id: `${pattern.id}`,
           type: pattern.type,
-          suggestedPosition: position,
+          suggestedPosition: primaryPosition,
           requiredBeacons: [...pattern.existingBeacons],
+          newBeaconsNeeded: newBeaconsNeeded,
+          allMissingPositions: [...pattern.missingPositions],
           potentialBonus: pattern.estimatedBonus,
-          completionPercentage: pattern.existingBeacons.length / this.getRequiredBeaconCount(pattern.type),
-          priority: this.calculateSuggestionPriority(pattern, position, beacons),
+          completionPercentage: pattern.existingBeacons.length / requiredBeaconCount,
+          priority: this.calculateSuggestionPriority(pattern, primaryPosition, beacons),
           estimatedValue: pattern.estimatedBonus,
-          conflictingPatterns: this.findConflictingPatterns(position, beacons),
+          conflictingPatterns: this.findConflictingPatterns(primaryPosition, beacons),
         };
         
         suggestions.push(suggestion);
@@ -459,42 +470,170 @@ export class PatternSuggestionEngine {
   
   private calculateMissingPositions(beacons: Beacon[], patternType: PatternType, beaconType: BeaconType = 'pioneer'): Point2D[] {
     const positions = beacons.map(b => b.position);
-    
-    // This would use geometric algorithms to determine where additional beacons
-    // should be placed to form the specified pattern type
-    // For now, we'll return a simplified implementation that respects minimum distances
-    
-    const center = calculateCentroid(positions.map(pos => ({ position: pos }) as Beacon));
     const requiredBeacons = this.getRequiredBeaconCount(patternType);
     const missing = requiredBeacons - beacons.length;
     
+    if (missing <= 0) return [];
+    
     // Calculate safe radius based on beacon type's minimum distance requirements
     const minDistance = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType];
-    const safeRadius = Math.max(minDistance * 1.5, 120); // At least 1.5x minimum distance, minimum 120
     
+    let missingPositions: Point2D[] = [];
+    
+    // Use pattern-specific geometry when possible
+    switch (patternType) {
+      case 'square':
+        missingPositions = this.calculateSquareCompletion(positions, missing, minDistance);
+        break;
+      case 'triangle':
+        missingPositions = this.calculateTriangleCompletion(positions, missing, minDistance);
+        break;
+      default:
+        // Fallback to centroid-based calculation for pentagon/hexagon
+        missingPositions = this.calculateCentroidBasedPositions(positions, patternType, missing, minDistance);
+        break;
+    }
+    
+    // Validate all positions
+    const validatedPositions: Point2D[] = [];
+    for (const position of missingPositions) {
+      let validPosition = position;
+      
+      if (this.placementValidator) {
+        const validation = this.placementValidator.isValidPosition(position, beaconType);
+        
+        if (!validation.isValid) {
+          // Try to find a nearby valid position
+          const nearbyValid = this.findNearbyValidPosition(position, beaconType, minDistance * 2);
+          validPosition = nearbyValid || position;
+        }
+      }
+      
+      validatedPositions.push(validPosition);
+    }
+    
+    return this.validateAndFilterPositions(validatedPositions, beaconType);
+  }
+
+  /**
+   * Calculate positions to complete a square from existing beacons
+   */
+  private calculateSquareCompletion(existingPositions: Point2D[], missing: number, minDistance: number): Point2D[] {
+    if (existingPositions.length === 3 && missing === 1) {
+      // Find the 4th corner of a square given 3 corners
+      const [p1, p2, p3] = existingPositions;
+      
+      // Calculate potential 4th corners
+      const candidates = [
+        { x: p1.x + p3.x - p2.x, y: p1.y + p3.y - p2.y },
+        { x: p2.x + p3.x - p1.x, y: p2.y + p3.y - p1.y },
+        { x: p1.x + p2.x - p3.x, y: p1.y + p2.y - p3.y },
+      ];
+      
+      // Find the candidate that creates the most square-like shape
+      let bestCandidate = candidates[0];
+      let bestScore = -1;
+      
+      for (const candidate of candidates) {
+        const score = this.evaluateSquareness(existingPositions.concat([candidate]));
+        if (score > bestScore) {
+          bestScore = score;
+          bestCandidate = candidate;
+        }
+      }
+      
+      return [bestCandidate];
+    }
+    
+    // Fallback for other cases
+    return this.calculateCentroidBasedPositions(existingPositions, 'square', missing, minDistance);
+  }
+
+  /**
+   * Calculate positions to complete a triangle from existing beacons
+   */
+  private calculateTriangleCompletion(existingPositions: Point2D[], missing: number, minDistance: number): Point2D[] {
+    if (existingPositions.length === 2 && missing === 1) {
+      // Complete equilateral triangle given 2 points
+      const [p1, p2] = existingPositions;
+      const distance = this.geometryUtils.distance(p1, p2);
+      
+      // Calculate the third point of an equilateral triangle
+      const midX = (p1.x + p2.x) / 2;
+      const midY = (p1.y + p2.y) / 2;
+      
+      const height = Math.sqrt(3) * distance / 2;
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      
+      const perpX = -dy / len;
+      const perpY = dx / len;
+      
+      const p3 = {
+        x: midX + perpX * height,
+        y: midY + perpY * height,
+      };
+      
+      return [p3];
+    }
+    
+    // Fallback for other cases
+    return this.calculateCentroidBasedPositions(existingPositions, 'triangle', missing, minDistance);
+  }
+
+  /**
+   * Fallback centroid-based position calculation
+   */
+  private calculateCentroidBasedPositions(existingPositions: Point2D[], patternType: PatternType, missing: number, minDistance: number): Point2D[] {
+    const center = calculateCentroid(existingPositions.map(pos => ({ position: pos }) as Beacon));
+    const safeRadius = Math.max(minDistance * 1.5, 120);
     const missingPositions: Point2D[] = [];
     
     for (let i = 0; i < missing; i++) {
       const angle = (i / missing) * 2 * Math.PI;
-      let candidatePosition = {
+      missingPositions.push({
         x: center.x + safeRadius * Math.cos(angle),
         y: center.y + safeRadius * Math.sin(angle),
-      };
-      
-      // Validate position if we have a placement validator
-      if (this.placementValidator) {
-        const validation = this.placementValidator.isValidPosition(candidatePosition, beaconType);
-        
-        if (!validation.isValid) {
-          // Try to find a nearby valid position
-          candidatePosition = this.findNearbyValidPosition(candidatePosition, beaconType, safeRadius) || candidatePosition;
-        }
-      }
-      
-      missingPositions.push(candidatePosition);
+      });
     }
     
-    return this.validateAndFilterPositions(missingPositions, beaconType);
+    return missingPositions;
+  }
+
+  /**
+   * Evaluate how square-like a set of 4 points are
+   */
+  private evaluateSquareness(points: Point2D[]): number {
+    if (points.length !== 4) return 0;
+    
+    // Calculate all pairwise distances
+    const distances: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        distances.push(this.geometryUtils.distance(points[i], points[j]));
+      }
+    }
+    
+    distances.sort((a, b) => a - b);
+    
+    // In a perfect square, we should have 4 equal sides and 2 equal diagonals
+    // distances[0-3] should be equal (sides), distances[4-5] should be equal (diagonals)
+    const avgSideLength = (distances[0] + distances[1] + distances[2] + distances[3]) / 4;
+    const avgDiagonalLength = (distances[4] + distances[5]) / 2;
+    
+    // Check side uniformity
+    const sideVariance = distances.slice(0, 4).reduce((sum, d) => sum + Math.pow(d - avgSideLength, 2), 0) / 4;
+    
+    // Check if diagonals are sqrt(2) times the sides
+    const expectedDiagonal = avgSideLength * Math.sqrt(2);
+    const diagonalError = Math.abs(avgDiagonalLength - expectedDiagonal) / expectedDiagonal;
+    
+    // Score based on how close it is to a perfect square
+    const uniformityScore = 1 / (1 + sideVariance / (avgSideLength * avgSideLength));
+    const proportionScore = 1 / (1 + diagonalError);
+    
+    return uniformityScore * proportionScore;
   }
 
   /**
