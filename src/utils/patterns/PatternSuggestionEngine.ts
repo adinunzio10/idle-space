@@ -497,18 +497,38 @@ export class PatternSuggestionEngine {
         break;
     }
     
-    // Validate all positions
+    console.log(`[PatternSuggestion] ${patternType} completion returned ${missingPositions.length} positions:`, missingPositions.map(p => `(${p.x},${p.y})`).join(', '));
+    
+    // For pattern-validated positions (squares/triangles), trust the validation and skip placement corruption
+    const isPatternValidated = (patternType === 'square' || patternType === 'triangle') && missingPositions.length > 0;
+    
+    if (isPatternValidated) {
+      console.log(`[PatternSuggestion] Pattern-validated positions - skipping placement validation to preserve pattern geometry`);
+      return missingPositions;
+    }
+    
+    // Only do placement validation for centroid-based fallbacks
+    console.log(`[PatternSuggestion] Running placement validation for ${patternType} positions...`);
     const validatedPositions: Point2D[] = [];
-    for (const position of missingPositions) {
+    for (let i = 0; i < missingPositions.length; i++) {
+      const position = missingPositions[i];
       let validPosition = position;
       
       if (this.placementValidator) {
         const validation = this.placementValidator.isValidPosition(position, beaconType);
+        console.log(`[PatternSuggestion] Position ${i + 1} (${position.x},${position.y}) placement validation: ${validation.isValid ? 'VALID' : 'INVALID'} - ${validation.reasons?.join(', ') || 'no reasons'}`);
         
         if (!validation.isValid) {
           // Try to find a nearby valid position
+          console.log(`[PatternSuggestion] Searching for nearby valid position...`);
           const nearbyValid = this.findNearbyValidPosition(position, beaconType, minDistance * 2);
-          validPosition = nearbyValid || position;
+          if (nearbyValid) {
+            console.log(`[PatternSuggestion] Found nearby valid position: (${nearbyValid.x},${nearbyValid.y}) - moved ${Math.sqrt((nearbyValid.x - position.x) ** 2 + (nearbyValid.y - position.y) ** 2).toFixed(1)} units`);
+            validPosition = nearbyValid;
+          } else {
+            console.log(`[PatternSuggestion] No nearby valid position found, keeping original`);
+            validPosition = position;
+          }
         }
       }
       
@@ -526,6 +546,8 @@ export class PatternSuggestionEngine {
       // Find the 4th corner of a square given 3 corners
       const [p1, p2, p3] = existingPositions;
       
+      console.log(`[PatternSuggestion] Square completion for triangle: P1(${p1.x},${p1.y}), P2(${p2.x},${p2.y}), P3(${p3.x},${p3.y})`);
+      
       // Calculate potential 4th corners using parallelogram completion
       const candidates = [
         { x: p1.x + p3.x - p2.x, y: p1.y + p3.y - p2.y },
@@ -533,8 +555,10 @@ export class PatternSuggestionEngine {
         { x: p1.x + p2.x - p3.x, y: p1.y + p2.y - p3.y },
       ];
       
+      console.log(`[PatternSuggestion] Parallelogram candidates:`, candidates.map((c, i) => `${i + 1}: (${c.x},${c.y})`).join(', '));
+      
       // Validate each candidate using the same logic as pattern detection
-      const validCandidates = candidates.filter(candidate => {
+      const validCandidates = candidates.filter((candidate, index) => {
         const testPoints = existingPositions.concat([candidate]);
         
         // Create temporary beacons for validation (just need positions and IDs)
@@ -555,29 +579,37 @@ export class PatternSuggestionEngine {
         const beaconIds = tempBeacons.map(b => b.id);
         
         // Use the public detectSquare method which includes all validation
-        return this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
+        const isValid = this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
+        console.log(`[PatternSuggestion] Candidate ${index + 1} (${candidate.x},${candidate.y}) validation: ${isValid ? 'VALID' : 'INVALID'}`);
+        return isValid;
       });
       
       // If we have valid candidates, pick the best one
       if (validCandidates.length > 0) {
+        console.log(`[PatternSuggestion] Found ${validCandidates.length} valid parallelogram candidates`);
         let bestCandidate = validCandidates[0];
         let bestScore = -1;
         
         for (const candidate of validCandidates) {
           const score = this.evaluateSquareness(existingPositions.concat([candidate]));
+          console.log(`[PatternSuggestion] Candidate (${candidate.x},${candidate.y}) squareness score: ${score.toFixed(4)}`);
           if (score > bestScore) {
             bestScore = score;
             bestCandidate = candidate;
           }
         }
         
+        console.log(`[PatternSuggestion] Selected best parallelogram candidate: (${bestCandidate.x},${bestCandidate.y}) with score ${bestScore.toFixed(4)}`);
         return [bestCandidate];
       }
       
       // If no parallelogram candidates work, try alternative approaches
+      console.log(`[PatternSuggestion] No valid parallelogram candidates, trying alternative approaches...`);
       const alternativeCandidates = this.generateAlternativeSquareCandidates(existingPositions, minDistance);
+      console.log(`[PatternSuggestion] Generated ${alternativeCandidates.length} alternative candidates`);
       
-      for (const candidate of alternativeCandidates) {
+      for (let i = 0; i < alternativeCandidates.length; i++) {
+        const candidate = alternativeCandidates[i];
         const testPoints = existingPositions.concat([candidate]);
         
         // Create temporary beacons for validation
@@ -597,13 +629,18 @@ export class PatternSuggestionEngine {
         
         const beaconIds = tempBeacons.map(b => b.id);
         
-        if (this.shapeDetector.detectSquare(tempBeacons, beaconIds, false)) {
+        const isValid = this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
+        console.log(`[PatternSuggestion] Alternative candidate ${i + 1}/${alternativeCandidates.length} (${candidate.x.toFixed(1)},${candidate.y.toFixed(1)}) validation: ${isValid ? 'VALID' : 'INVALID'}`);
+        
+        if (isValid) {
+          console.log(`[PatternSuggestion] Selected alternative candidate: (${candidate.x},${candidate.y})`);
           return [candidate];
         }
       }
     }
     
     // Fallback for other cases
+    console.log(`[PatternSuggestion] No valid square candidates found, falling back to centroid method`);
     return this.calculateCentroidBasedPositions(existingPositions, 'square', missing, minDistance);
   }
 
@@ -795,6 +832,7 @@ export class PatternSuggestionEngine {
   private findNearbyValidPosition(originalPosition: Point2D, beaconType: BeaconType, searchRadius: number): Point2D | null {
     if (!this.placementValidator) return null;
     
+    console.log(`[PatternSuggestion] Finding nearby valid position for (${originalPosition.x},${originalPosition.y})`);
     const attempts = 8; // Try 8 directions around the original position
     const minDistance = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType];
     
@@ -808,11 +846,15 @@ export class PatternSuggestionEngine {
       };
       
       const validation = this.placementValidator.isValidPosition(candidatePosition, beaconType);
+      console.log(`[PatternSuggestion] Nearby candidate ${i + 1}/8 (${candidatePosition.x.toFixed(1)},${candidatePosition.y.toFixed(1)}) at angle ${(angle * 180 / Math.PI).toFixed(0)}°: ${validation.isValid ? 'VALID' : 'INVALID'} - ${validation.reasons?.join(', ') || 'no reasons'}`);
+      
       if (validation.isValid) {
+        console.log(`[PatternSuggestion] Found valid nearby position after ${i + 1} attempts`);
         return candidatePosition;
       }
     }
     
+    console.log(`[PatternSuggestion] No valid nearby position found after ${attempts} attempts`);
     return null;
   }
 
