@@ -105,6 +105,9 @@ import { ProbeAnimationRenderer } from './ProbeAnimationRenderer';
 import { PatternSuggestionEngine } from '../../utils/patterns/PatternSuggestionEngine';
 import { SpatialPatternCache } from '../../utils/patterns/SpatialPatternCache';
 import { SpatialHashMap } from '../../utils/spatial/SpatialHashMap';
+import { PlacementValidator, PlacementConfig } from '../../utils/spatial/PlacementValidator';
+import { BEACON_PLACEMENT_CONFIG } from '../../types/beacon';
+import { Beacon as BeaconEntity } from '../../entities/Beacon';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -239,8 +242,43 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Spatial hashing components for pattern suggestions
   const spatialHashMap = useMemo(() => new SpatialHashMap(), []);
   const spatialCache = useMemo(() => new SpatialPatternCache(), []);
+  
+  // Create placement validator for pattern suggestions
+  const placementValidator = useMemo(() => {
+    const placementConfig: PlacementConfig = {
+      bounds: {
+        minX: -10000,
+        maxX: 10000,
+        minY: -10000,
+        maxY: 10000,
+      },
+      minimumDistances: BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE,
+      allowOverlap: false,
+    };
+    const validator = new PlacementValidator(placementConfig);
+    
+    // Convert galaxy beacons to the format expected by PlacementValidator
+    const entityBeacons = beacons.map(beacon => new BeaconEntity({
+      id: beacon.id,
+      position: beacon.position,
+      level: beacon.level || 1,
+      type: beacon.type,
+      specialization: 'none',
+      status: 'active',
+      connections: beacon.connections || [],
+      createdAt: Date.now(),
+      lastUpgraded: Date.now(),
+      generationRate: 1.0,
+      totalResourcesGenerated: 0,
+    }));
+    
+    validator.updateBeacons(entityBeacons);
+    return validator;
+  }, [beacons]);
+  
   const suggestionEngine = useMemo(() => 
-    new PatternSuggestionEngine(spatialHashMap), [spatialHashMap]
+    new PatternSuggestionEngine(spatialHashMap, undefined, placementValidator), 
+    [spatialHashMap, placementValidator]
   );
 
   // Pattern suggestion state management

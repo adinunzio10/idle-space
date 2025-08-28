@@ -21,6 +21,7 @@ import { PatternBonusCalculator } from './PatternBonusCalculator';
 import { SpatialHashMap } from '../spatial/SpatialHashMap';
 import { SpatialPatternCache } from './SpatialPatternCache';
 import { PatternSuggestionEngine } from './PatternSuggestionEngine';
+import { PlacementValidator } from '../spatial/PlacementValidator';
 import { GeometricTolerance, DEFAULT_TOLERANCE } from '../../types/geometry';
 import { DelaunayResult } from '../../types/triangulation';
 import { BonusCalculationResult } from '../../types/bonuses';
@@ -618,7 +619,8 @@ export class PatternDetector {
     bonusOptions?: any,
     spatialHashConfig?: Partial<SpatialHashConfig>,
     spatialCacheConfig?: Partial<SpatialCacheConfig>,
-    optimizationSettings?: Partial<SpatialOptimizationSettings>
+    optimizationSettings?: Partial<SpatialOptimizationSettings>,
+    placementValidator?: PlacementValidator
   ) {
     this.triangulationEngine = new TriangulationEngine(triangulationOptions);
     this.bonusCalculator = new PatternBonusCalculator(bonusOptions);
@@ -647,7 +649,7 @@ export class PatternDetector {
       this.patternCache = new SpatialPatternCache(); // Fallback
     }
     
-    this.suggestionEngine = new PatternSuggestionEngine(this.spatialHash);
+    this.suggestionEngine = new PatternSuggestionEngine(this.spatialHash, DEFAULT_TOLERANCE, placementValidator);
   }
   
   /**

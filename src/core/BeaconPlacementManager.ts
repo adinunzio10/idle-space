@@ -53,7 +53,7 @@ export class BeaconPlacementManager {
     
     // Initialize pattern detector for suggestions
     this.patternDetector = config.enablePatternSuggestions 
-      ? new PatternDetector()
+      ? new PatternDetector(undefined, undefined, undefined, undefined, undefined, this.validator)
       : null;
   }
 

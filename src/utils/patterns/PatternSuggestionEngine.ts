@@ -11,10 +11,12 @@ import {
   SPATIAL_PERFORMANCE_THRESHOLDS,
 } from '../../constants/spatialHashing';
 import { PATTERN_BONUSES } from '../../constants/connections';
+import { BeaconType, BEACON_PLACEMENT_CONFIG } from '../../types/beacon';
 import { GeometryUtils } from './GeometryUtils';
 import { calculateCentroid } from './geometry';
 import { SpatialHashMap } from '../spatial/SpatialHashMap';
 import { GeometricTolerance, DEFAULT_TOLERANCE } from '../../types/geometry';
+import { PlacementValidator } from '../spatial/PlacementValidator';
 
 /**
  * Pattern completion analysis and suggestion engine
@@ -25,16 +27,19 @@ export class PatternSuggestionEngine {
   private cachedSuggestions: Map<string, { suggestions: PatternSuggestion[]; timestamp: number }>;
   private cachedAnalysis: Map<string, { analysis: PatternCompletionAnalysis; timestamp: number }>;
   private tolerance: GeometricTolerance;
+  private placementValidator: PlacementValidator | null;
 
   constructor(
     spatialHash: SpatialHashMap,
-    tolerance: GeometricTolerance = DEFAULT_TOLERANCE
+    tolerance: GeometricTolerance = DEFAULT_TOLERANCE,
+    placementValidator?: PlacementValidator
   ) {
     this.spatialHash = spatialHash;
     this.tolerance = tolerance;
     this.geometryUtils = new GeometryUtils(tolerance);
     this.cachedSuggestions = new Map();
     this.cachedAnalysis = new Map();
+    this.placementValidator = placementValidator || null;
   }
 
   /**
@@ -269,7 +274,9 @@ export class PatternSuggestionEngine {
         if (this.couldFormPattern(combination, patternType) && 
             !this.isExistingPattern(combination, existingPatterns)) {
           
-          const missingPositions = this.calculateMissingPositions(combination, patternType);
+          // Determine beacon type from existing beacons in the combination (use most common type)
+          const beaconType = this.getMostCommonBeaconType(combination);
+          const missingPositions = this.calculateMissingPositions(combination, patternType, beaconType);
           
           if (missingPositions.length > 0) {
             incomplete.push({
@@ -279,7 +286,7 @@ export class PatternSuggestionEngine {
               missingPositions,
               estimatedBonus: PATTERN_BONUSES[patternType],
               proximityScore: this.calculateProximityScore(combination),
-              feasibilityScore: this.calculateFeasibilityScore(missingPositions, beacons),
+              feasibilityScore: this.calculateFeasibilityScore(missingPositions, beacons, beaconType),
             });
           }
         }
@@ -450,29 +457,109 @@ export class PatternSuggestionEngine {
     return intersection.size / union.size >= threshold;
   }
   
-  private calculateMissingPositions(beacons: Beacon[], patternType: PatternType): Point2D[] {
+  private calculateMissingPositions(beacons: Beacon[], patternType: PatternType, beaconType: BeaconType = 'pioneer'): Point2D[] {
     const positions = beacons.map(b => b.position);
     
     // This would use geometric algorithms to determine where additional beacons
     // should be placed to form the specified pattern type
-    // For now, we'll return a simplified implementation
+    // For now, we'll return a simplified implementation that respects minimum distances
     
     const center = calculateCentroid(positions.map(pos => ({ position: pos }) as Beacon));
     const requiredBeacons = this.getRequiredBeaconCount(patternType);
     const missing = requiredBeacons - beacons.length;
     
+    // Calculate safe radius based on beacon type's minimum distance requirements
+    const minDistance = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType];
+    const safeRadius = Math.max(minDistance * 1.5, 120); // At least 1.5x minimum distance, minimum 120
+    
     const missingPositions: Point2D[] = [];
-    const radius = 100; // Average pattern radius
     
     for (let i = 0; i < missing; i++) {
       const angle = (i / missing) * 2 * Math.PI;
-      missingPositions.push({
-        x: center.x + radius * Math.cos(angle),
-        y: center.y + radius * Math.sin(angle),
-      });
+      let candidatePosition = {
+        x: center.x + safeRadius * Math.cos(angle),
+        y: center.y + safeRadius * Math.sin(angle),
+      };
+      
+      // Validate position if we have a placement validator
+      if (this.placementValidator) {
+        const validation = this.placementValidator.isValidPosition(candidatePosition, beaconType);
+        
+        if (!validation.isValid) {
+          // Try to find a nearby valid position
+          candidatePosition = this.findNearbyValidPosition(candidatePosition, beaconType, safeRadius) || candidatePosition;
+        }
+      }
+      
+      missingPositions.push(candidatePosition);
     }
     
-    return missingPositions;
+    return this.validateAndFilterPositions(missingPositions, beaconType);
+  }
+
+  /**
+   * Get the most common beacon type from a group of beacons
+   */
+  private getMostCommonBeaconType(beacons: Beacon[]): BeaconType {
+    if (beacons.length === 0) return 'pioneer';
+    
+    const typeCounts: Record<BeaconType, number> = {
+      pioneer: 0,
+      harvester: 0,
+      architect: 0,
+    };
+    
+    beacons.forEach(beacon => {
+      if (beacon.type && typeCounts.hasOwnProperty(beacon.type)) {
+        typeCounts[beacon.type]++;
+      }
+    });
+    
+    // Return the type with the highest count, defaulting to pioneer
+    const mostCommonType = Object.entries(typeCounts).reduce((a, b) => 
+      typeCounts[a[0] as BeaconType] > typeCounts[b[0] as BeaconType] ? a : b
+    )[0] as BeaconType;
+    
+    return mostCommonType;
+  }
+
+  /**
+   * Find a nearby valid position for beacon placement
+   */
+  private findNearbyValidPosition(originalPosition: Point2D, beaconType: BeaconType, searchRadius: number): Point2D | null {
+    if (!this.placementValidator) return null;
+    
+    const attempts = 8; // Try 8 directions around the original position
+    const minDistance = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType];
+    
+    for (let i = 0; i < attempts; i++) {
+      const angle = (i / attempts) * 2 * Math.PI;
+      const offsetDistance = minDistance * 0.5; // Small offset to find valid position
+      
+      const candidatePosition = {
+        x: originalPosition.x + offsetDistance * Math.cos(angle),
+        y: originalPosition.y + offsetDistance * Math.sin(angle),
+      };
+      
+      const validation = this.placementValidator.isValidPosition(candidatePosition, beaconType);
+      if (validation.isValid) {
+        return candidatePosition;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Validate and filter positions to ensure they meet minimum distance requirements
+   */
+  private validateAndFilterPositions(positions: Point2D[], beaconType: BeaconType): Point2D[] {
+    if (!this.placementValidator) return positions;
+    
+    return positions.filter(position => {
+      const validation = this.placementValidator!.isValidPosition(position, beaconType);
+      return validation.isValid;
+    });
   }
   
   private calculateProximityScore(beacons: Beacon[]): number {
@@ -494,19 +581,25 @@ export class PatternSuggestionEngine {
     return Math.max(0, 1 - Math.abs(averageDistance - idealDistance) / idealDistance);
   }
   
-  private calculateFeasibilityScore(positions: Point2D[], existingBeacons: Beacon[]): number {
+  private calculateFeasibilityScore(positions: Point2D[], existingBeacons: Beacon[], beaconType: BeaconType = 'pioneer'): number {
     let score = 1;
+    const minDistance = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType];
     
     for (const position of positions) {
-      // Check if position is too close to existing beacons
+      // Check if position is too close to existing beacons using proper minimum distance
       const tooClose = existingBeacons.some(beacon => 
-        this.geometryUtils.distance(position, beacon.position) < 50
+        this.geometryUtils.distance(position, beacon.position) < minDistance
       );
       
-      if (tooClose) score *= 0.5;
+      if (tooClose) score *= 0.3; // Heavily penalize positions that are too close
       
-      // Check if position is in a good location (simplified)
-      // In a real implementation, this would check placement validity
+      // Additional validation if we have a placement validator
+      if (this.placementValidator) {
+        const validation = this.placementValidator.isValidPosition(position, beaconType);
+        if (!validation.isValid) {
+          score *= 0.2; // Heavily penalize invalid positions
+        }
+      }
     }
     
     return score;
