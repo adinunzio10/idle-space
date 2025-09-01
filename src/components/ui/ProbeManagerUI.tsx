@@ -134,7 +134,6 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
       {/* Header */}
       <View 
         className="bg-surface px-4 py-3"
-        style={{ paddingTop: insets.top + 12 }}
       >
         <View className="flex-row justify-between items-center">
           {onClose && (
