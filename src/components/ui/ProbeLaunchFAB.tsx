@@ -176,7 +176,8 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
             {
               position: 'absolute',
               bottom: 70, // Above the main FAB
-              right: position === 'bottomLeft' ? 0 : -120, // Position menu to align with FAB center
+              left: position === 'bottomLeft' ? 0 : undefined, // When FAB is on left, menu goes to the right
+              right: position === 'bottomRight' ? 0 : undefined, // When FAB is on right, menu aligns right
               width: 180, // Fixed width instead of minWidth
             },
             menuAnimatedStyle
