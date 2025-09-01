@@ -9,11 +9,15 @@ import { GalaxyMapView } from '../components/galaxy/GalaxyMapView';
 import { ResourceHUD } from '../components/ui/ResourceHUD';
 import { BeaconSpecializationModal } from '../components/ui/BeaconSpecializationModal';
 import { ProbeManagerUI } from '../components/ui/ProbeManagerUI';
+import { ProbeLaunchFAB } from '../components/ui/ProbeLaunchFAB';
+import { PatternToggleButton } from '../components/ui/PatternToggleButton';
 import { GameState } from '../storage/schemas/GameState';
 import { ProbeInstance } from '../types/probe';
 import { Beacon } from '../types/galaxy';
 import { BeaconType, BeaconSpecialization } from '../types/beacon';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { ProbeType } from '../types/probe';
+import { Point2D } from '../types/galaxy';
 
 type GalaxyMapScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'GalaxyMap'>;
 
@@ -41,6 +45,29 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   const [beaconVersion, setBeaconVersion] = useState(0);
   const [showProbeManager, setShowProbeManager] = useState(false);
   const [lastPlacement, setLastPlacement] = useState<{ position: { x: number; y: number } | null; timestamp: number }>({ position: null, timestamp: 0 });
+
+  // Handle probe launch from FAB
+  const handleProbeLaunch = (type: ProbeType, launchPosition: Point2D) => {
+    try {
+      const probeManager = gameController.getProbeManager();
+      
+      // Generate random target position within galaxy bounds
+      const targetPosition: Point2D = {
+        x: Math.random() * 1800 + 100, // 100-1900 to stay within bounds
+        y: Math.random() * 1800 + 100,
+      };
+      
+      const result = probeManager.queueProbe(type, targetPosition, 1, launchPosition);
+      
+      if (result.success) {
+        console.log(`[GalaxyMapScreen] Successfully queued ${type} probe`);
+      } else {
+        console.warn(`[GalaxyMapScreen] Failed to queue ${type} probe:`, result.error);
+      }
+    } catch (error) {
+      console.error(`[GalaxyMapScreen] Error launching ${type} probe:`, error);
+    }
+  };
 
   const handleBeaconSelect = (beacon: Beacon) => {
     console.log('Selected beacon:', beacon);
@@ -210,6 +237,17 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           />
           
           <StatusBar style="light" />
+          
+          {/* FABs positioned inside main view container */}
+          <ProbeLaunchFAB
+            onProbeSelect={handleProbeLaunch}
+            position="bottomLeft"
+            launchPosition={{ x: 1000, y: 1000 }}
+          />
+          
+          <PatternToggleButton
+            position="bottom-right"
+          />
         </View>
         
         <BeaconSpecializationModal

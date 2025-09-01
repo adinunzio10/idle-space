@@ -67,18 +67,14 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   
   // Calculate pattern suggestion count using PatternDetector's suggestion engine
   const calculatePatternCount = useCallback((currentBeacons: Beacon[]): number => {
-    console.log(`[PatternSuggestionContext] calculatePatternCount (suggestions) called with ${currentBeacons.length} beacons`);
-    
     // Need at least 2 beacons to have suggestions for completing patterns
     if (currentBeacons.length < 2) {
-      console.log(`[PatternSuggestionContext] Not enough beacons for suggestions (${currentBeacons.length} < 2)`);
       return 0;
     }
     
     try {
       // Get pattern suggestions instead of completed patterns
       const suggestions = patternDetector.getPatternSuggestions(currentBeacons);
-      console.log(`[PatternSuggestionContext] Found ${suggestions.length} pattern suggestions:`, suggestions.map(s => ({ type: s.type, priority: s.priority })));
       
       return suggestions.length;
     } catch (error) {
@@ -89,12 +85,10 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   
   // Update beacons and recalculate pattern suggestions
   const updateBeacons = useCallback((newBeacons: Beacon[]) => {
-    console.log(`[PatternSuggestionContext] updateBeacons called with ${newBeacons.length} beacons`);
     setBeacons(newBeacons);
     
     // Calculate pattern suggestions
     const newPatternCount = calculatePatternCount(newBeacons);
-    console.log(`[PatternSuggestionContext] Setting suggestion count to ${newPatternCount}`);
     setPatternCount(newPatternCount);
     
     // Also update the suggestions array for the UI
@@ -144,10 +138,6 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   
   // Initialize pattern suggestion count on mount and when beacons change
   useEffect(() => {
-    console.log(`[PatternSuggestionContext] useEffect triggered with ${beacons.length} beacons`);
-    if (beacons.length > 0) {
-      console.log(`[PatternSuggestionContext] First beacon connections:`, beacons[0]?.connections);
-    }
     const newPatternCount = calculatePatternCount(beacons);
     setPatternCount(newPatternCount);
     

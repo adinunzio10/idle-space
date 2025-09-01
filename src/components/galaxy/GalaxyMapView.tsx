@@ -105,7 +105,6 @@ import PatternRenderer, { usePatternRenderingQuality } from './PatternRenderer';
 import { PatternSuggestionOverlay } from './PatternSuggestionOverlay';
 import { usePatternSuggestions, usePatternSuggestionActions } from '../../contexts/PatternSuggestionContext';
 import { PlacementHintSystem } from '../ui/PlacementHintSystem';
-import { PatternToggleButton } from '../ui/PatternToggleButton';
 import StarField from './StarField';
 import { ProbeAnimationRenderer } from './ProbeAnimationRenderer';
 import { PatternSuggestionEngine } from '../../utils/patterns/PatternSuggestionEngine';
@@ -114,12 +113,14 @@ import { SpatialHashMap } from '../../utils/spatial/SpatialHashMap';
 import { PlacementValidator, PlacementConfig } from '../../utils/spatial/PlacementValidator';
 import { BEACON_PLACEMENT_CONFIG } from '../../types/beacon';
 import { Beacon as BeaconEntity } from '../../entities/Beacon';
+import { ProbeType } from '../../types/probe';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
 interface GalaxyMapViewProps extends GalaxyMapProps {
   style?: any;
+  gameController?: any; // GameController instance for probe launching
 }
 
 export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
@@ -133,6 +134,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   selectedBeacon = null,
   beaconUpdateTrigger,
   style,
+  gameController,
 }) => {
   // Constants for galaxy content
   const GALAXY_WIDTH = 2000;
@@ -1163,6 +1165,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     }
   }, [beacons, onBeaconSelect, onMapPress, isPatternHintPopupVisible]);
 
+
   // Single tap for beacon/cluster selection or map interaction with optimized thresholds
   const tapThresholds = gestureConfig.getTapThresholds();
   const singleTapGesture = Gesture.Tap()
@@ -1443,6 +1446,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
         </Animated.View>
       </GestureDetector>
+      
       
     </View>
   );

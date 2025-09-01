@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -20,6 +21,8 @@ interface PatternToggleButtonProps {
 export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
   position = 'bottom-right',
 }) => {
+  const insets = useSafeAreaInsets();
+  
   // Use context instead of props
   const patternCount = usePatternCount();
   const { 
@@ -105,8 +108,31 @@ export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
     return null;
   }
 
+  // Dynamic position style using safe area insets
+  const getPositionStyle = () => {
+    console.log('[PatternToggleButton] Safe area insets:', insets);
+    
+    const baseStyle = {
+      position: 'absolute' as const,
+      zIndex: 1000,
+    };
+    
+    switch (position) {
+      case 'bottom-right':
+        return { ...baseStyle, bottom: insets.bottom + 20, right: 20 };
+      case 'bottom-left':
+        return { ...baseStyle, bottom: insets.bottom + 20, left: 20 };
+      case 'top-right':
+        return { ...baseStyle, top: insets.top + 80, right: 20 };
+      case 'top-left':
+        return { ...baseStyle, top: insets.top + 80, left: 20 };
+      default:
+        return { ...baseStyle, bottom: insets.bottom + 20, right: 20 };
+    }
+  };
+
   return (
-    <View style={[styles.container, styles[`container_${position}`]]}>
+    <View style={getPositionStyle()}>
       {/* Glow effect */}
       <Animated.View style={[styles.glow, glowStyle]} />
       

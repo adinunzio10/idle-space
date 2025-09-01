@@ -132,7 +132,10 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
   return (
     <View className="flex-1 bg-surface rounded-t-xl overflow-hidden">
       {/* Header */}
-      <View className="bg-surface px-4 py-3">
+      <View 
+        className="bg-surface px-4 py-3"
+        style={{ paddingTop: insets.top + 12 }}
+      >
         <View className="flex-row justify-between items-center">
           {onClose && (
             <TouchableOpacity

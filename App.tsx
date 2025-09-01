@@ -17,6 +17,7 @@ import { StatisticsModal } from './src/components/ui/StatisticsModal';
 import { SettingsModal } from './src/components/ui/SettingsModal';
 import { PatternToggleButton } from './src/components/ui/PatternToggleButton';
 import { PatternSuggestionProvider } from './src/contexts/PatternSuggestionContext';
+import { ResourceProvider } from './src/core/ResourceContext';
 import { ProbeInstance } from './src/types/probe';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
@@ -153,6 +154,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           showDebugOverlay={showDebugOverlay}
           selectedBeacon={selectedBeacon}
           beaconUpdateTrigger={beaconVersion}
+          gameController={gameController}
           />
         </View>
         
@@ -424,8 +426,9 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <PatternSuggestionProvider initialBeacons={getBeaconsForMap()}>
-            <GalaxyMapScreen 
+          <ResourceProvider>
+            <PatternSuggestionProvider initialBeacons={getBeaconsForMap()}>
+              <GalaxyMapScreen 
             onBack={() => setShowGalaxyMap(false)}
             beacons={getBeaconsForMap()}
             probes={probes}
@@ -440,7 +443,8 @@ export default function App() {
             beaconVersion={beaconVersion}
             gameController={gameController}
             />
-          </PatternSuggestionProvider>
+            </PatternSuggestionProvider>
+          </ResourceProvider>
         </GestureHandlerRootView>
         
         <BeaconSpecializationModal
