@@ -166,7 +166,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <View className="flex-1 bg-background">
           <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
           
-          <View className="bg-surface px-4 py-3" style={{ paddingTop: insets.top + 12 }}>
+          <View className="bg-surface px-4 py-3">
             <View className="flex-row justify-between items-center">
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
