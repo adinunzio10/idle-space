@@ -21,22 +21,14 @@ interface ProbeLaunchFABProps {
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
-// Add debug log at module level to verify import
-console.warn('🚨 [ProbeLaunchFAB] MODULE LOADED - SHOULD BE VISIBLE!');
 
 export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
   onProbeSelect,
   position = 'bottomRight',
   launchPosition,
 }) => {
-  console.warn('🚨 [ProbeLaunchFAB] COMPONENT RENDERING!');
-  console.log('[ProbeLaunchFAB] Props received:', { position, launchPosition });
-  
   const insets = useSafeAreaInsets();
-  console.log('[ProbeLaunchFAB] Got safe area insets:', insets);
-  
   const { canAfford, formatResourceValue } = useResources();
-  console.log('[ProbeLaunchFAB] Got resources context');
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Animation values
@@ -157,24 +149,15 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
 
   // Position style based on prop
   const getPositionStyle = () => {
-    // Debug logging for safe area insets
-    console.log('[ProbeLaunchFAB] Safe area insets:', insets);
-    console.log('[ProbeLaunchFAB] Position calculation - bottom will be:', 30 + insets.bottom);
-    
     const baseStyle = {
       position: 'absolute' as const,
-      bottom: 30 + insets.bottom, // Use safe area insets properly
-      zIndex: 9999, // Higher z-index to ensure visibility
+      bottom: 30 + insets.bottom,
+      zIndex: 9999,
     };
     
-    const finalStyle = position === 'bottomLeft' 
+    return position === 'bottomLeft' 
       ? { ...baseStyle, left: 20 }
       : { ...baseStyle, right: 20 };
-      
-    console.log('[ProbeLaunchFAB] Final position style:', finalStyle);
-    console.log('[ProbeLaunchFAB] Final position calculated as:', finalStyle);
-    
-    return finalStyle;
   };
 
   const formatCost = (cost: Partial<Record<string, number>>) => {
@@ -183,17 +166,9 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
       .join(', ');
   };
 
-  console.log('[ProbeLaunchFAB] About to render component');
-  console.log('[ProbeLaunchFAB] Position style will be:', getPositionStyle());
 
   return (
-    <View style={[getPositionStyle(), { 
-      backgroundColor: 'rgba(255, 0, 0, 0.8)', // Bright red background
-      padding: 10,
-      borderRadius: 20,
-      borderWidth: 5,
-      borderColor: 'yellow' // Yellow border
-    }]}>
+    <View style={getPositionStyle()}>
       {/* Probe Type Selection Menu */}
       {isExpanded && (
         <Animated.View
@@ -201,8 +176,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
             {
               position: 'absolute',
               bottom: 70, // Above the main FAB
-              right: position === 'bottomLeft' ? 0 : undefined,
-              left: position === 'bottomRight' ? 20 : undefined, // Force menu to left side when FAB is on right
+              right: position === 'bottomLeft' ? 0 : 20, // Always keep some margin from right edge
               width: 180, // Fixed width instead of minWidth
             },
             menuAnimatedStyle
@@ -304,10 +278,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
           },
           fabAnimatedStyle
         ]}
-        onPress={() => {
-          console.log('[ProbeLaunchFAB] FAB PRESSED - Button is working!');
-          handleFABPress();
-        }}
+        onPress={handleFABPress}
         onPressIn={() => {
           fabScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
         }}
