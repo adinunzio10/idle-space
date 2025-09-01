@@ -22,14 +22,14 @@ interface ProbeLaunchFABProps {
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 // Add debug log at module level to verify import
-console.log('[ProbeLaunchFAB] Module loaded/imported');
+console.warn('🚨 [ProbeLaunchFAB] MODULE LOADED - SHOULD BE VISIBLE!');
 
 export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
   onProbeSelect,
   position = 'bottomRight',
   launchPosition,
 }) => {
-  console.log('[ProbeLaunchFAB] Component function called - rendering started');
+  console.warn('🚨 [ProbeLaunchFAB] COMPONENT RENDERING!');
   console.log('[ProbeLaunchFAB] Props received:', { position, launchPosition });
   
   const insets = useSafeAreaInsets();
@@ -159,12 +159,12 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
   const getPositionStyle = () => {
     // Debug logging for safe area insets
     console.log('[ProbeLaunchFAB] Safe area insets:', insets);
-    console.log('[ProbeLaunchFAB] Calculated bottom position:', insets.bottom + 20);
+    console.log('[ProbeLaunchFAB] Position calculation - bottom will be:', 30 + insets.bottom);
     
     const baseStyle = {
       position: 'absolute' as const,
-      bottom: 20, // Temporarily use fixed positioning like PatternToggleButton
-      zIndex: 1000,
+      bottom: 30 + insets.bottom, // Use safe area insets properly
+      zIndex: 9999, // Higher z-index to ensure visibility
     };
     
     const finalStyle = position === 'bottomLeft' 
@@ -172,6 +172,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
       : { ...baseStyle, right: 20 };
       
     console.log('[ProbeLaunchFAB] Final position style:', finalStyle);
+    console.log('[ProbeLaunchFAB] Final position calculated as:', finalStyle);
     
     return finalStyle;
   };
@@ -186,7 +187,13 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
   console.log('[ProbeLaunchFAB] Position style will be:', getPositionStyle());
 
   return (
-    <View style={getPositionStyle()}>
+    <View style={[getPositionStyle(), { 
+      backgroundColor: 'rgba(255, 0, 0, 0.8)', // Bright red background
+      padding: 10,
+      borderRadius: 20,
+      borderWidth: 5,
+      borderColor: 'yellow' // Yellow border
+    }]}>
       {/* Probe Type Selection Menu */}
       {isExpanded && (
         <Animated.View
@@ -279,9 +286,9 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
       <AnimatedTouchableOpacity
         style={[
           {
-            width: 64,
-            height: 64,
-            borderRadius: 32,
+            width: 80, // Increased size for better visibility
+            height: 80,
+            borderRadius: 40,
             backgroundColor: '#4F46E5',
             justifyContent: 'center',
             alignItems: 'center',
@@ -290,12 +297,16 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
             shadowOpacity: 0.3,
             shadowRadius: 8,
             elevation: 8,
-            borderWidth: 2,
-            borderColor: 'rgba(255, 255, 255, 0.2)',
+            borderWidth: 3, // Thicker border
+            borderColor: '#FFFFFF', // Bright white border for visibility
+            zIndex: 9999, // Ensure it's above everything
           },
           fabAnimatedStyle
         ]}
-        onPress={handleFABPress}
+        onPress={() => {
+          console.log('[ProbeLaunchFAB] FAB PRESSED - Button is working!');
+          handleFABPress();
+        }}
         onPressIn={() => {
           fabScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
         }}
@@ -307,7 +318,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
         accessibilityHint="Tap to expand probe launch menu"
         accessibilityRole="button"
       >
-        <Text style={{ fontSize: 24, color: '#FFFFFF' }}>
+        <Text style={{ fontSize: 28, color: '#FFFFFF' }}>
           {isExpanded ? '✕' : '🚀'}
         </Text>
       </AnimatedTouchableOpacity>

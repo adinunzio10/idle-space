@@ -48,6 +48,7 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
 
   // Handle probe launch from FAB
   const handleProbeLaunch = (type: ProbeType, launchPosition: Point2D) => {
+    console.log('[GalaxyMapScreen] handleProbeLaunch called with:', { type, launchPosition });
     try {
       const probeManager = gameController.getProbeManager();
       
@@ -239,11 +240,16 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           <StatusBar style="light" />
           
           {/* FABs positioned inside main view container */}
-          <ProbeLaunchFAB
-            onProbeSelect={handleProbeLaunch}
-            position="bottomLeft"
-            launchPosition={{ x: 1000, y: 1000 }}
-          />
+          {(() => {
+            console.warn('🚨 [GalaxyMapScreen] RENDERING PROBELAUNCHFAB!');
+            return (
+              <ProbeLaunchFAB
+                onProbeSelect={handleProbeLaunch}
+                position="bottomLeft"
+                launchPosition={{ x: 1000, y: 1000 }}
+              />
+            );
+          })()}
           
           <PatternToggleButton
             position="bottom-right"
