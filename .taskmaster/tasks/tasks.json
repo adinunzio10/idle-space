@@ -1356,11 +1356,25 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 20,
+        "title": "Refactor Settings and Statistics modals to dedicated full-screen components",
+        "description": "Convert the existing Settings and Statistics modal dialogs into dedicated full-screen components that follow the same navigation pattern as Galaxy Map and Probe Manager screens for improved user experience and consistency.",
+        "details": "Transform the modal-based Settings and Statistics components into full-screen dedicated screens following the established navigation patterns from Galaxy Map and Probe Manager implementations. Key changes include: 1) **Navigation Integration**: Implement screen-based navigation using React Navigation or similar pattern matching existing screen transitions. Add navigation buttons/tabs in main UI to access Settings and Statistics screens alongside Galaxy Map and Probe Manager. 2) **Component Restructuring**: Convert SettingsModal and StatisticsModal into dedicated screen components (SettingsScreen, StatisticsScreen) with proper header navigation including back buttons and screen titles. Maintain existing functionality while adapting to full-screen layout patterns. 3) **Layout Optimization**: Redesign component layouts to utilize full screen real estate effectively, improving readability and interaction space for touch interfaces. Implement consistent styling and spacing matching other full-screen components. 4) **State Management**: Update any modal-specific state management to work with screen-based navigation, ensuring proper state persistence and cleanup during screen transitions. 5) **Accessibility**: Enhance accessibility with proper focus management, screen reader navigation, and keyboard support following full-screen component patterns rather than modal accessibility patterns.",
+        "testStrategy": "Verify Settings and Statistics screens are accessible through main navigation alongside Galaxy Map and Probe Manager screens. Test all existing Settings functionality works identically in full-screen format including save/load, input validation, and immediate setting application. Confirm Statistics display correctly shows all game metrics and updates in real-time. Test navigation transitions are smooth and consistent with other screens. Verify back button functionality returns to previous screen correctly. Test accessibility features including screen reader navigation, focus management, and touch target sizing. Validate responsive layout works across different device sizes and orientations. Ensure no regression in existing functionality during modal-to-screen conversion.",
+        "status": "pending",
+        "dependencies": [
+          17,
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-01T04:29:01.102Z",
+      "updated": "2025-09-01T17:19:21.751Z",
       "description": "Tasks for master context"
     }
   }
