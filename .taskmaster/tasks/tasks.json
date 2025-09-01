@@ -1198,70 +1198,78 @@
       {
         "id": 17,
         "title": "Populate Settings Screen with Configuration Options and Functionality",
-        "description": "Implement a comprehensive settings screen with game configuration options, accessibility features, performance toggles, and data management functionality for the idle space game.",
-        "details": "Create a fully functional settings screen building on the existing UI foundation (Task 8). Implement the following settings categories: 1) Game Settings - auto-save interval (10s/30s/60s), offline progression notifications, resource number formatting (scientific/engineering/abbreviated), animation speed multiplier (0.5x-2x). 2) Display Settings - FPS counter toggle, performance overlay, beacon rendering quality (high/medium/low), UI scale factor (0.8x-1.2x), dark/light theme toggle. 3) Accessibility - reduced motion toggle, high contrast mode, larger touch targets, screen reader compatibility. 4) Audio Settings - sound effects volume, background music toggle, haptic feedback intensity. 5) Data Management - export save data, import save data with validation, reset progress with confirmation dialog, clear cache. Use React Context for global settings state management with AsyncStorage persistence. Implement immediate setting application without requiring app restart. Add input validation and error handling for all user inputs. Follow React Native best practices with proper TypeScript interfaces and accessibility labels.",
-        "testStrategy": "Test each setting option applies immediately and persists across app restarts. Verify save/load functionality works with valid and malformed data files. Test accessibility features with screen readers and device accessibility settings. Validate input bounds and error messages for numeric inputs. Test theme switching with proper color updates across all components. Verify reset functionality with proper confirmation flows and data cleanup.",
+        "description": "Connect the existing settings screen UI to actual game systems and implement comprehensive functionality. The settings screen UI is fully implemented with SettingsScreen.tsx and SettingsModal.tsx, but lacks underlying state management architecture. Only manual save (connected to gameController.saveGame()) and haptic feedback (using expo-haptics) are functional. All other settings show placeholder alerts and need integration with their respective systems through a new settings context system.",
         "status": "pending",
         "dependencies": [
           8
         ],
         "priority": "medium",
+        "details": "The settings screen has complete, well-structured UI with SettingsScreen.tsx and SettingsModal.tsx components featuring clean layout, proper styling, and accessibility features. However, it lacks the underlying settings system architecture. Need to create SettingsContext/SettingsProvider to connect the polished UI to actual functionality. Currently non-functional settings include: auto-save interval integration with GameController, offline generation toggle, pattern suggestions, sound effects, scientific notation number formatting, debug info overlay, large text scaling, high contrast theme, reduce animations, export save functionality, and reset progress. The PlayerSettings interface exists in GameState schema but isn't being used. Focus on building settings context system to bridge the gap between existing UI and backend systems.",
+        "testStrategy": "Test that each connected setting applies immediately and persists across app restarts. Verify settings context properly manages state and AsyncStorage persistence. Test auto-save integration affects actual save intervals. Test number formatting applies to all resource displays throughout the app. Validate audio settings control actual game sounds. Test export produces valid save files and import validates data properly. Verify reset progress actually clears all game data. Test accessibility features integrate with device settings and affect app behavior appropriately.",
         "subtasks": [
           {
             "id": 1,
             "title": "Create Settings Context and State Management System",
-            "description": "Implement React Context for settings management with TypeScript interfaces and AsyncStorage persistence for all game configuration options including game settings, display settings, accessibility, audio, and data management.",
-            "dependencies": [],
-            "details": "Create SettingsContext.tsx with interfaces for all settings categories: GameSettings (autoSaveInterval, offlineNotifications, numberFormat, animationSpeed), DisplaySettings (showFPS, performanceOverlay, beaconQuality, uiScale, theme), AccessibilitySettings (reducedMotion, highContrast, largeTouchTargets, screenReader), AudioSettings (sfxVolume, musicEnabled, hapticIntensity), DataSettings (exportData, importData). Implement context provider with AsyncStorage persistence using the existing AsyncStorageAdapter pattern from SaveManager. Include default settings values and validation logic.",
+            "description": "Implement React Context for settings management with TypeScript interfaces and AsyncStorage persistence to connect the existing polished UI to actual functionality. Leverage the existing PlayerSettings interface from GameState schema.",
             "status": "pending",
-            "testStrategy": "Test settings persistence across app restarts, validate default values are loaded correctly, test AsyncStorage error handling and fallback behavior."
+            "dependencies": [],
+            "details": "Create SettingsContext.tsx and SettingsProvider to manage all game configuration options. Use the existing PlayerSettings interface from GameState schema as foundation and extend as needed for categories: GameSettings (autoSaveInterval, offlineNotifications, numberFormat, animationSpeed), DisplaySettings (showFPS, performanceOverlay, beaconQuality, uiScale, theme), AccessibilitySettings (reducedMotion, highContrast, largeTouchTargets, screenReader), AudioSettings (sfxVolume, musicEnabled, hapticIntensity), DataSettings (exportData, importData). Implement context provider with AsyncStorage persistence using the existing AsyncStorageAdapter pattern from SaveManager. Include default settings values, validation logic, and methods to connect with the existing SettingsScreen.tsx and SettingsModal.tsx components.",
+            "testStrategy": "Test settings context properly connects to existing UI components. Test settings persistence across app restarts, validate default values are loaded correctly, test AsyncStorage error handling and fallback behavior."
           },
           {
             "id": 2,
-            "title": "Build Settings Screen UI Components and Layout",
-            "description": "Create comprehensive settings screen UI with categorized sections, form controls, and NativeWind styling following the existing design patterns from the codebase.",
-            "dependencies": [
-              "17.1"
-            ],
-            "details": "Create SettingsScreen.tsx component with categorized sections matching task description. Use TouchableOpacity buttons, Switch components, and TextInput for various setting types. Implement collapsible sections for better organization. Follow existing UI patterns from App.tsx and ProbeManagerUI.tsx using NativeWind classes. Include proper spacing, colors from theme (bg-background, bg-surface, text-text, etc.), and accessibility labels. Add input validation UI feedback and error states.",
+            "title": "Connect Auto-Save and Offline Generation to Game Systems",
+            "description": "Integrate auto-save interval setting with GameController's save system and connect offline generation toggle to the game's offline progression logic using the new settings context.",
             "status": "pending",
-            "testStrategy": "Test UI renders correctly on different screen sizes, verify all form controls work properly, test accessibility features with screen readers."
+            "dependencies": [
+              1
+            ],
+            "details": "Connect the auto-save interval dropdown (10s/30s/60s) in existing UI to modify the actual save interval in GameController or SaveManager through the settings context. Replace placeholder alert with actual functionality. Implement offline generation toggle integration with the game's offline progression calculation system. Ensure changes to auto-save interval apply immediately and persist across app restarts. Add proper validation and error handling for these critical game systems. Update existing SettingsScreen.tsx to use settings context instead of showing placeholder alerts.",
+            "testStrategy": "Test auto-save interval changes take effect immediately by monitoring actual save occurrences. Verify offline generation toggle affects resource accumulation while app is backgrounded. Test UI updates properly reflect setting changes."
           },
           {
             "id": 3,
-            "title": "Implement Game Settings Controls and Logic",
-            "description": "Create interactive controls for game-specific settings including auto-save interval selection, offline notifications, number formatting options, and animation speed multiplier with immediate application.",
-            "dependencies": [
-              "17.1",
-              "17.2"
-            ],
-            "details": "Implement dropdown/picker for auto-save intervals (10s/30s/60s), toggle for offline notifications, radio buttons for number formatting (scientific/engineering/abbreviated), slider for animation speed (0.5x-2x). Connect controls to SettingsContext and ensure changes apply immediately. Update SaveManager's autoSaveInterval when changed. Add validation for numeric inputs and proper range checking.",
+            "title": "Implement Number Formatting and Animation Speed Systems",
+            "description": "Create number formatting system for resource displays and implement animation speed multiplier controls that affect game animations throughout the app, connecting to existing UI controls.",
             "status": "pending",
-            "testStrategy": "Test auto-save interval changes take effect immediately, verify number formatting applies to resource displays, test animation speed affects game animations in real-time."
+            "dependencies": [
+              1
+            ],
+            "details": "Build number formatting system that can display numbers in scientific, engineering, or abbreviated formats. Connect to existing scientific notation toggle in settings UI. Apply this formatting to all resource displays throughout the app (Quantum Data, Stellar Essence, etc.). Implement animation speed multiplier (0.5x-2x) that affects game animations including probe launches, beacon connections, and UI transitions. Connect to existing animation speed slider in settings UI. Ensure formatting and speed changes apply immediately to existing UI elements without requiring app restart. Replace placeholder alerts with actual functionality.",
+            "testStrategy": "Test number formatting applies consistently across all resource displays in the app. Verify animation speed multiplier affects all relevant animations in real-time. Test settings UI properly controls these systems."
           },
           {
             "id": 4,
-            "title": "Implement Display and Accessibility Settings with Performance Integration",
-            "description": "Create display settings controls (FPS counter, performance overlay, beacon quality, UI scale, theme) and accessibility features (reduced motion, high contrast, touch targets) with integration to existing performance monitoring system.",
-            "dependencies": [
-              "17.1",
-              "17.2"
-            ],
-            "details": "Implement FPS counter toggle connecting to existing performance monitor in src/utils/performance/monitor.ts, performance overlay toggle, beacon quality selector affecting LOD system, UI scale slider (0.8x-1.2x), theme toggle. Add accessibility toggles for reduced motion (affecting animations), high contrast mode (CSS overrides), larger touch targets (44px minimum), screen reader optimization. Integrate with existing rendering systems and ensure settings apply immediately to GalaxyMapView.",
+            "title": "Connect Debug, Audio, and Accessibility Systems",
+            "description": "Integrate debug info toggle with performance monitoring system, create audio system integration, and implement accessibility features including text scaling and high contrast modes using existing UI controls.",
             "status": "pending",
-            "testStrategy": "Test FPS counter displays correctly, verify beacon quality affects rendering performance, test UI scaling works across components, validate accessibility features with device accessibility settings."
+            "dependencies": [
+              1
+            ],
+            "details": "Connect debug info toggle in existing UI to the existing performance monitoring system (src/utils/performance/monitor.ts) to show/hide debug overlay. Replace placeholder alert with actual functionality. Create audio system integration for sound effects volume and background music toggle (currently shows placeholder alerts). Implement text scaling system for large text accessibility option in existing UI. Create high contrast theme variant and connect toggle to actual theme switching. Integrate reduce animations setting with the game's animation systems to respect accessibility preferences. Update existing SettingsScreen.tsx to use actual functionality instead of placeholder alerts.",
+            "testStrategy": "Test debug info toggle shows/hides actual performance data. Verify audio settings control game sounds when audio system is implemented. Test accessibility features integrate with device settings and affect app behavior appropriately. Verify existing UI controls connect to actual systems."
           },
           {
             "id": 5,
-            "title": "Implement Audio Settings and Data Management Features",
-            "description": "Create audio controls and data management functionality including save data export/import with validation, progress reset confirmation, and cache clearing with proper error handling and user feedback.",
-            "dependencies": [
-              "17.1",
-              "17.2"
-            ],
-            "details": "Implement volume slider for sound effects, music toggle, haptic intensity selector. For data management: create export functionality using SaveManager to generate JSON file, import with validation against save file schema, reset progress with confirmation dialog that clears all game data, cache clear function. Use platform-appropriate file sharing for export/import. Add loading states, success/error messages, and confirmation dialogs. Integrate with existing SaveManager methods and GameController reset functionality.",
+            "title": "Implement Functional Data Management Features",
+            "description": "Connect export save and reset progress features in existing UI to actual SaveManager functionality, replacing placeholder alerts with working save data export/import and complete progress reset.",
             "status": "pending",
-            "testStrategy": "Test audio settings affect game sounds, verify save data export creates valid files, test import validates corrupted data properly, confirm reset functionality clears all data, test cache clearing improves performance."
+            "dependencies": [
+              1
+            ],
+            "details": "Replace export save placeholder alert in existing UI with actual SaveManager integration to generate and share save data files. Implement save data import with validation against save file schema. Connect reset progress button in existing UI to actual data clearing functionality that removes all game progress, not just showing a placeholder alert. Add proper confirmation dialogs, loading states, success/error messages, and file handling using platform-appropriate sharing mechanisms. Update existing SettingsScreen.tsx and SettingsModal.tsx to use actual functionality instead of placeholder alerts.",
+            "testStrategy": "Test save data export creates valid files that can be imported successfully. Verify import validates and rejects corrupted data properly. Confirm reset progress actually clears all game data and returns to initial state. Test existing UI properly handles success/error states."
+          },
+          {
+            "id": 6,
+            "title": "Connect Pattern Suggestions Setting to Pattern Detection System",
+            "description": "Integrate the pattern suggestions toggle in existing settings UI with the actual pattern detection system to enable/disable automatic pattern highlighting and suggestions.",
+            "status": "pending",
+            "dependencies": [
+              1
+            ],
+            "details": "Connect the pattern suggestions toggle in existing settings UI to the game's pattern detection system. When enabled, the system should highlight potential geometric patterns (triangles, squares, pentagons, hexagons) and suggest optimal beacon placements. When disabled, suppress pattern suggestions and highlighting. Replace placeholder alert with actual integration to pattern detection logic. Ensure setting persists across app sessions and applies immediately when toggled.",
+            "testStrategy": "Test pattern suggestions toggle properly enables/disables pattern highlighting in galaxy map. Verify setting persistence across app restarts. Test immediate application of setting changes without requiring app restart."
           }
         ]
       },
