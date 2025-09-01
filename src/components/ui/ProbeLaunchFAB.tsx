@@ -201,8 +201,8 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
             {
               position: 'absolute',
               bottom: 70, // Above the main FAB
-              right: position === 'bottomLeft' ? 0 : -160, // Adjusted offset for better visibility
-              left: position === 'bottomRight' ? 20 : undefined, // Ensure menu doesn't go off-screen
+              right: position === 'bottomLeft' ? 0 : undefined,
+              left: position === 'bottomRight' ? 20 : undefined, // Force menu to left side when FAB is on right
               width: 180, // Fixed width instead of minWidth
             },
             menuAnimatedStyle
