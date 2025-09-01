@@ -24,7 +24,6 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import debounce from 'lodash.debounce';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedProps,
@@ -32,6 +31,7 @@ import Animated, {
   withSpring,
   runOnJS,
   useFrameCallback,
+  runOnUI,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { G, Rect } from 'react-native-svg';
@@ -44,6 +44,7 @@ import {
   GestureState,
   BeaconCluster,
   RenderingState,
+  Beacon,
 } from '../../types/galaxy';
 import {
   screenToGalaxy,
@@ -92,6 +93,8 @@ import {
   PatternDetector, 
   updateConnectionPatterns 
 } from '../../utils/patterns/detection';
+import { useBackgroundPatternDetection } from '../../hooks/useBackgroundPatternDetection';
+import { AsyncPatternAnalyzer } from '../../services/AsyncPatternAnalyzer';
 import { CONNECTION_CONFIG } from '../../constants/connections';
 import { gestureConfig, GESTURE_THRESHOLDS } from '../../constants/gestures';
 import BeaconRenderer from './BeaconRenderer';
@@ -272,12 +275,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Pattern detector for geometric patterns - now with spatial index
   const patternDetector = useMemo(() => new PatternDetector(undefined, undefined, undefined, undefined, undefined, placementValidator, spatialIndex), [placementValidator, spatialIndex]);
+
+  // Background pattern detection to prevent main thread blocking
+  const { patterns: backgroundPatterns, detectPatternsAsync, isWorkerAvailable } = useBackgroundPatternDetection();
   
   const suggestionEngine = useMemo(() => 
     new PatternSuggestionEngine(spatialHashMap, undefined, placementValidator, spatialIndex), 
     [spatialHashMap, placementValidator, spatialIndex]
   );
 
+<<<<<<< HEAD
   // Pattern suggestion state from context
   const {
     popupVisible,
@@ -315,10 +322,31 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         } catch (error) {
           console.warn('Failed to analyze pattern opportunities:', error);
         }
-      }
-    }, 100), // 100ms delay
+  // Async pattern analyzer for background processing
+  const asyncPatternAnalyzer = useMemo(() => 
+    new AsyncPatternAnalyzer(suggestionEngine), 
     [suggestionEngine]
   );
+
+  // Pattern suggestion state management (disabled by default for performance)
+  const [suggestionState, suggestionActions] = usePatternSuggestionState({
+    popupVisible: false,
+    mapVisualizationsVisible: false,
+    displayMode: 'best',
+  });
+
+  // Async pattern analysis to prevent frame drops
+  const analyzePatternAsync = useCallback(async (beacons: Beacon[], viewport: ViewportState) => {
+    if (suggestionState.popupVisible || suggestionState.mapVisualizationsVisible) {
+      try {
+        const analysis = await asyncPatternAnalyzer.analyzeAsync(beacons, viewport);
+        setPatternAnalysis(analysis);
+        setPatternSuggestions(analysis.suggestedPositions || []);
+      } catch (error) {
+        console.warn('Failed to analyze pattern opportunities:', error);
+      }
+    }
+  }, [asyncPatternAnalyzer, suggestionState.popupVisible, suggestionState.mapVisualizationsVisible]);
 
   // Track significant viewport changes to avoid unnecessary pattern analysis
   const lastSignificantViewport = useRef<ViewportState>({ 
@@ -361,14 +389,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     viewportState.scale
   );
 
-  // Initialize performance monitoring
+  // Initialize performance monitoring and cleanup
   React.useEffect(() => {
     performanceMonitor.start();
     return () => {
       performanceMonitor.stop();
+      asyncPatternAnalyzer.cleanup();
     };
-  }, []);
+  }, [asyncPatternAnalyzer]);
 
+<<<<<<< HEAD
   // Update context with beacon changes and trigger pattern analysis
   useEffect(() => {
     // Update context with current beacons for pattern count calculation
@@ -383,6 +413,14 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       analyzePatternOpportunitiesDebounced(beacons, viewportState, suggestionState);
     }
   }, [beacons, beacons.length, updateBeacons, analyzePatternOpportunitiesDebounced, viewportState, suggestionState.popupVisible, suggestionState.mapVisualizationsVisible, suggestionEngine]);
+  // Pattern analysis trigger when beacons change (completely async now)
+  useEffect(() => {
+    if (beacons.length > 0) {
+      // Use async analyzer with placement cooldown
+      analyzePatternAsync(beacons, viewportState);
+    }
+  }, [beacons.length, beacons, analyzePatternAsync, viewportState]);
+>>>>>>> 0d3c2ef (perf: fix severe frame drops during beacon placement)
 
   // Debug logging helper - defined early so it's available in worklets
   const logGesture = useCallback((type: string, data: any) => {
@@ -545,12 +583,14 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     // Build connections from all beacons (not just visible ones for pattern detection)
     const allConnections = buildConnectionsFromBeacons(beacons);
     
-    // Detect patterns (skip if performance is poor)
-    // Don't reuse renderingState.patterns to avoid circular dependency
-    let patterns: any[] = [];
-    if (qualitySettings.enableAnimations) {
-      patterns = patternDetector.detectPatternsOptimized(beacons, allConnections);
+    // Use background patterns to avoid main thread blocking
+    // Trigger async pattern detection for next frame
+    if (qualitySettings.enableAnimations && isWorkerAvailable) {
+      detectPatternsAsync(beacons, allConnections);
     }
+    
+    // Use cached background patterns or fallback to empty
+    const patterns = backgroundPatterns;
     
     // Update connections with pattern information
     const connectionsWithPatterns = updateConnectionPatterns(allConnections, patterns);
@@ -581,23 +621,36 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     
     setRenderingState(newRenderingState);
     
-    // Update pattern suggestions only on significant viewport changes (debounced for performance)
+    // Update pattern suggestions only on significant viewport changes (async for performance)
     if (patterns.length > 0 && isSignificantViewportChange(newViewport)) {
       lastSignificantViewport.current = newViewport;
-      analyzePatternOpportunitiesDebounced(beacons, newViewport, suggestionState);
+      analyzePatternAsync(beacons, newViewport);
     }
     
     endFrame(); // End performance monitoring
-  }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings, isSignificantViewportChange, analyzePatternOpportunitiesDebounced, suggestionState]);
+  }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings, isSignificantViewportChange, analyzePatternAsync, suggestionState, backgroundPatterns, detectPatternsAsync, isWorkerAvailable]);
 
   // Store the function in ref to prevent circular dependencies
   updateViewportStateRef.current = updateViewportState;
 
+  // Frame skip counter for performance optimization
+  const frameSkipCounter = useSharedValue(0);
+
   // Momentum physics frame callback
   // WORKLET PATTERN: useFrameCallback with runOnJS for state updates
   useFrameCallback((frameInfo) => {
+    // Skip frames if previous frame took too long (> 20ms = 50fps)
+    const deltaTime = frameInfo.timeSincePreviousFrame || 16.67;
+    if (deltaTime > 20) {
+      frameSkipCounter.value++;
+      if (frameSkipCounter.value % 2 !== 0) {
+        return; // Skip this frame to recover performance
+      }
+    } else {
+      frameSkipCounter.value = 0; // Reset counter on good performance
+    }
+
     if (isDecaying.value && !gestureStateIsActive.value) {
-      const deltaTime = frameInfo.timeSincePreviousFrame || 16.67; // Fallback to 60fps
       const normalizedDelta = deltaTime / 16.67; // Normalize to 60fps
       
       const currentVelocity: GestureVelocity = {
@@ -768,8 +821,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         }, currentTime, debugSharedValue);
       }
       
-      // Real-time viewport updates (throttled)
-      if (Math.abs(event.translationX) % 10 < 2 || Math.abs(event.translationY) % 10 < 2) {
+      // Real-time viewport updates (heavily throttled for performance)
+      if (Math.abs(event.translationX) % 25 < 3 || Math.abs(event.translationY) % 25 < 3) {
         runOnJS(updateViewportState)(translateX.value, translateY.value, scale.value);
       }
     })
@@ -972,8 +1025,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         }, currentTime, debugSharedValue);
       }
       
-      // Real-time viewport updates (throttled)
-      if (Math.abs((event.scale || 1) - lastScale.value) > 0.05) {
+      // Real-time viewport updates (heavily throttled for performance)
+      if (Math.abs((event.scale || 1) - lastScale.value) > 0.1) {
         runOnJS(updateViewportState)(constrainedTranslation.x, constrainedTranslation.y, newScale);
       }
     })
@@ -1225,13 +1278,18 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Force update rendering state when beacons change
   React.useEffect(() => {
     if (beaconUpdateTrigger !== undefined && updateViewportStateRef.current) {
+      // Copy the function reference to avoid worklet capturing the ref object
+      const updateFn = updateViewportStateRef.current;
+      
       // Force a viewport update to refresh spatial index and visible beacons
-      // Use ref to avoid circular dependency
-      updateViewportStateRef.current(
-        translateX.value,
-        translateY.value,
-        scale.value
-      );
+      // Use runOnUI to properly access shared values from JS thread
+      runOnUI(() => {
+        'worklet';
+        const x = translateX.value;
+        const y = translateY.value;
+        const s = scale.value;
+        runOnJS(updateFn)(x, y, s);
+      })();
     }
   }, [beaconUpdateTrigger]);
 

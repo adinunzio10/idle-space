@@ -76,6 +76,17 @@ export class PatternSuggestionEngine {
     );
 
     try {
+      // Early return for small beacon networks - avoid expensive analysis
+      if (beacons.length < 10) {
+        return {
+          suggestedPositions: [],
+          incompletePatterns: [],
+          optimalNextPlacement: null,
+          totalPotentialBonus: 0,
+          averageCompletionCost: 0
+        };
+      }
+
       // Apply viewport culling if viewport is provided
       let filteredBeacons = beacons;
       if (viewport) {
