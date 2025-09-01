@@ -55,7 +55,6 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
 
   
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-background">
         {/* GameHUD at the top */}
         <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
@@ -163,7 +162,6 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
         
         <StatusBar style="light" />
       </View>
-    </GestureHandlerRootView>
   );
 };
 
@@ -430,23 +428,25 @@ export default function App() {
 
     return (
       <SafeAreaProvider>
-        <PatternSuggestionProvider initialBeacons={getBeaconsForMap()}>
-          <GalaxyMapScreen 
-          onBack={() => setShowGalaxyMap(false)}
-          beacons={getBeaconsForMap()}
-          probes={probes}
-          onBeaconSelect={handleBeaconSelect}
-          onMapPress={handleMapPress}
-          selectedBeaconType={selectedBeaconType}
-          onBeaconTypeSelect={setSelectedBeaconType}
-          quantumData={gameState?.resources.quantumData || 0}
-          showDebugOverlay={showDebugOverlay}
-          onToggleDebugOverlay={() => setShowDebugOverlay(!showDebugOverlay)}
-          selectedBeacon={selectedBeacon}
-          beaconVersion={beaconVersion}
-          gameController={gameController}
-          />
-        </PatternSuggestionProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <PatternSuggestionProvider initialBeacons={getBeaconsForMap()}>
+            <GalaxyMapScreen 
+            onBack={() => setShowGalaxyMap(false)}
+            beacons={getBeaconsForMap()}
+            probes={probes}
+            onBeaconSelect={handleBeaconSelect}
+            onMapPress={handleMapPress}
+            selectedBeaconType={selectedBeaconType}
+            onBeaconTypeSelect={setSelectedBeaconType}
+            quantumData={gameState?.resources.quantumData || 0}
+            showDebugOverlay={showDebugOverlay}
+            onToggleDebugOverlay={() => setShowDebugOverlay(!showDebugOverlay)}
+            selectedBeacon={selectedBeacon}
+            beaconVersion={beaconVersion}
+            gameController={gameController}
+            />
+          </PatternSuggestionProvider>
+        </GestureHandlerRootView>
         
         <BeaconSpecializationModal
           isVisible={showSpecializationModal}
