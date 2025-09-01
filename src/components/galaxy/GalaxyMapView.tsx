@@ -24,7 +24,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { debounce } from 'lodash';
+import debounce from 'lodash.debounce';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedProps,
