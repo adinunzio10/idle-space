@@ -200,8 +200,8 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
           style={[
             {
               position: 'absolute',
-              bottom: 80, // Above the main FAB
-              right: 0,
+              bottom: 70, // Above the main FAB
+              right: position === 'bottomLeft' ? 0 : -180, // Offset left to prevent cutoff
               minWidth: 200,
             },
             menuAnimatedStyle
@@ -286,9 +286,9 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
       <AnimatedTouchableOpacity
         style={[
           {
-            width: 80, // Increased size for better visibility
-            height: 80,
-            borderRadius: 40,
+            width: 60, // Standard FAB size
+            height: 60,
+            borderRadius: 30,
             backgroundColor: '#4F46E5',
             justifyContent: 'center',
             alignItems: 'center',
