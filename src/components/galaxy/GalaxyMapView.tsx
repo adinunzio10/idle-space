@@ -23,7 +23,8 @@
  * ✅ Using shared values only within worklet contexts
  */
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import debounce from 'lodash.debounce';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedProps,
@@ -289,6 +290,53 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     displayMode: 'best',
   });
 
+  // Debounced pattern analysis to prevent excessive calculations during pan/zoom
+  const analyzePatternOpportunitiesDebounced = useMemo(
+    () => debounce((beacons: any[], viewport: ViewportState, currentSuggestionState: any) => {
+      if (currentSuggestionState.popupVisible || currentSuggestionState.mapVisualizationsVisible) {
+        try {
+          // Pass viewport bounds for culling optimization
+          const analysis = suggestionEngine.analyzePatternOpportunities(beacons, [], { bounds: viewport.bounds });
+          setPatternAnalysis(analysis);
+          setPatternSuggestions(analysis.suggestedPositions || []);
+        } catch (error) {
+          console.warn('Failed to analyze pattern opportunities:', error);
+        }
+      }
+    }, 100), // 100ms delay
+    [suggestionEngine]
+  );
+
+  // Track significant viewport changes to avoid unnecessary pattern analysis
+  const lastSignificantViewport = useRef<ViewportState>({ 
+    translateX: 0, 
+    translateY: 0, 
+    scale: 1, 
+    bounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 } 
+  });
+  
+  const isSignificantViewportChange = useCallback((newViewport: ViewportState): boolean => {
+    const last = lastSignificantViewport.current;
+    
+    // Check zoom change (>10% threshold)
+    const scaleChange = Math.abs(newViewport.scale - last.scale) / last.scale;
+    if (scaleChange > 0.1) {
+      return true;
+    }
+    
+    // Check pan distance (>25% of screen width/height threshold)
+    const panDistanceX = Math.abs(newViewport.translateX - last.translateX);
+    const panDistanceY = Math.abs(newViewport.translateY - last.translateY);
+    const screenThresholdX = width * 0.25;
+    const screenThresholdY = height * 0.25;
+    
+    if (panDistanceX > screenThresholdX || panDistanceY > screenThresholdY) {
+      return true;
+    }
+    
+    return false;
+  }, [width, height]);
+
   // Check if Pattern Opportunities popup is currently visible (not map visualizations)
   const isPatternHintPopupVisible = useMemo(() => {
     return suggestionState.popupVisible && (patternAnalysis?.suggestedPositions?.length || 0) > 0;
@@ -307,6 +355,15 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       performanceMonitor.stop();
     };
   }, []);
+
+  // Immediate pattern analysis trigger when beacons change (user placement)
+  useEffect(() => {
+    if (beacons.length > 0 && (suggestionState.popupVisible || suggestionState.mapVisualizationsVisible)) {
+      // Cancel any pending debounced call and analyze immediately
+      analyzePatternOpportunitiesDebounced.cancel();
+      analyzePatternOpportunitiesDebounced(beacons, viewportState, suggestionState);
+    }
+  }, [beacons.length, analyzePatternOpportunitiesDebounced, viewportState, suggestionState.popupVisible, suggestionState.mapVisualizationsVisible]);
 
   // Debug logging helper - defined early so it's available in worklets
   const logGesture = useCallback((type: string, data: any) => {
@@ -505,19 +562,14 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     
     setRenderingState(newRenderingState);
     
-    // Update pattern suggestions when patterns change (throttled for performance)
-    if (patterns.length > 0 && (suggestionState.popupVisible || suggestionState.mapVisualizationsVisible)) {
-      try {
-        const analysis = suggestionEngine.analyzePatternOpportunities(beacons);
-        setPatternAnalysis(analysis);
-        setPatternSuggestions(analysis.suggestedPositions || []);
-      } catch (error) {
-        console.warn('Failed to analyze pattern opportunities:', error);
-      }
+    // Update pattern suggestions only on significant viewport changes (debounced for performance)
+    if (patterns.length > 0 && isSignificantViewportChange(newViewport)) {
+      lastSignificantViewport.current = newViewport;
+      analyzePatternOpportunitiesDebounced(beacons, newViewport, suggestionState);
     }
     
     endFrame(); // End performance monitoring
-  }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings]);
+  }, [width, height, spatialIndex, patternDetector, beacons, startFrame, endFrame, getQualitySettings, isSignificantViewportChange, analyzePatternOpportunitiesDebounced, suggestionState]);
 
   // Store the function in ref to prevent circular dependencies
   updateViewportStateRef.current = updateViewportState;

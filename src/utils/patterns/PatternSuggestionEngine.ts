@@ -18,6 +18,7 @@ import { SpatialHashMap } from '../spatial/SpatialHashMap';
 import { GeometricTolerance, DEFAULT_TOLERANCE } from '../../types/geometry';
 import { PlacementValidator } from '../spatial/PlacementValidator';
 import { ShapeDetector } from './detection';
+import { patternPerformanceMonitor } from '../performance/PatternPerformanceMonitor';
 
 /**
  * Pattern completion analysis and suggestion engine
@@ -51,45 +52,67 @@ export class PatternSuggestionEngine {
    */
   analyzePatternOpportunities(
     beacons: Beacon[],
-    existingPatterns: GeometricPattern[] = []
+    existingPatterns: GeometricPattern[] = [],
+    viewport?: { bounds: { minX: number; maxX: number; minY: number; maxY: number } }
   ): PatternCompletionAnalysis {
-    const startTime = performance.now();
-    
-    // Check cache first
-    const cacheKey = this.generateCacheKey(beacons);
-    const cached = this.cachedAnalysis.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < PATTERN_SUGGESTION_CONFIG.SUGGESTION_CACHE_TTL) {
-      return cached.analysis;
-    }
+    const operationId = `pattern_analysis_${Date.now()}`;
+    patternPerformanceMonitor.startOperation(
+      operationId,
+      'pattern-analysis',
+      beacons.length
+    );
 
-    // Find incomplete patterns
-    const incompletePatterns = this.findIncompletePatterns(beacons, existingPatterns);
-    
-    // Generate suggestions from incomplete patterns
-    const suggestions = this.generateSuggestionsFromIncomplete(incompletePatterns, beacons);
-    
-    // Find optimal next placement
-    const optimalPlacement = this.findOptimalPlacement(suggestions);
-    
-    // Calculate metrics
-    const totalPotentialBonus = suggestions.reduce((sum, s) => sum + s.potentialBonus, 0);
-    const averageCompletionCost = this.calculateAverageCompletionCost(suggestions);
-    
-    const analysis: PatternCompletionAnalysis = {
-      incompletePatterns,
-      suggestedPositions: suggestions.slice(0, PATTERN_SUGGESTION_CONFIG.MAX_SUGGESTIONS),
-      optimalNextPlacement: optimalPlacement,
-      totalPotentialBonus,
-      averageCompletionCost,
-    };
-    
-    // Cache the result
-    this.cachedAnalysis.set(cacheKey, {
-      analysis,
-      timestamp: Date.now(),
-    });
-    
-    return analysis;
+    try {
+      // Apply viewport culling if viewport is provided
+      let filteredBeacons = beacons;
+      if (viewport) {
+        filteredBeacons = this.filterBeaconsInViewport(beacons, viewport.bounds);
+      }
+      
+      // Check cache first (use filtered beacons for cache key)
+      const cacheKey = this.generateCacheKey(filteredBeacons);
+      const cached = this.cachedAnalysis.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < PATTERN_SUGGESTION_CONFIG.SUGGESTION_CACHE_TTL) {
+        return cached.analysis;
+      }
+
+      // Find incomplete patterns using filtered beacons
+      const incompletePatterns = this.findIncompletePatterns(filteredBeacons, existingPatterns);
+      
+      // Generate suggestions from incomplete patterns
+      const suggestions = this.generateSuggestionsFromIncomplete(incompletePatterns, filteredBeacons);
+      
+      // Find optimal next placement
+      const optimalPlacement = this.findOptimalPlacement(suggestions);
+      
+      // Calculate metrics
+      const totalPotentialBonus = suggestions.reduce((sum, s) => sum + s.potentialBonus, 0);
+      const averageCompletionCost = this.calculateAverageCompletionCost(suggestions);
+      
+      const analysis: PatternCompletionAnalysis = {
+        incompletePatterns,
+        suggestedPositions: suggestions.slice(0, PATTERN_SUGGESTION_CONFIG.MAX_SUGGESTIONS),
+        optimalNextPlacement: optimalPlacement,
+        totalPotentialBonus,
+        averageCompletionCost,
+      };
+      
+      // Cache the result
+      this.cachedAnalysis.set(cacheKey, {
+        analysis,
+        timestamp: Date.now(),
+      });
+      
+      return analysis;
+    } finally {
+      patternPerformanceMonitor.endOperation(
+        operationId,
+        'pattern-analysis',
+        beacons.length,
+        undefined,
+        0 // Will be updated with actual suggestion count
+      );
+    }
   }
 
   /**
@@ -119,44 +142,53 @@ export class PatternSuggestionEngine {
     beacons: Beacon[],
     patternType: PatternType
   ): PatternProbability {
-    const neighbors = this.findNearbyBeacons(position, beacons, NEIGHBOR_QUERY_CONFIG.PATTERN_RADII[patternType]);
-    
-    // Get required beacon count for pattern
-    const requiredBeacons = this.getRequiredBeaconCount(patternType);
-    
-    if (neighbors.length < requiredBeacons - 1) {
-      return {
-        patternType,
-        probability: 0,
-        confidenceLevel: 1,
-        requiredMoves: requiredBeacons,
-        timeToCompletion: Infinity,
-        riskFactors: ['Insufficient nearby beacons'],
-      };
-    }
+    const { result } = patternPerformanceMonitor.measureOperation(
+      'pattern-probability',
+      () => {
+        const neighbors = this.findNearbyBeacons(position, beacons, NEIGHBOR_QUERY_CONFIG.PATTERN_RADII[patternType]);
+        
+        // Get required beacon count for pattern
+        const requiredBeacons = this.getRequiredBeaconCount(patternType);
+        
+        if (neighbors.length < requiredBeacons - 1) {
+          return {
+            patternType,
+            probability: 0,
+            confidenceLevel: 1,
+            requiredMoves: requiredBeacons,
+            timeToCompletion: Infinity,
+            riskFactors: ['Insufficient nearby beacons'],
+          };
+        }
 
-    // Check possible pattern formations
-    const possiblePatterns = this.findPossiblePatternFormations(
-      position,
-      neighbors,
+        // Check possible pattern formations
+        const possiblePatterns = this.findPossiblePatternFormations(
+          position,
+          neighbors,
+          patternType
+        );
+
+        const bestFormation = possiblePatterns.reduce((best, current) => 
+          current.quality > best.quality ? current : best
+        , { quality: 0, requiredMoves: Infinity, riskFactors: [] as string[] });
+
+        const probability = Math.min(1, bestFormation.quality);
+        const confidenceLevel = this.calculateConfidenceLevel(possiblePatterns);
+        
+        return {
+          patternType,
+          probability,
+          confidenceLevel,
+          requiredMoves: bestFormation.requiredMoves,
+          timeToCompletion: bestFormation.requiredMoves * 5000, // Estimated 5s per beacon
+          riskFactors: bestFormation.riskFactors,
+        };
+      },
+      beacons.length,
       patternType
     );
 
-    const bestFormation = possiblePatterns.reduce((best, current) => 
-      current.quality > best.quality ? current : best
-    , { quality: 0, requiredMoves: Infinity, riskFactors: [] as string[] });
-
-    const probability = Math.min(1, bestFormation.quality);
-    const confidenceLevel = this.calculateConfidenceLevel(possiblePatterns);
-    
-    return {
-      patternType,
-      probability,
-      confidenceLevel,
-      requiredMoves: bestFormation.requiredMoves,
-      timeToCompletion: bestFormation.requiredMoves * 5000, // Estimated 5s per beacon
-      riskFactors: bestFormation.riskFactors,
-    };
+    return result;
   }
 
   /**
@@ -254,6 +286,31 @@ export class PatternSuggestionEngine {
   clearCache(): void {
     this.cachedSuggestions.clear();
     this.cachedAnalysis.clear();
+  }
+
+  /**
+   * Get performance statistics for pattern operations
+   */
+  getPerformanceStats(): {
+    report: any;
+    isPerformanceAcceptable: boolean;
+    recommendations: string[];
+  } {
+    const report = patternPerformanceMonitor.getPerformanceReport();
+    const isAcceptable = patternPerformanceMonitor.isPerformanceAcceptable();
+    
+    return {
+      report,
+      isPerformanceAcceptable: isAcceptable,
+      recommendations: report.recommendations,
+    };
+  }
+
+  /**
+   * Reset performance monitoring
+   */
+  resetPerformanceMonitoring(): void {
+    patternPerformanceMonitor.clearHistory();
   }
 
   /**
@@ -498,18 +555,14 @@ export class PatternSuggestionEngine {
         break;
     }
     
-    console.log(`[PatternSuggestion] ${patternType} completion returned ${missingPositions.length} positions:`, missingPositions.map(p => `(${p.x},${p.y})`).join(', '));
-    
     // For pattern-validated positions (squares/triangles), trust the validation and skip placement corruption
     const isPatternValidated = (patternType === 'square' || patternType === 'triangle') && missingPositions.length > 0;
     
     if (isPatternValidated) {
-      console.log(`[PatternSuggestion] Pattern-validated positions - skipping placement validation to preserve pattern geometry`);
       return missingPositions;
     }
     
     // Only do placement validation for centroid-based fallbacks
-    console.log(`[PatternSuggestion] Running placement validation for ${patternType} positions...`);
     const validatedPositions: Point2D[] = [];
     for (let i = 0; i < missingPositions.length; i++) {
       const position = missingPositions[i];
@@ -517,18 +570,12 @@ export class PatternSuggestionEngine {
       
       if (this.placementValidator) {
         const validation = this.placementValidator.isValidPosition(position, beaconType);
-        console.log(`[PatternSuggestion] Position ${i + 1} (${position.x},${position.y}) placement validation: ${validation.isValid ? 'VALID' : 'INVALID'} - ${validation.reasons?.join(', ') || 'no reasons'}`);
         
         if (!validation.isValid) {
           // Try to find a nearby valid position
-          console.log(`[PatternSuggestion] Searching for nearby valid position...`);
           const nearbyValid = this.findNearbyValidPosition(position, beaconType, minDistance * 2);
           if (nearbyValid) {
-            console.log(`[PatternSuggestion] Found nearby valid position: (${nearbyValid.x},${nearbyValid.y}) - moved ${Math.sqrt((nearbyValid.x - position.x) ** 2 + (nearbyValid.y - position.y) ** 2).toFixed(1)} units`);
             validPosition = nearbyValid;
-          } else {
-            console.log(`[PatternSuggestion] No nearby valid position found, keeping original`);
-            validPosition = position;
           }
         }
       }
@@ -536,7 +583,7 @@ export class PatternSuggestionEngine {
       validatedPositions.push(validPosition);
     }
     
-    return this.validateAndFilterPositions(validatedPositions, beaconType);
+    return this.validateAndFilterPositions(validatedPositions, beaconType, patternType);
   }
 
   /**
@@ -547,15 +594,6 @@ export class PatternSuggestionEngine {
       // Find the 4th corner of a square given 3 corners
       const [p1, p2, p3] = existingPositions;
       
-      // Only log if this is a new calculation (avoid spam during map panning)
-      const triangleKey = `${p1.x},${p1.y}|${p2.x},${p2.y}|${p3.x},${p3.y}`;
-      const isNewCalculation = !this.lastTriangleKey || this.lastTriangleKey !== triangleKey;
-      
-      if (isNewCalculation) {
-        console.log(`[PatternSuggestion] Square completion for triangle: P1(${p1.x},${p1.y}), P2(${p2.x},${p2.y}), P3(${p3.x},${p3.y})`);
-        this.lastTriangleKey = triangleKey;
-      }
-      
       // Calculate potential 4th corners using parallelogram completion
       const candidates = [
         { x: p1.x + p3.x - p2.x, y: p1.y + p3.y - p2.y },
@@ -563,12 +601,8 @@ export class PatternSuggestionEngine {
         { x: p1.x + p2.x - p3.x, y: p1.y + p2.y - p3.y },
       ];
       
-      if (isNewCalculation) {
-        console.log(`[PatternSuggestion] Parallelogram candidates:`, candidates.map((c, i) => `${i + 1}: (${c.x},${c.y})`).join(', '));
-      }
-      
       // Validate each candidate using the same logic as pattern detection
-      const validCandidates = candidates.filter((candidate, index) => {
+      const validCandidates = candidates.filter((candidate) => {
         const testPoints = existingPositions.concat([candidate]);
         
         // Create temporary beacons for validation (just need positions and IDs)
@@ -589,45 +623,29 @@ export class PatternSuggestionEngine {
         const beaconIds = tempBeacons.map(b => b.id);
         
         // Use the public detectSquare method which includes all validation
-        const isValid = this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
-        if (isNewCalculation) {
-          console.log(`[PatternSuggestion] Candidate ${index + 1} (${candidate.x},${candidate.y}) validation: ${isValid ? 'VALID' : 'INVALID'}`);
-        }
-        return isValid;
+        return this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
       });
       
       // If we have valid candidates, pick the best one
       if (validCandidates.length > 0) {
-        if (isNewCalculation) {
-          console.log(`[PatternSuggestion] Found ${validCandidates.length} valid parallelogram candidates`);
-        }
         let bestCandidate = validCandidates[0];
         let bestScore = -1;
         
         for (const candidate of validCandidates) {
           const score = this.evaluateSquareness(existingPositions.concat([candidate]));
-          if (isNewCalculation) {
-            console.log(`[PatternSuggestion] Candidate (${candidate.x},${candidate.y}) squareness score: ${score.toFixed(4)}`);
-          }
           if (score > bestScore) {
             bestScore = score;
             bestCandidate = candidate;
           }
         }
         
-        if (isNewCalculation) {
-          console.log(`[PatternSuggestion] Selected best parallelogram candidate: (${bestCandidate.x},${bestCandidate.y}) with score ${bestScore.toFixed(4)}`);
-        }
         return [bestCandidate];
       }
       
       // If no parallelogram candidates work, try alternative approaches
-      console.log(`[PatternSuggestion] No valid parallelogram candidates, trying alternative approaches...`);
       const alternativeCandidates = this.generateAlternativeSquareCandidates(existingPositions, minDistance);
-      console.log(`[PatternSuggestion] Generated ${alternativeCandidates.length} alternative candidates`);
       
-      for (let i = 0; i < alternativeCandidates.length; i++) {
-        const candidate = alternativeCandidates[i];
+      for (const candidate of alternativeCandidates) {
         const testPoints = existingPositions.concat([candidate]);
         
         // Create temporary beacons for validation
@@ -648,17 +666,14 @@ export class PatternSuggestionEngine {
         const beaconIds = tempBeacons.map(b => b.id);
         
         const isValid = this.shapeDetector.detectSquare(tempBeacons, beaconIds, false);
-        console.log(`[PatternSuggestion] Alternative candidate ${i + 1}/${alternativeCandidates.length} (${candidate.x.toFixed(1)},${candidate.y.toFixed(1)}) validation: ${isValid ? 'VALID' : 'INVALID'}`);
         
         if (isValid) {
-          console.log(`[PatternSuggestion] Selected alternative candidate: (${candidate.x},${candidate.y})`);
           return [candidate];
         }
       }
     }
     
     // Fallback for other cases
-    console.log(`[PatternSuggestion] No valid square candidates found, falling back to centroid method`);
     return this.calculateCentroidBasedPositions(existingPositions, 'square', missing, minDistance);
   }
 
@@ -850,7 +865,6 @@ export class PatternSuggestionEngine {
   private findNearbyValidPosition(originalPosition: Point2D, beaconType: BeaconType, searchRadius: number): Point2D | null {
     if (!this.placementValidator) return null;
     
-    console.log(`[PatternSuggestion] Finding nearby valid position for (${originalPosition.x},${originalPosition.y})`);
     const attempts = 8; // Try 8 directions around the original position
     const minDistance = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType];
     
@@ -864,28 +878,42 @@ export class PatternSuggestionEngine {
       };
       
       const validation = this.placementValidator.isValidPosition(candidatePosition, beaconType);
-      console.log(`[PatternSuggestion] Nearby candidate ${i + 1}/8 (${candidatePosition.x.toFixed(1)},${candidatePosition.y.toFixed(1)}) at angle ${(angle * 180 / Math.PI).toFixed(0)}°: ${validation.isValid ? 'VALID' : 'INVALID'} - ${validation.reasons?.join(', ') || 'no reasons'}`);
       
       if (validation.isValid) {
-        console.log(`[PatternSuggestion] Found valid nearby position after ${i + 1} attempts`);
         return candidatePosition;
       }
     }
     
-    console.log(`[PatternSuggestion] No valid nearby position found after ${attempts} attempts`);
     return null;
   }
 
   /**
-   * Validate and filter positions to ensure they meet minimum distance requirements
+   * Validate and filter positions with pattern-specific corrections
    */
-  private validateAndFilterPositions(positions: Point2D[], beaconType: BeaconType): Point2D[] {
+  private validateAndFilterPositions(
+    positions: Point2D[], 
+    beaconType: BeaconType, 
+    patternType: PatternType = 'triangle'
+  ): Point2D[] {
     if (!this.placementValidator) return positions;
     
-    return positions.filter(position => {
-      const validation = this.placementValidator!.isValidPosition(position, beaconType);
-      return validation.isValid;
-    });
+    const results = this.placementValidator.validatePatternPositions(
+      positions, 
+      beaconType, 
+      patternType
+    );
+    
+    // Combine valid positions with corrected positions
+    const validPositions = [...results.validPositions];
+    
+    // Add corrected positions if they have good confidence
+    for (const correction of results.correctedPositions) {
+      if (correction.confidence >= 0.6) { // Only accept corrections with 60%+ confidence
+        validPositions.push(correction.corrected);
+      }
+    }
+    
+    return validPositions;
   }
   
   private calculateProximityScore(beacons: Beacon[]): number {
@@ -1047,5 +1075,34 @@ export class PatternSuggestionEngine {
       .join('|');
     
     return hash.slice(0, 50); // Limit key length
+  }
+
+  /**
+   * Filter beacons to only those within the viewport (with buffer)
+   */
+  private filterBeaconsInViewport(
+    beacons: Beacon[], 
+    bounds: { minX: number; maxX: number; minY: number; maxY: number }
+  ): Beacon[] {
+    // Add 20% buffer around viewport to catch patterns that extend outside
+    const bufferX = (bounds.maxX - bounds.minX) * 0.2;
+    const bufferY = (bounds.maxY - bounds.minY) * 0.2;
+    
+    const expandedBounds = {
+      minX: bounds.minX - bufferX,
+      maxX: bounds.maxX + bufferX,
+      minY: bounds.minY - bufferY,
+      maxY: bounds.maxY + bufferY,
+    };
+    
+    return beacons.filter(beacon => {
+      const pos = beacon.position;
+      return (
+        pos.x >= expandedBounds.minX &&
+        pos.x <= expandedBounds.maxX &&
+        pos.y >= expandedBounds.minY &&
+        pos.y <= expandedBounds.maxY
+      );
+    });
   }
 }

@@ -52,6 +52,73 @@ interface PatternSuggestionOverlayProps {
   enableAnimations?: boolean;
 }
 
+// Custom comparison function to optimize re-renders
+const PatternSuggestionOverlayPropsAreEqual = (
+  prevProps: PatternSuggestionOverlayProps,
+  nextProps: PatternSuggestionOverlayProps
+): boolean => {
+  // Quick reference equality checks first
+  if (
+    prevProps.showGhostBeacons !== nextProps.showGhostBeacons ||
+    prevProps.showPatternPreviews !== nextProps.showPatternPreviews ||
+    prevProps.enableAnimations !== nextProps.enableAnimations ||
+    prevProps.onSuggestionInteraction !== nextProps.onSuggestionInteraction
+  ) {
+    return false;
+  }
+
+  // Compare viewport state (only essential properties)
+  const prevViewport = prevProps.viewportState;
+  const nextViewport = nextProps.viewportState;
+  if (
+    Math.abs(prevViewport.scale - nextViewport.scale) > 0.01 ||
+    Math.abs(prevViewport.translateX - nextViewport.translateX) > 5 ||
+    Math.abs(prevViewport.translateY - nextViewport.translateY) > 5
+  ) {
+    return false;
+  }
+
+  // Compare suggestion state
+  const prevSuggestionState = prevProps.suggestionState;
+  const nextSuggestionState = nextProps.suggestionState;
+  if (
+    prevSuggestionState.popupVisible !== nextSuggestionState.popupVisible ||
+    prevSuggestionState.mapVisualizationsVisible !== nextSuggestionState.mapVisualizationsVisible ||
+    prevSuggestionState.displayMode !== nextSuggestionState.displayMode ||
+    prevSuggestionState.selectedSuggestion?.id !== nextSuggestionState.selectedSuggestion?.id ||
+    prevSuggestionState.hoveredSuggestion?.id !== nextSuggestionState.hoveredSuggestion?.id
+  ) {
+    return false;
+  }
+
+  // Compare suggestions array (by IDs and essential properties)
+  if (prevProps.suggestions.length !== nextProps.suggestions.length) {
+    return false;
+  }
+  
+  for (let i = 0; i < prevProps.suggestions.length; i++) {
+    const prev = prevProps.suggestions[i];
+    const next = nextProps.suggestions[i];
+    if (
+      prev.id !== next.id ||
+      prev.priority !== next.priority ||
+      prev.potentialBonus !== next.potentialBonus ||
+      prev.suggestedPosition.x !== next.suggestedPosition.x ||
+      prev.suggestedPosition.y !== next.suggestedPosition.y
+    ) {
+      return false;
+    }
+  }
+
+  // Skip deep comparison of beacons array - suggestions comparison is more relevant
+  // Only check if the number of beacons changed significantly
+  if (Math.abs(prevProps.beacons.length - nextProps.beacons.length) > 0) {
+    return false;
+  }
+
+  return true;
+};
+
 export const PatternSuggestionOverlay: React.FC<PatternSuggestionOverlayProps> = memo(({
   suggestions,
   beacons,
@@ -87,7 +154,7 @@ export const PatternSuggestionOverlay: React.FC<PatternSuggestionOverlayProps> =
     }
     
     return filtered;
-  }, [suggestions, suggestionState]);
+  }, [suggestions, suggestionState.mapVisualizationsVisible, suggestionState.dismissedSuggestions, suggestionState.displayMode]);
 
   // Handle suggestion interaction
   const handleSuggestionPress = useCallback((suggestion: PatternSuggestion) => {
@@ -164,7 +231,7 @@ export const PatternSuggestionOverlay: React.FC<PatternSuggestionOverlayProps> =
       ))}
     </G>
   );
-});
+}, PatternSuggestionOverlayPropsAreEqual);
 
 PatternSuggestionOverlay.displayName = 'PatternSuggestionOverlay';
 

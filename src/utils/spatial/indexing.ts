@@ -1,51 +1,63 @@
 import { Point2D, ViewportBounds, Beacon } from '../../types/galaxy';
+import RBush from 'rbush';
+
+interface RBushItem {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  beacon: Beacon;
+}
 
 /**
- * Simple spatial grid for efficient querying of beacons within viewport
+ * R-tree based spatial index for efficient querying of beacons within viewport
+ * Provides O(log n) complexity for spatial queries compared to O(n²) grid-based approach
  */
 export class SpatialIndex {
-  private cellSize: number;
-  private grid: Map<string, Beacon[]>;
+  private tree: RBush<RBushItem>;
+  private beaconMap: Map<string, RBushItem>;
 
-  constructor(cellSize: number = 1000) {
-    this.cellSize = cellSize;
-    this.grid = new Map();
+  constructor(maxEntries: number = 16) {
+    this.tree = new RBush<RBushItem>(maxEntries);
+    this.beaconMap = new Map();
   }
 
   /**
-   * Get grid cell key for a position
+   * Create R-tree item from beacon
    */
-  private getCellKey(x: number, y: number): string {
-    const cellX = Math.floor(x / this.cellSize);
-    const cellY = Math.floor(y / this.cellSize);
-    return `${cellX},${cellY}`;
+  private createRBushItem(beacon: Beacon): RBushItem {
+    // Create a small bounding box around the beacon position
+    // This allows for efficient point-in-region queries
+    const padding = 0.1;
+    return {
+      minX: beacon.position.x - padding,
+      minY: beacon.position.y - padding,
+      maxX: beacon.position.x + padding,
+      maxY: beacon.position.y + padding,
+      beacon: beacon,
+    };
   }
 
   /**
    * Add a beacon to the spatial index
    */
   addBeacon(beacon: Beacon): void {
-    const key = this.getCellKey(beacon.position.x, beacon.position.y);
-    if (!this.grid.has(key)) {
-      this.grid.set(key, []);
-    }
-    this.grid.get(key)!.push(beacon);
+    // Remove existing entry if it exists (for updates)
+    this.removeBeacon(beacon);
+    
+    const item = this.createRBushItem(beacon);
+    this.tree.insert(item);
+    this.beaconMap.set(beacon.id, item);
   }
 
   /**
    * Remove a beacon from the spatial index
    */
   removeBeacon(beacon: Beacon): void {
-    const key = this.getCellKey(beacon.position.x, beacon.position.y);
-    const cell = this.grid.get(key);
-    if (cell) {
-      const index = cell.findIndex(b => b.id === beacon.id);
-      if (index !== -1) {
-        cell.splice(index, 1);
-        if (cell.length === 0) {
-          this.grid.delete(key);
-        }
-      }
+    const existingItem = this.beaconMap.get(beacon.id);
+    if (existingItem) {
+      this.tree.remove(existingItem);
+      this.beaconMap.delete(beacon.id);
     }
   }
 
@@ -53,20 +65,8 @@ export class SpatialIndex {
    * Update beacon position in the index
    */
   updateBeacon(beacon: Beacon, oldPosition: Point2D): void {
-    // Remove from old position
-    const oldKey = this.getCellKey(oldPosition.x, oldPosition.y);
-    const oldCell = this.grid.get(oldKey);
-    if (oldCell) {
-      const index = oldCell.findIndex(b => b.id === beacon.id);
-      if (index !== -1) {
-        oldCell.splice(index, 1);
-        if (oldCell.length === 0) {
-          this.grid.delete(oldKey);
-        }
-      }
-    }
-
-    // Add to new position
+    // Simply remove and re-add with new position
+    // The addBeacon method already handles removing existing entries
     this.addBeacon(beacon);
   }
 
@@ -74,99 +74,132 @@ export class SpatialIndex {
    * Query beacons within viewport bounds
    */
   queryBounds(bounds: ViewportBounds): Beacon[] {
-    const results: Beacon[] = [];
-    const visited = new Set<string>();
+    const searchBounds = {
+      minX: bounds.minX,
+      minY: bounds.minY,
+      maxX: bounds.maxX,
+      maxY: bounds.maxY,
+    };
 
-    // Calculate grid cell range
-    const minCellX = Math.floor(bounds.minX / this.cellSize);
-    const maxCellX = Math.floor(bounds.maxX / this.cellSize);
-    const minCellY = Math.floor(bounds.minY / this.cellSize);
-    const maxCellY = Math.floor(bounds.maxY / this.cellSize);
-
-    // Query all cells that intersect with bounds
-    for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
-      for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
-        const key = `${cellX},${cellY}`;
-        const cell = this.grid.get(key);
-        
-        if (cell) {
-          for (const beacon of cell) {
-            if (!visited.has(beacon.id)) {
-              visited.add(beacon.id);
-              // Check if beacon is actually within bounds
-              if (
-                beacon.position.x >= bounds.minX &&
-                beacon.position.x <= bounds.maxX &&
-                beacon.position.y >= bounds.minY &&
-                beacon.position.y <= bounds.maxY
-              ) {
-                results.push(beacon);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return results;
+    const items = this.tree.search(searchBounds);
+    return items.map(item => item.beacon);
   }
 
   /**
    * Find nearest beacon to a point
    */
   findNearest(point: Point2D, maxDistance: number = Infinity): Beacon | null {
-    let nearest: Beacon | null = null;
-    let nearestDistance = maxDistance;
+    // Search in expanding circular areas around the point
+    const searchSteps = [50, 100, 200, 500, 1000, maxDistance];
+    
+    for (const radius of searchSteps) {
+      if (radius > maxDistance) continue;
+      
+      const searchBounds = {
+        minX: point.x - radius,
+        minY: point.y - radius,
+        maxX: point.x + radius,
+        maxY: point.y + radius,
+      };
 
-    // Search in expanding grid cells around the point
-    const searchRadius = Math.ceil(maxDistance / this.cellSize);
-    const centerCellX = Math.floor(point.x / this.cellSize);
-    const centerCellY = Math.floor(point.y / this.cellSize);
+      const candidates = this.tree.search(searchBounds);
+      
+      let nearest: Beacon | null = null;
+      let nearestDistance = maxDistance;
 
-    for (let radius = 0; radius <= searchRadius; radius++) {
-      for (let dx = -radius; dx <= radius; dx++) {
-        for (let dy = -radius; dy <= radius; dy++) {
-          // Only check cells on the perimeter of current radius
-          if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
-            const cellX = centerCellX + dx;
-            const cellY = centerCellY + dy;
-            const key = `${cellX},${cellY}`;
-            const cell = this.grid.get(key);
-
-            if (cell) {
-              for (const beacon of cell) {
-                const distance = Math.sqrt(
-                  Math.pow(beacon.position.x - point.x, 2) +
-                  Math.pow(beacon.position.y - point.y, 2)
-                );
-                if (distance < nearestDistance) {
-                  nearest = beacon;
-                  nearestDistance = distance;
-                }
-              }
-            }
-          }
+      for (const item of candidates) {
+        const beacon = item.beacon;
+        const distance = Math.sqrt(
+          Math.pow(beacon.position.x - point.x, 2) +
+          Math.pow(beacon.position.y - point.y, 2)
+        );
+        
+        if (distance < nearestDistance) {
+          nearest = beacon;
+          nearestDistance = distance;
         }
+      }
+
+      if (nearest) {
+        return nearest;
       }
     }
 
-    return nearest;
+    return null;
   }
 
   /**
    * Clear all beacons from the index
    */
   clear(): void {
-    this.grid.clear();
+    this.tree.clear();
+    this.beaconMap.clear();
   }
 
   /**
    * Rebuild the entire index with new beacons
+   * Includes bulk loading optimization for better performance
    */
   rebuild(beacons: Beacon[]): void {
     this.clear();
-    for (const beacon of beacons) {
-      this.addBeacon(beacon);
+    
+    // Use bulk loading for better R-tree performance
+    if (beacons.length > 0) {
+      const items = beacons.map(beacon => {
+        const item = this.createRBushItem(beacon);
+        this.beaconMap.set(beacon.id, item);
+        return item;
+      });
+      
+      // Bulk load for O(n log n) construction instead of O(n²)
+      this.tree.load(items);
+    }
+  }
+
+  /**
+   * Get performance statistics
+   */
+  getStats(): { totalBeacons: number; treeHeight: number } {
+    return {
+      totalBeacons: this.beaconMap.size,
+      treeHeight: this.tree.toJSON().height || 0,
+    };
+  }
+
+  /**
+   * Query beacons within a circular radius (optimized using R-tree)
+   */
+  queryRadius(center: Point2D, radius: number): Beacon[] {
+    const searchBounds = {
+      minX: center.x - radius,
+      minY: center.y - radius,
+      maxX: center.x + radius,
+      maxY: center.y + radius,
+    };
+
+    const items = this.tree.search(searchBounds);
+    const radiusSquared = radius * radius;
+
+    // Filter by actual circular distance
+    return items
+      .map(item => item.beacon)
+      .filter(beacon => {
+        const dx = beacon.position.x - center.x;
+        const dy = beacon.position.y - center.y;
+        return (dx * dx + dy * dy) <= radiusSquared;
+      });
+  }
+
+  /**
+   * Dynamic rebalancing - rebuilds tree if performance degrades
+   */
+  rebalanceIfNeeded(): void {
+    const stats = this.getStats();
+    const beacons = Array.from(this.beaconMap.values()).map(item => item.beacon);
+    
+    // Rebalance if tree becomes too deep (indicates poor balance)
+    if (stats.treeHeight > Math.log2(stats.totalBeacons) * 2) {
+      this.rebuild(beacons);
     }
   }
 }

@@ -32,7 +32,7 @@ import {
   StateTransitionResult,
 } from '../../utils/gestures/gestureStateMachine';
 import { gestureConfig } from '../../constants/gestures';
-import { Beacon } from '../../types/beacon';
+import { Beacon } from '../../types/galaxy';
 
 interface DebugOverlayProps {
   stateMachine: GestureStateMachine;
@@ -208,9 +208,6 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
             </Text>
             <Text style={styles.beaconText}>Level: {selectedBeacon.level}</Text>
             <Text style={styles.beaconText}>Type: {selectedBeacon.type}</Text>
-            {selectedBeacon.specialization && (
-              <Text style={styles.beaconText}>Spec: {selectedBeacon.specialization}</Text>
-            )}
           </>
         ) : (
           <Text style={styles.beaconText}>None</Text>

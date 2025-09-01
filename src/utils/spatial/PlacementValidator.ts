@@ -343,4 +343,297 @@ export class PlacementValidator {
   public clear(): void {
     this.beacons.clear();
   }
+
+  /**
+   * Pattern-specific position validation with correction suggestions
+   */
+  public validatePatternPosition(
+    position: Point2D,
+    beaconType: BeaconType,
+    patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'
+  ): {
+    isValid: boolean;
+    correctedPosition?: Point2D;
+    corrections: string[];
+    confidence: number;
+  } {
+    const validation = this.isValidPosition(position, beaconType);
+    const corrections: string[] = [];
+    let correctedPosition: Point2D | undefined;
+    let confidence = 1.0;
+
+    if (!validation.isValid) {
+      // Try to find a corrected position
+      const correction = this.findCorrectedPosition(
+        position,
+        beaconType,
+        patternType,
+        validation
+      );
+      
+      if (correction) {
+        correctedPosition = correction.position;
+        confidence = correction.confidence;
+        corrections.push(...correction.reasons);
+      } else {
+        corrections.push('No valid correction found within acceptable range');
+        confidence = 0;
+      }
+    }
+
+    return {
+      isValid: validation.isValid,
+      correctedPosition,
+      corrections,
+      confidence,
+    };
+  }
+
+  /**
+   * Find a corrected position for invalid placements
+   */
+  public findCorrectedPosition(
+    originalPosition: Point2D,
+    beaconType: BeaconType,
+    patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon',
+    validation: BeaconValidationResult
+  ): { position: Point2D; confidence: number; reasons: string[] } | null {
+    const minDistance = this.config.minimumDistances[beaconType];
+    const maxCorrectionDistance = minDistance * 2; // Don't move too far from original
+    const attempts = 24; // Try 24 directions around the original position
+    
+    const reasons: string[] = [];
+
+    // Try different correction strategies based on the validation failure
+    if (validation.minDistanceViolation) {
+      const violatingBeacon = this.beacons.get(validation.minDistanceViolation.nearestBeacon);
+      if (violatingBeacon) {
+        const corrected = this.correctForMinDistanceViolation(
+          originalPosition,
+          violatingBeacon,
+          beaconType,
+          patternType
+        );
+        if (corrected) {
+          return {
+            position: corrected,
+            confidence: 0.8,
+            reasons: ['Moved to maintain minimum distance from nearby beacon'],
+          };
+        }
+      }
+    }
+
+    if (validation.outOfBounds) {
+      const corrected = this.correctForBoundsViolation(originalPosition, beaconType);
+      if (corrected) {
+        return {
+          position: corrected,
+          confidence: 0.7,
+          reasons: ['Moved back within placement bounds'],
+        };
+      }
+    }
+
+    // General spiral search for valid position
+    for (let i = 0; i < attempts; i++) {
+      const angle = (i / attempts) * 2 * Math.PI;
+      const radius = (minDistance * 0.5) + (i / attempts) * maxCorrectionDistance;
+      
+      const candidatePosition = {
+        x: originalPosition.x + radius * Math.cos(angle),
+        y: originalPosition.y + radius * Math.sin(angle),
+      };
+
+      const candidateValidation = this.isValidPosition(candidatePosition, beaconType);
+      if (candidateValidation.isValid) {
+        const distance = this.calculateDistance(originalPosition, candidatePosition);
+        const confidence = Math.max(0.3, 1 - (distance / maxCorrectionDistance));
+        
+        return {
+          position: candidatePosition,
+          confidence,
+          reasons: [`Found valid position ${distance.toFixed(1)} units away from original`],
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Correct position that violates minimum distance constraint
+   */
+  private correctForMinDistanceViolation(
+    position: Point2D,
+    violatingBeacon: Beacon,
+    beaconType: BeaconType,
+    patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'
+  ): Point2D | null {
+    const minDistance = this.config.minimumDistances[beaconType];
+    const safeDistance = minDistance * 1.1; // Add 10% buffer
+
+    // Calculate direction away from violating beacon
+    const dx = position.x - violatingBeacon.position.x;
+    const dy = position.y - violatingBeacon.position.y;
+    const currentDistance = Math.sqrt(dx * dx + dy * dy);
+
+    if (currentDistance === 0) {
+      // Positions are identical, move in a pattern-appropriate direction
+      const angle = this.getPatternPreferredAngle(patternType);
+      return {
+        x: position.x + safeDistance * Math.cos(angle),
+        y: position.y + safeDistance * Math.sin(angle),
+      };
+    }
+
+    // Normalize direction vector
+    const normalizedDx = dx / currentDistance;
+    const normalizedDy = dy / currentDistance;
+
+    // Move to safe distance
+    const correctedPosition = {
+      x: violatingBeacon.position.x + normalizedDx * safeDistance,
+      y: violatingBeacon.position.y + normalizedDy * safeDistance,
+    };
+
+    // Verify the correction doesn't create new violations
+    const validation = this.isValidPosition(correctedPosition, beaconType);
+    return validation.isValid ? correctedPosition : null;
+  }
+
+  /**
+   * Correct position that's out of bounds
+   */
+  private correctForBoundsViolation(
+    position: Point2D,
+    beaconType: BeaconType
+  ): Point2D | null {
+    const { bounds } = this.config;
+    const margin = 10; // Safety margin from boundaries
+
+    const correctedPosition = {
+      x: Math.max(bounds.minX + margin, Math.min(bounds.maxX - margin, position.x)),
+      y: Math.max(bounds.minY + margin, Math.min(bounds.maxY - margin, position.y)),
+    };
+
+    const validation = this.isValidPosition(correctedPosition, beaconType);
+    return validation.isValid ? correctedPosition : null;
+  }
+
+  /**
+   * Get pattern-preferred angle for positioning corrections
+   */
+  private getPatternPreferredAngle(patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'): number {
+    switch (patternType) {
+      case 'triangle':
+        return Math.PI / 3; // 60 degrees
+      case 'square':
+        return Math.PI / 4; // 45 degrees
+      case 'pentagon':
+        return (2 * Math.PI) / 5; // 72 degrees
+      case 'hexagon':
+        return Math.PI / 3; // 60 degrees
+      default:
+        return Math.PI / 4;
+    }
+  }
+
+  /**
+   * Batch validate multiple pattern positions with corrections
+   */
+  public validatePatternPositions(
+    positions: Point2D[],
+    beaconType: BeaconType,
+    patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'
+  ): {
+    validPositions: Point2D[];
+    correctedPositions: Array<{ original: Point2D; corrected: Point2D; confidence: number }>;
+    invalidPositions: Point2D[];
+    overallConfidence: number;
+  } {
+    const validPositions: Point2D[] = [];
+    const correctedPositions: Array<{ original: Point2D; corrected: Point2D; confidence: number }> = [];
+    const invalidPositions: Point2D[] = [];
+
+    for (const position of positions) {
+      const validation = this.validatePatternPosition(position, beaconType, patternType);
+      
+      if (validation.isValid) {
+        validPositions.push(position);
+      } else if (validation.correctedPosition) {
+        correctedPositions.push({
+          original: position,
+          corrected: validation.correctedPosition,
+          confidence: validation.confidence,
+        });
+      } else {
+        invalidPositions.push(position);
+      }
+    }
+
+    // Calculate overall confidence
+    const totalPositions = positions.length;
+    const validCount = validPositions.length;
+    const correctedCount = correctedPositions.length;
+    const averageCorrectionConfidence = correctedCount > 0 
+      ? correctedPositions.reduce((sum, c) => sum + c.confidence, 0) / correctedCount
+      : 0;
+
+    const overallConfidence = totalPositions > 0
+      ? (validCount + correctedCount * averageCorrectionConfidence) / totalPositions
+      : 0;
+
+    return {
+      validPositions,
+      correctedPositions,
+      invalidPositions,
+      overallConfidence,
+    };
+  }
+
+  /**
+   * Suggest alternative positions for pattern completion
+   */
+  public suggestAlternativePositions(
+    targetPosition: Point2D,
+    beaconType: BeaconType,
+    patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon',
+    maxAlternatives: number = 3
+  ): Array<{ position: Point2D; score: number; reasoning: string }> {
+    const alternatives: Array<{ position: Point2D; score: number; reasoning: string }> = [];
+    const searchRadius = this.config.minimumDistances[beaconType] * 3;
+    const attempts = 50;
+
+    for (let i = 0; i < attempts && alternatives.length < maxAlternatives; i++) {
+      const angle = (i / attempts) * 2 * Math.PI;
+      const radius = (searchRadius * 0.3) + Math.random() * (searchRadius * 0.7);
+      
+      const candidate = {
+        x: targetPosition.x + radius * Math.cos(angle),
+        y: targetPosition.y + radius * Math.sin(angle),
+      };
+
+      const validation = this.isValidPosition(candidate, beaconType);
+      if (validation.isValid) {
+        const distance = this.calculateDistance(targetPosition, candidate);
+        const score = Math.max(0, 1 - (distance / searchRadius));
+        
+        const nearestBeacon = this.findNearestBeacon(candidate);
+        const connectionPotential = nearestBeacon 
+          ? Math.max(0, 1 - (nearestBeacon.distance / (this.config.minimumDistances[beaconType] * 2)))
+          : 0;
+
+        const finalScore = (score * 0.6) + (connectionPotential * 0.4);
+        
+        alternatives.push({
+          position: candidate,
+          score: finalScore,
+          reasoning: `Distance: ${distance.toFixed(1)}, Connection potential: ${(connectionPotential * 100).toFixed(0)}%`,
+        });
+      }
+    }
+
+    return alternatives.sort((a, b) => b.score - a.score);
+  }
 }
