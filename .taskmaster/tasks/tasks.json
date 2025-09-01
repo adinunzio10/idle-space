@@ -1086,11 +1086,81 @@
         ],
         "priority": "medium",
         "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Populate Settings Screen with Configuration Options and Functionality",
+        "description": "Implement a comprehensive settings screen with game configuration options, accessibility features, performance toggles, and data management functionality for the idle space game.",
+        "details": "Create a fully functional settings screen building on the existing UI foundation (Task 8). Implement the following settings categories: 1) Game Settings - auto-save interval (10s/30s/60s), offline progression notifications, resource number formatting (scientific/engineering/abbreviated), animation speed multiplier (0.5x-2x). 2) Display Settings - FPS counter toggle, performance overlay, beacon rendering quality (high/medium/low), UI scale factor (0.8x-1.2x), dark/light theme toggle. 3) Accessibility - reduced motion toggle, high contrast mode, larger touch targets, screen reader compatibility. 4) Audio Settings - sound effects volume, background music toggle, haptic feedback intensity. 5) Data Management - export save data, import save data with validation, reset progress with confirmation dialog, clear cache. Use React Context for global settings state management with AsyncStorage persistence. Implement immediate setting application without requiring app restart. Add input validation and error handling for all user inputs. Follow React Native best practices with proper TypeScript interfaces and accessibility labels.",
+        "testStrategy": "Test each setting option applies immediately and persists across app restarts. Verify save/load functionality works with valid and malformed data files. Test accessibility features with screen readers and device accessibility settings. Validate input bounds and error messages for numeric inputs. Test theme switching with proper color updates across all components. Verify reset functionality with proper confirmation flows and data cleanup.",
+        "status": "pending",
+        "dependencies": [
+          8
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Settings Context and State Management System",
+            "description": "Implement React Context for settings management with TypeScript interfaces and AsyncStorage persistence for all game configuration options including game settings, display settings, accessibility, audio, and data management.",
+            "dependencies": [],
+            "details": "Create SettingsContext.tsx with interfaces for all settings categories: GameSettings (autoSaveInterval, offlineNotifications, numberFormat, animationSpeed), DisplaySettings (showFPS, performanceOverlay, beaconQuality, uiScale, theme), AccessibilitySettings (reducedMotion, highContrast, largeTouchTargets, screenReader), AudioSettings (sfxVolume, musicEnabled, hapticIntensity), DataSettings (exportData, importData). Implement context provider with AsyncStorage persistence using the existing AsyncStorageAdapter pattern from SaveManager. Include default settings values and validation logic.",
+            "status": "pending",
+            "testStrategy": "Test settings persistence across app restarts, validate default values are loaded correctly, test AsyncStorage error handling and fallback behavior."
+          },
+          {
+            "id": 2,
+            "title": "Build Settings Screen UI Components and Layout",
+            "description": "Create comprehensive settings screen UI with categorized sections, form controls, and NativeWind styling following the existing design patterns from the codebase.",
+            "dependencies": [
+              "17.1"
+            ],
+            "details": "Create SettingsScreen.tsx component with categorized sections matching task description. Use TouchableOpacity buttons, Switch components, and TextInput for various setting types. Implement collapsible sections for better organization. Follow existing UI patterns from App.tsx and ProbeManagerUI.tsx using NativeWind classes. Include proper spacing, colors from theme (bg-background, bg-surface, text-text, etc.), and accessibility labels. Add input validation UI feedback and error states.",
+            "status": "pending",
+            "testStrategy": "Test UI renders correctly on different screen sizes, verify all form controls work properly, test accessibility features with screen readers."
+          },
+          {
+            "id": 3,
+            "title": "Implement Game Settings Controls and Logic",
+            "description": "Create interactive controls for game-specific settings including auto-save interval selection, offline notifications, number formatting options, and animation speed multiplier with immediate application.",
+            "dependencies": [
+              "17.1",
+              "17.2"
+            ],
+            "details": "Implement dropdown/picker for auto-save intervals (10s/30s/60s), toggle for offline notifications, radio buttons for number formatting (scientific/engineering/abbreviated), slider for animation speed (0.5x-2x). Connect controls to SettingsContext and ensure changes apply immediately. Update SaveManager's autoSaveInterval when changed. Add validation for numeric inputs and proper range checking.",
+            "status": "pending",
+            "testStrategy": "Test auto-save interval changes take effect immediately, verify number formatting applies to resource displays, test animation speed affects game animations in real-time."
+          },
+          {
+            "id": 4,
+            "title": "Implement Display and Accessibility Settings with Performance Integration",
+            "description": "Create display settings controls (FPS counter, performance overlay, beacon quality, UI scale, theme) and accessibility features (reduced motion, high contrast, touch targets) with integration to existing performance monitoring system.",
+            "dependencies": [
+              "17.1",
+              "17.2"
+            ],
+            "details": "Implement FPS counter toggle connecting to existing performance monitor in src/utils/performance/monitor.ts, performance overlay toggle, beacon quality selector affecting LOD system, UI scale slider (0.8x-1.2x), theme toggle. Add accessibility toggles for reduced motion (affecting animations), high contrast mode (CSS overrides), larger touch targets (44px minimum), screen reader optimization. Integrate with existing rendering systems and ensure settings apply immediately to GalaxyMapView.",
+            "status": "pending",
+            "testStrategy": "Test FPS counter displays correctly, verify beacon quality affects rendering performance, test UI scaling works across components, validate accessibility features with device accessibility settings."
+          },
+          {
+            "id": 5,
+            "title": "Implement Audio Settings and Data Management Features",
+            "description": "Create audio controls and data management functionality including save data export/import with validation, progress reset confirmation, and cache clearing with proper error handling and user feedback.",
+            "dependencies": [
+              "17.1",
+              "17.2"
+            ],
+            "details": "Implement volume slider for sound effects, music toggle, haptic intensity selector. For data management: create export functionality using SaveManager to generate JSON file, import with validation against save file schema, reset progress with confirmation dialog that clears all game data, cache clear function. Use platform-appropriate file sharing for export/import. Add loading states, success/error messages, and confirmation dialogs. Integrate with existing SaveManager methods and GameController reset functionality.",
+            "status": "pending",
+            "testStrategy": "Test audio settings affect game sounds, verify save data export creates valid files, test import validates corrupted data properly, confirm reset functionality clears all data, test cache clearing improves performance."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-01T02:33:04.902Z",
+      "updated": "2025-09-01T02:42:25.146Z",
       "description": "Tasks for master context"
     }
   }
