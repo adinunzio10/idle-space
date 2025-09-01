@@ -1085,7 +1085,50 @@
           6
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove resource costs from ProbeManager system",
+            "description": "Modify ProbeManager to eliminate all resource validation and costs for probe launches while maintaining time-based deployment delays",
+            "dependencies": [],
+            "details": "Update ProbeManager class to remove resource cost validation from probe launch methods. Keep existing time-based delays (Pioneer: 30s, Harvester: 90s, Architect: 60s). Modify probe queue system to allow unlimited queuing based only on time slots. Remove resource deduction calls from probe deployment logic. Update probe launch UI to show only time delays without resource requirements.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement escalating beacon placement cost system",
+            "description": "Add exponential cost formula for manual beacon placement with base cost and specialization multipliers",
+            "dependencies": [
+              "16.1"
+            ],
+            "details": "Implement escalating cost formula: base cost 50 QD * 1.5^(beacon_count) with additional costs for specialized types (Efficiency: +100%, Range: +150%, Stability: +200%). Update BeaconManager to calculate costs before placement. Modify BeaconPlacementValidator to check resource availability. Add cost calculation methods to ResourceManager for beacon placement validation and resource deduction.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add cost preview UI for beacon placement",
+            "description": "Create user interface showing exact resource requirements before beacon placement confirmation",
+            "dependencies": [
+              "16.2"
+            ],
+            "details": "Design and implement cost preview overlay showing exact QD requirements for beacon placement. Display base cost, exponential multiplier calculation, and specialization bonus costs. Add confirmation dialog with cost breakdown before finalizing beacon placement. Include visual indicators in galaxy map showing cost differences between probe-placed vs manually-placed beacons. Update placement flow to show cost preview on beacon selection.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Update tutorial and rebalance resource generation",
+            "description": "Modify tutorial system and adjust resource generation rates to reflect new economic model",
+            "dependencies": [
+              "16.3"
+            ],
+            "details": "Update tutorial text and help system to explain new economic model where probes are free expansion method and beacons are premium instant placement. Rebalance resource generation rates to maintain economic tension with new cost structure. Update onboarding flow to demonstrate time-gated probe launches vs resource-cost beacon placement. Modify existing help tooltips and UI text to reflect economic changes. Test and adjust base resource generation to ensure game balance.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 17,
@@ -1234,11 +1277,90 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 19,
+        "title": "Fix Pattern Toggle Button and Overlay Functionality Issues",
+        "description": "Resolve multiple pattern system issues including broken toggle button functionality, inconsistent pattern count display, unreliable pentagon suggestions, and non-functioning map overlay visualizations after Task 18 state management refactor.",
+        "details": "Debug and fix critical pattern system regressions introduced during the state management refactor: 1) **Pattern Toggle Button Issues**: Fix button showing incorrect count (1) for triangles when no suggestions exist and popup not opening on long press. Investigate PatternSuggestionContext state synchronization with UI components. Verify event handlers are properly connected after context migration. 2) **Pentagon Detection Consistency**: Debug 4th beacon placement not reliably triggering pentagon suggestions. Review pattern detection logic in PatternDetector class for geometric validation edge cases. Implement more robust beacon position validation and angle tolerance calculations. 3) **Pattern Count Display Issues**: Fix inconsistent count display (alternating between 1 and 2 for same configuration). Investigate race conditions in pattern calculation updates and ensure single source of truth from PatternSuggestionContext. Add debouncing to prevent rapid state updates. 4) **Map Overlay Visualization Breakdown**: Completely rebuild PatternSuggestionOverlay integration with new context system. Fix dotted pattern lines not rendering by ensuring SVG overlay components receive proper pattern data from context. Verify React Native SVG compatibility with new state management approach. 5) **State Management Audit**: Thoroughly review PatternSuggestionContext implementation for proper state initialization, update mechanisms, and component subscription patterns. Ensure context providers wrap all dependent components correctly. Add comprehensive logging for pattern state transitions to identify root causes. Use React DevTools Profiler to identify performance bottlenecks and unnecessary re-renders.",
+        "testStrategy": "Systematically test each fixed component: 1) Verify pattern toggle button displays correct count matching actual detected patterns, not beacon count approximations. Test long press gesture opens popup with valid suggestion data. 2) Place exactly 4 beacons in pentagon formation multiple times, confirming pentagon suggestions appear consistently every time. Test various beacon spacing and positioning edge cases. 3) Monitor pattern count display during rapid beacon placement/removal, ensuring count remains stable and accurate. Test with overlapping pattern configurations. 4) Enable pattern overlay toggle and verify dotted lines render correctly for all detected patterns (triangles through hexagons). Test overlay persistence during map pan/zoom operations. 5) Use React Native Debugger to monitor PatternSuggestionContext state changes, ensuring no orphaned state or memory leaks. Perform integration testing across the full pattern detection workflow from beacon placement to visual feedback. Test on both iOS and Android devices to ensure cross-platform compatibility after fixes.",
+        "status": "done",
+        "dependencies": [
+          18
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Debug and Fix Pattern Toggle Button Count Display Issues",
+            "description": "Fix the pattern toggle button showing incorrect count (1) for triangles when no suggestions exist and ensure accurate pattern count display from PatternSuggestionContext.",
+            "dependencies": [],
+            "details": "Investigate PatternSuggestionContext state synchronization with PatternToggleButton component. Debug why button shows count of 1 for triangles when no patterns exist. Verify pattern count calculation matches actual detected patterns from PatternDetector, not beacon count approximations. Add logging to track pattern count state updates and identify source of incorrect values. Implement proper state subscription to ensure UI reflects accurate pattern data.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Fix Pattern Toggle Button Long Press Gesture Handling",
+            "description": "Restore long press functionality to open pattern popup and verify event handlers are properly connected after context migration.",
+            "dependencies": [
+              "19.1"
+            ],
+            "details": "Debug broken long press gesture on PatternToggleButton that fails to open popup. Verify React Native Gesture Handler integration with new PatternSuggestionContext system. Check if gesture recognizer event handlers are properly bound after state management refactor. Test gesture detection and ensure popup opens with valid suggestion data from context. Implement proper gesture event propagation and state updates.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Debug Pentagon Detection Geometric Validation Issues",
+            "description": "Fix unreliable pentagon pattern detection when placing 4th beacon, focusing on PatternDetector geometric validation edge cases.",
+            "dependencies": [],
+            "details": "Investigate PatternDetector class pentagon detection logic for geometric validation failures. Debug why 4th beacon placement doesn't consistently trigger pentagon suggestions. Review angle tolerance calculations and beacon position validation algorithms. Implement more robust geometric validation for pentagon formation detection. Add comprehensive logging for pattern detection steps to identify where validation fails. Test with various beacon arrangements to ensure consistent pentagon recognition.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Resolve Pattern Count Display Race Conditions",
+            "description": "Fix inconsistent pattern count display alternating between values and implement debouncing to prevent rapid state updates.",
+            "dependencies": [
+              "19.1"
+            ],
+            "details": "Debug race conditions in PatternSuggestionContext causing pattern count to alternate between different values for same beacon configuration. Identify competing state update sources causing count inconsistencies. Implement debouncing mechanism using lodash.debounce to prevent rapid pattern calculation updates. Ensure single source of truth for pattern count from PatternSuggestionContext. Add state update sequencing to prevent overlapping calculations that cause display flickering.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Rebuild PatternSuggestionOverlay SVG Integration",
+            "description": "Completely rebuild PatternSuggestionOverlay component integration with new context system to restore dotted pattern line visualizations.",
+            "dependencies": [
+              "19.1",
+              "19.3"
+            ],
+            "details": "Fix broken PatternSuggestionOverlay SVG rendering where dotted pattern lines no longer display on galaxy map. Rebuild integration with PatternSuggestionContext to ensure overlay components receive proper pattern data. Verify React Native SVG compatibility with new state management approach. Debug SVG path rendering issues and ensure pattern suggestion lines are visible. Test overlay positioning and scaling with galaxy map zoom/pan interactions. Implement proper cleanup and re-rendering when pattern data updates.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Conduct Comprehensive Pattern State Management Audit",
+            "description": "Perform thorough audit of PatternSuggestionContext implementation and use React DevTools Profiler to identify performance issues and root causes.",
+            "dependencies": [
+              "19.2",
+              "19.4",
+              "19.5"
+            ],
+            "details": "Review PatternSuggestionContext implementation for proper state initialization, update mechanisms, and component subscription patterns. Ensure context providers wrap all dependent components correctly in component tree. Add comprehensive logging for all pattern state transitions to identify root causes of issues. Use React DevTools Profiler to identify performance bottlenecks, unnecessary re-renders, and memory leaks. Document state flow and create debugging guide for future pattern system maintenance. Validate that all pattern-related components properly subscribe to context updates.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-01T03:47:15.856Z",
+      "updated": "2025-09-01T04:29:01.102Z",
       "description": "Tasks for master context"
     }
   }
