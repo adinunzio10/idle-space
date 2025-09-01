@@ -75,7 +75,7 @@ import {
   debugGestureWorklet,
 } from '../../utils/gestures/gestureWorklets';
 import DebugOverlay from '../debug/DebugOverlay';
-import { QuadTreeSpatialIndex } from '../../utils/spatial/quadtree';
+import { SpatialIndex } from '../../utils/spatial/indexing';
 import { performanceMonitor, usePerformanceMonitor } from '../../utils/performance/monitor';
 import { 
   getLODRenderInfo, 
@@ -225,21 +225,13 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Create a stable ref for updateViewportState to avoid circular dependencies
   const updateViewportStateRef = useRef<((x: number, y: number, s: number) => void) | null>(null);
 
-  // Spatial indexing for efficient beacon queries - now using QuadTree
+  // Spatial indexing for efficient beacon queries - now using R-tree
   const spatialIndex = useMemo(() => {
-    const bounds = {
-      x: 0,
-      y: 0,
-      width: GALAXY_WIDTH,
-      height: GALAXY_HEIGHT,
-    };
-    const index = new QuadTreeSpatialIndex(bounds, 10, 8);
+    const index = new SpatialIndex();
     index.rebuild(beacons);
     return index;
   }, [beacons]);
 
-  // Pattern detector for geometric patterns
-  const patternDetector = useMemo(() => new PatternDetector(), []);
 
   // Spatial hashing components for pattern suggestions
   const spatialHashMap = useMemo(() => new SpatialHashMap(), []);
@@ -277,10 +269,13 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     validator.updateBeacons(entityBeacons);
     return validator;
   }, [beacons]);
+
+  // Pattern detector for geometric patterns - now with spatial index
+  const patternDetector = useMemo(() => new PatternDetector(undefined, undefined, undefined, undefined, undefined, placementValidator, spatialIndex), [placementValidator, spatialIndex]);
   
   const suggestionEngine = useMemo(() => 
-    new PatternSuggestionEngine(spatialHashMap, undefined, placementValidator), 
-    [spatialHashMap, placementValidator]
+    new PatternSuggestionEngine(spatialHashMap, undefined, placementValidator, spatialIndex), 
+    [spatialHashMap, placementValidator, spatialIndex]
   );
 
   // Pattern suggestion state management
@@ -359,11 +354,14 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Immediate pattern analysis trigger when beacons change (user placement)
   useEffect(() => {
     if (beacons.length > 0 && (suggestionState.popupVisible || suggestionState.mapVisualizationsVisible)) {
+      // Update the suggestion engine's spatial index with current beacons
+      suggestionEngine.updateSpatialIndex(beacons);
+      
       // Cancel any pending debounced call and analyze immediately
       analyzePatternOpportunitiesDebounced.cancel();
       analyzePatternOpportunitiesDebounced(beacons, viewportState, suggestionState);
     }
-  }, [beacons.length, analyzePatternOpportunitiesDebounced, viewportState, suggestionState.popupVisible, suggestionState.mapVisualizationsVisible]);
+  }, [beacons.length, analyzePatternOpportunitiesDebounced, viewportState, suggestionState.popupVisible, suggestionState.mapVisualizationsVisible, suggestionEngine]);
 
   // Debug logging helper - defined early so it's available in worklets
   const logGesture = useCallback((type: string, data: any) => {

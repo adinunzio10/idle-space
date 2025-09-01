@@ -15,6 +15,7 @@ import { BeaconType, BEACON_PLACEMENT_CONFIG } from '../../types/beacon';
 import { GeometryUtils } from './GeometryUtils';
 import { calculateCentroid } from './geometry';
 import { SpatialHashMap } from '../spatial/SpatialHashMap';
+import { SpatialIndex } from '../spatial/indexing';
 import { GeometricTolerance, DEFAULT_TOLERANCE } from '../../types/geometry';
 import { PlacementValidator } from '../spatial/PlacementValidator';
 import { ShapeDetector } from './detection';
@@ -26,6 +27,7 @@ import { patternPerformanceMonitor } from '../performance/PatternPerformanceMoni
 export class PatternSuggestionEngine {
   private geometryUtils: GeometryUtils;
   private spatialHash: SpatialHashMap;
+  private spatialIndex: SpatialIndex | null;
   private cachedSuggestions: Map<string, { suggestions: PatternSuggestion[]; timestamp: number }>;
   private cachedAnalysis: Map<string, { analysis: PatternCompletionAnalysis; timestamp: number }>;
   private tolerance: GeometricTolerance;
@@ -36,15 +38,26 @@ export class PatternSuggestionEngine {
   constructor(
     spatialHash: SpatialHashMap,
     tolerance: GeometricTolerance = DEFAULT_TOLERANCE,
-    placementValidator?: PlacementValidator
+    placementValidator?: PlacementValidator,
+    spatialIndex?: SpatialIndex
   ) {
     this.spatialHash = spatialHash;
+    this.spatialIndex = spatialIndex || null;
     this.tolerance = tolerance;
     this.geometryUtils = new GeometryUtils(tolerance);
     this.cachedSuggestions = new Map();
     this.cachedAnalysis = new Map();
     this.placementValidator = placementValidator || null;
     this.shapeDetector = new ShapeDetector();
+  }
+
+  /**
+   * Update the spatial index with current beacons for optimal query performance
+   */
+  updateSpatialIndex(beacons: Beacon[]): void {
+    if (this.spatialIndex) {
+      this.spatialIndex.rebuild(beacons);
+    }
   }
 
   /**
@@ -439,6 +452,12 @@ export class PatternSuggestionEngine {
   }
   
   private findNearbyBeacons(position: Point2D, beacons: Beacon[], radius: number): Beacon[] {
+    // Use R-tree spatial index for O(log n) performance if available
+    if (this.spatialIndex) {
+      return this.spatialIndex.queryRadius(position, radius);
+    }
+    
+    // Fallback to linear search O(n) if no spatial index
     return beacons.filter(beacon => {
       const distance = this.geometryUtils.distance(position, beacon.position);
       return distance <= radius;

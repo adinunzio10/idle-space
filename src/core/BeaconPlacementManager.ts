@@ -11,7 +11,7 @@ import {
 } from '../types/spatialHashing';
 import { Beacon, BeaconFactory } from '../entities';
 import { PlacementValidator, PlacementBounds, PlacementConfig } from '../utils/spatial/PlacementValidator';
-import { QuadTreeSpatialIndex } from '../utils/spatial/quadtree';
+import { SpatialIndex } from '../utils/spatial/indexing';
 import { PatternDetector } from '../utils/patterns/detection';
 
 export interface PlacementManagerConfig {
@@ -23,7 +23,7 @@ export interface PlacementManagerConfig {
 
 export class BeaconPlacementManager {
   private validator: PlacementValidator;
-  private spatialIndex: QuadTreeSpatialIndex | null;
+  private spatialIndex: SpatialIndex | null;
   private beacons: Map<string, Beacon>;
   private config: PlacementManagerConfig;
   private patternDetector: PatternDetector | null;
@@ -43,17 +43,12 @@ export class BeaconPlacementManager {
     
     // Initialize spatial index if enabled
     this.spatialIndex = config.enableSpatialIndexing 
-      ? new QuadTreeSpatialIndex({
-          x: config.bounds.minX,
-          y: config.bounds.minY,
-          width: config.bounds.maxX - config.bounds.minX,
-          height: config.bounds.maxY - config.bounds.minY,
-        })
+      ? new SpatialIndex()
       : null;
     
     // Initialize pattern detector for suggestions
     this.patternDetector = config.enablePatternSuggestions 
-      ? new PatternDetector(undefined, undefined, undefined, undefined, undefined, this.validator)
+      ? new PatternDetector(undefined, undefined, undefined, undefined, undefined, this.validator, this.spatialIndex || undefined)
       : null;
   }
 
