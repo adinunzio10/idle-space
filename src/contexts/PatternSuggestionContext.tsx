@@ -65,43 +65,47 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   // Pattern detector instance - memoized to prevent recreation
   const patternDetector = useMemo(() => new PatternDetector(), []);
   
-  // Calculate real pattern count using PatternDetector
+  // Calculate pattern suggestion count using PatternDetector's suggestion engine
   const calculatePatternCount = useCallback((currentBeacons: Beacon[]): number => {
-    console.log(`[PatternSuggestionContext] calculatePatternCount called with ${currentBeacons.length} beacons`);
+    console.log(`[PatternSuggestionContext] calculatePatternCount (suggestions) called with ${currentBeacons.length} beacons`);
     
-    if (currentBeacons.length < 3) {
-      console.log(`[PatternSuggestionContext] Not enough beacons for patterns (${currentBeacons.length} < 3)`);
+    // Need at least 2 beacons to have suggestions for completing patterns
+    if (currentBeacons.length < 2) {
+      console.log(`[PatternSuggestionContext] Not enough beacons for suggestions (${currentBeacons.length} < 2)`);
       return 0;
     }
     
     try {
-      // Build connections from beacon network
-      const connections = buildConnectionsFromBeacons(currentBeacons);
-      console.log(`[PatternSuggestionContext] Built ${connections.length} connections from ${currentBeacons.length} beacons`);
+      // Get pattern suggestions instead of completed patterns
+      const suggestions = patternDetector.getPatternSuggestions(currentBeacons);
+      console.log(`[PatternSuggestionContext] Found ${suggestions.length} pattern suggestions:`, suggestions.map(s => ({ type: s.patternType, priority: s.priority })));
       
-      const patterns = patternDetector.detectPatternsOptimized(currentBeacons, connections);
-      console.log(`[PatternSuggestionContext] Detected ${patterns.length} patterns:`, patterns.map(p => ({ id: p.id, type: p.type, beacons: p.beaconIds })));
-      
-      // Special check for when we're reporting patterns but shouldn't
-      if (patterns.length > 0 && currentBeacons.length < 3) {
-        console.error(`[PatternSuggestionContext] ERROR: Detected ${patterns.length} patterns with only ${currentBeacons.length} beacons!`);
-      }
-      
-      return patterns.length;
+      return suggestions.length;
     } catch (error) {
-      console.warn('Failed to detect patterns:', error);
+      console.warn('Failed to get pattern suggestions:', error);
       return 0;
     }
   }, [patternDetector]);
   
-  // Update beacons and recalculate patterns
+  // Update beacons and recalculate pattern suggestions
   const updateBeacons = useCallback((newBeacons: Beacon[]) => {
     console.log(`[PatternSuggestionContext] updateBeacons called with ${newBeacons.length} beacons`);
     setBeacons(newBeacons);
+    
+    // Calculate pattern suggestions
     const newPatternCount = calculatePatternCount(newBeacons);
-    console.log(`[PatternSuggestionContext] Setting pattern count to ${newPatternCount}`);
+    console.log(`[PatternSuggestionContext] Setting suggestion count to ${newPatternCount}`);
     setPatternCount(newPatternCount);
-  }, [calculatePatternCount]);
+    
+    // Also update the suggestions array for the UI
+    try {
+      const newSuggestions = patternDetector.getPatternSuggestions(newBeacons);
+      setSuggestions(newSuggestions);
+    } catch (error) {
+      console.warn('Failed to update suggestions array:', error);
+      setSuggestions([]);
+    }
+  }, [calculatePatternCount, patternDetector]);
   
   // Pattern suggestion actions
   const actions = useMemo(() => ({
@@ -138,7 +142,7 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
     }
   }, [actions]);
   
-  // Initialize pattern count on mount and when beacons change
+  // Initialize pattern suggestion count on mount and when beacons change
   useEffect(() => {
     console.log(`[PatternSuggestionContext] useEffect triggered with ${beacons.length} beacons`);
     if (beacons.length > 0) {
@@ -146,7 +150,16 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
     }
     const newPatternCount = calculatePatternCount(beacons);
     setPatternCount(newPatternCount);
-  }, [beacons, calculatePatternCount]);
+    
+    // Also update suggestions array
+    try {
+      const newSuggestions = patternDetector.getPatternSuggestions(beacons);
+      setSuggestions(newSuggestions);
+    } catch (error) {
+      console.warn('Failed to initialize suggestions array:', error);
+      setSuggestions([]);
+    }
+  }, [beacons, calculatePatternCount, patternDetector]);
   
   const contextValue: PatternSuggestionContextValue = {
     // State
@@ -182,10 +195,10 @@ export const usePatternSuggestions = (): PatternSuggestionContextValue => {
   return context;
 };
 
-// Convenience hook for pattern count only
+// Convenience hook for pattern suggestion count only
 export const usePatternCount = () => {
   const { patternCount } = usePatternSuggestions();
-  return patternCount;
+  return patternCount; // This is actually the count of pattern suggestions, not completed patterns
 };
 
 // Convenience hook for pattern visibility controls

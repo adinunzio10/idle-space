@@ -28,9 +28,9 @@ export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
     showPopup: onOpenPopup 
   } = usePatternVisibility();
   
-  // Debug logging for pattern count changes
+  // Debug logging for pattern suggestion count changes
   React.useEffect(() => {
-    console.log(`[PatternToggleButton] Pattern count changed to: ${patternCount}`);
+    console.log(`[PatternToggleButton] Pattern suggestion count changed to: ${patternCount}`);
   }, [patternCount]);
   const scaleValue = useSharedValue(1);
   const pulseValue = useSharedValue(0);
