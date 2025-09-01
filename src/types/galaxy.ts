@@ -46,6 +46,14 @@ export interface GalaxyMapProps {
   showDebugOverlay?: boolean;
   selectedBeacon?: Beacon | null;
   beaconUpdateTrigger?: number;
+  // Pattern suggestion control
+  externalPatternControl?: {
+    mapVisualizationsVisible: boolean;
+    popupVisible: boolean;
+    onToggleMapVisualizations: () => void;
+    onOpenPopup: () => void;
+    onClosePopup: () => void;
+  };
 }
 
 export interface RenderingConfig {

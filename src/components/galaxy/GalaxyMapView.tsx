@@ -127,6 +127,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   showDebugOverlay = false,
   selectedBeacon = null,
   beaconUpdateTrigger,
+  externalPatternControl,
   style,
 }) => {
   // Constants for galaxy content
@@ -280,10 +281,30 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Pattern suggestion state management
   const [suggestionState, suggestionActions] = usePatternSuggestionState({
-    popupVisible: true,
-    mapVisualizationsVisible: true,
+    popupVisible: externalPatternControl?.popupVisible ?? true,
+    mapVisualizationsVisible: externalPatternControl?.mapVisualizationsVisible ?? true,
     displayMode: 'best',
   });
+
+  // Sync external pattern control with internal state
+  useEffect(() => {
+    if (externalPatternControl) {
+      if (suggestionState.mapVisualizationsVisible !== externalPatternControl.mapVisualizationsVisible) {
+        if (externalPatternControl.mapVisualizationsVisible) {
+          suggestionActions.showMapVisualizations();
+        } else {
+          suggestionActions.hideMapVisualizations();
+        }
+      }
+      if (suggestionState.popupVisible !== externalPatternControl.popupVisible) {
+        if (externalPatternControl.popupVisible) {
+          suggestionActions.showPopup();
+        } else {
+          suggestionActions.hidePopup();
+        }
+      }
+    }
+  }, [externalPatternControl?.mapVisualizationsVisible, externalPatternControl?.popupVisible, suggestionState.mapVisualizationsVisible, suggestionState.popupVisible, suggestionActions]);
 
   // Debounced pattern analysis to prevent excessive calculations during pan/zoom
   const analyzePatternOpportunitiesDebounced = useMemo(
@@ -1372,21 +1393,17 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
             isVisible={suggestionState.popupVisible && (patternAnalysis?.suggestedPositions?.length || 0) > 0}
             onHintPress={handleHintPress}
             onSuggestionInteraction={handleSuggestionInteraction}
-            onClose={suggestionActions.hidePopup}
+            onClose={() => {
+              suggestionActions.hidePopup();
+              externalPatternControl?.onClosePopup();
+            }}
             position="top"
             enableAnimations={!renderingState.performanceMode}
           />
 
-          {/* Pattern toggle button - Always available when patterns exist */}
-          <PatternToggleButton
-            patternCount={patternAnalysis?.suggestedPositions?.length || 0}
-            isMapVisualizationsVisible={suggestionState.mapVisualizationsVisible}
-            onToggleVisualizations={suggestionActions.toggleMapVisualizations}
-            onOpenPopup={suggestionActions.showPopup}
-            position="bottom-right"
-          />
         </Animated.View>
       </GestureDetector>
+      
     </View>
   );
 };
