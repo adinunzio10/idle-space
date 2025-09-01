@@ -52,7 +52,19 @@ export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(({
     if (!analysis || !analysis.suggestedPositions) return [];
     
     return analysis.suggestedPositions
-      .filter(s => s.potentialBonus >= DEFAULT_PLACEMENT_HINT_CONFIG.minBonusThreshold)
+      .filter(s => {
+        // Validate suggestion makes sense
+        const isValid = s.newBeaconsNeeded > 0 && 
+                       s.newBeaconsNeeded <= 3 && // Max 3 new beacons
+                       s.completionPercentage >= 0.3 && // At least 30% complete
+                       s.potentialBonus >= DEFAULT_PLACEMENT_HINT_CONFIG.minBonusThreshold;
+        
+        if (!isValid && process.env.NODE_ENV === 'development') {
+          console.warn('Filtered invalid suggestion:', s);
+        }
+        
+        return isValid;
+      })
       .sort((a, b) => b.priority - a.priority);
   }, [analysis]);
 

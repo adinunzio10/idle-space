@@ -343,10 +343,16 @@ export class PatternSuggestionEngine {
       const threshold = PATTERN_SUGGESTION_CONFIG.COMPLETION_THRESHOLDS[patternType];
       const minExistingBeacons = Math.ceil(requiredBeacons * threshold);
       
+      // Skip if combination size doesn't make sense for this pattern
+      if (minExistingBeacons > beacons.length) continue;
+      
       // Find combinations of beacons that could form this pattern
       const combinations = this.generateBeaconCombinations(beacons, minExistingBeacons);
       
       for (const combination of combinations) {
+        // Skip combinations that are wrong size for pattern type
+        if (combination.length >= requiredBeacons) continue;
+        
         if (this.couldFormPattern(combination, patternType) && 
             !this.isExistingPattern(combination, existingPatterns)) {
           
@@ -355,6 +361,16 @@ export class PatternSuggestionEngine {
           const missingPositions = this.calculateMissingPositions(combination, patternType, beaconType);
           
           if (missingPositions.length > 0) {
+            // Add debug logging for pattern suggestions
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`Found incomplete ${patternType}:`, {
+                beaconCount: combination.length,
+                requiredCount: requiredBeacons,
+                beaconIds: combination.map(b => b.id),
+                missingCount: missingPositions.length
+              });
+            }
+            
             incomplete.push({
               id: `incomplete-${patternType}-${combination.map(b => b.id).join('-')}`,
               type: patternType,
@@ -515,11 +531,24 @@ export class PatternSuggestionEngine {
   }
   
   private couldFormPattern(beacons: Beacon[], patternType: PatternType): boolean {
-    if (beacons.length < 2) return false;
+    const beaconCount = beacons.length;
+    const requiredCount = this.getRequiredBeaconCount(patternType);
     
-    // Check if beacons are within reasonable distance of each other
+    if (beaconCount < 2) return false;
+    
+    // Can't form pattern if we have too many beacons already
+    if (beaconCount > requiredCount) return false;
+    
+    // Can't form pattern if we're too far from completion
+    if (beaconCount < Math.ceil(requiredCount * 0.5)) return false;
+    
+    // For exact beacon count minus one, validate partial geometry
+    if (beaconCount === requiredCount - 1) {
+      if (!this.validatePartialPattern(beacons, patternType)) return false;
+    }
+    
+    // Check distance constraints
     const maxDistance = NEIGHBOR_QUERY_CONFIG.PATTERN_RADII[patternType];
-    
     for (let i = 0; i < beacons.length; i++) {
       for (let j = i + 1; j < beacons.length; j++) {
         const distance = this.geometryUtils.distance(
@@ -531,6 +560,89 @@ export class PatternSuggestionEngine {
     }
     
     return true;
+  }
+  
+  private validatePartialPattern(beacons: Beacon[], patternType: PatternType): boolean {
+    const positions = beacons.map(b => b.position);
+    
+    switch (patternType) {
+      case 'triangle':
+        // 2 beacons can always form part of a triangle
+        return beacons.length === 2;
+        
+      case 'square':
+        if (beacons.length === 3) {
+          // Check if 3 points could be part of a square
+          // They should form a right angle or be on adjacent sides
+          return this.couldBePartOfSquare(positions);
+        }
+        return beacons.length === 2;
+        
+      case 'pentagon':
+        if (beacons.length === 4) {
+          return this.couldBePartOfPentagon(positions);
+        }
+        return beacons.length <= 3;
+        
+      case 'hexagon':
+        if (beacons.length === 5) {
+          return this.couldBePartOfHexagon(positions);
+        }
+        return beacons.length <= 4;
+        
+      default:
+        return false;
+    }
+  }
+  
+  private couldBePartOfSquare(positions: Point2D[]): boolean {
+    if (positions.length !== 3) return false;
+    
+    const [p1, p2, p3] = positions;
+    
+    // Calculate angles between points
+    const angle1 = this.geometryUtils.angleBetweenPoints(p1, p2, p3);
+    const angle2 = this.geometryUtils.angleBetweenPoints(p2, p3, p1);
+    const angle3 = this.geometryUtils.angleBetweenPoints(p3, p1, p2);
+    
+    // Check if any angle is approximately 90 degrees (π/2 radians)
+    const rightAngle = Math.PI / 2;
+    const tolerance = 0.2; // ~11 degrees
+    
+    const hasRightAngle = 
+      Math.abs(angle1 - rightAngle) < tolerance ||
+      Math.abs(angle2 - rightAngle) < tolerance ||
+      Math.abs(angle3 - rightAngle) < tolerance;
+    
+    if (!hasRightAngle) return false;
+    
+    // Additional check: two sides should be approximately equal
+    const side1 = this.geometryUtils.distance(p1, p2);
+    const side2 = this.geometryUtils.distance(p2, p3);
+    const side3 = this.geometryUtils.distance(p3, p1);
+    
+    const sides = [side1, side2, side3].sort((a, b) => a - b);
+    const ratio1 = sides[1] / sides[0];
+    const ratio2 = sides[2] / sides[1];
+    
+    // Either two sides are equal (corner of square) or
+    // we have a right triangle with sides in ratio 1:1:√2
+    const hasEqualSides = ratio1 < 1.2 || ratio2 < 1.2;
+    const isDiagonalPattern = Math.abs(ratio2 - Math.sqrt(2)) < 0.2;
+    
+    return hasEqualSides || isDiagonalPattern;
+  }
+  
+  private couldBePartOfPentagon(positions: Point2D[]): boolean {
+    // For now, accept any 4 points as potential pentagon partial
+    // This is a placeholder - in a full implementation, would check pentagon geometry
+    return positions.length === 4;
+  }
+  
+  private couldBePartOfHexagon(positions: Point2D[]): boolean {
+    // For now, accept any 5 points as potential hexagon partial  
+    // This is a placeholder - in a full implementation, would check hexagon geometry
+    return positions.length === 5;
   }
   
   private isExistingPattern(beacons: Beacon[], existingPatterns: GeometricPattern[]): boolean {
