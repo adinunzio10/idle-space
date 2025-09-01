@@ -417,6 +417,9 @@ export class GameController {
       // Note: This bypasses placement validation since these are already placed
       this.beaconPlacementManager['beacons'].set(beacon.id, beacon);
       
+      // IMPORTANT: Add to validator so it knows about existing beacons for future placement validation
+      this.beaconPlacementManager['validator'].addBeacon(beacon);
+      
       if (this.beaconPlacementManager['spatialIndex']) {
         this.beaconPlacementManager['spatialIndex'].addBeacon(beacon);
       }
