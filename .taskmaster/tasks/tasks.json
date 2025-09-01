@@ -1071,11 +1071,26 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 16,
+        "title": "Redesign Resource Cost Model for Probe and Beacon Economics",
+        "description": "Restructure the economic model to make probe launches free (time-gated only) while implementing escalating resource costs for manual beacon placement, reversing the current cost structure.",
+        "details": "Redesign the core economic model by modifying the ProbeManager and BeaconManager systems: 1) Remove all resource costs from probe launches in ProbeManager, keeping only time-based deployment delays (Pioneer: 30s, Harvester: 90s, Architect: 60s). Update probe queue system to be resource-free with unlimited queuing based on time slots only. 2) Implement escalating cost formula for manual beacon placement: base cost 50 QD, exponential scaling factor 1.5^(beacon_count), with additional costs for specialized beacon types (Efficiency: +100% cost, Range: +150% cost, Stability: +200% cost). 3) Update ResourceManager to handle new cost calculations and validation. 4) Modify BeaconPlacementValidator to check resource availability before placement confirmation. 5) Add cost preview UI showing exact resource requirements before beacon placement confirmation. 6) Update tutorial and help text to reflect the new economic model where probes are the free expansion method and beacons are premium instant placement. 7) Rebalance resource generation rates to accommodate the new cost structure, potentially reducing base generation to maintain economic tension. 8) Add visual feedback in galaxy map showing cost differences between probe-placed vs manually-placed beacons using different visual indicators.",
+        "testStrategy": "Verify probe launches require no resources and only time delays work correctly. Test beacon placement cost escalation formula with various beacon counts and specializations. Validate resource deduction occurs correctly for beacon placement with insufficient resource error handling. Test cost preview UI accuracy before placement confirmation. Performance test cost calculations with large beacon counts (500+). Verify tutorial updates reflect new economic model accurately. Test game balance by playing through early game progression with new cost structure.",
+        "status": "pending",
+        "dependencies": [
+          4,
+          5,
+          6
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-01T01:27:15.715Z",
+      "updated": "2025-09-01T02:33:04.902Z",
       "description": "Tasks for master context"
     }
   }
