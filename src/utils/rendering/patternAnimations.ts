@@ -257,11 +257,11 @@ export const createParticleAnimation = (
  * Complex multi-pattern formation sequence
  */
 export const createSequentialFormationAnimation = (
-  patterns: Array<{
+  patterns: {
     progress: SharedValue<number>;
     type: PatternType;
     delay: number;
-  }>,
+  }[],
   onComplete?: () => void
 ) => {
   let completedCount = 0;

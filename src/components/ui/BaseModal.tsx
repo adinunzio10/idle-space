@@ -14,7 +14,7 @@ interface BaseModalProps {
   animationInTiming?: number;
   animationOutTiming?: number;
   backdropOpacity?: number;
-  swipeDirection?: 'up' | 'down' | 'left' | 'right' | Array<'up' | 'down' | 'left' | 'right'>;
+  swipeDirection?: 'up' | 'down' | 'left' | 'right' | ('up' | 'down' | 'left' | 'right')[];
   onSwipeComplete?: () => void;
   maxHeight?: number;
   fullScreen?: boolean;

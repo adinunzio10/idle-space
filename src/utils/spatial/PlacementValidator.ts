@@ -548,12 +548,12 @@ export class PlacementValidator {
     patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'
   ): {
     validPositions: Point2D[];
-    correctedPositions: Array<{ original: Point2D; corrected: Point2D; confidence: number }>;
+    correctedPositions: { original: Point2D; corrected: Point2D; confidence: number }[];
     invalidPositions: Point2D[];
     overallConfidence: number;
   } {
     const validPositions: Point2D[] = [];
-    const correctedPositions: Array<{ original: Point2D; corrected: Point2D; confidence: number }> = [];
+    const correctedPositions: { original: Point2D; corrected: Point2D; confidence: number }[] = [];
     const invalidPositions: Point2D[] = [];
 
     for (const position of positions) {
@@ -600,8 +600,8 @@ export class PlacementValidator {
     beaconType: BeaconType,
     patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon',
     maxAlternatives: number = 3
-  ): Array<{ position: Point2D; score: number; reasoning: string }> {
-    const alternatives: Array<{ position: Point2D; score: number; reasoning: string }> = [];
+  ): { position: Point2D; score: number; reasoning: string }[] {
+    const alternatives: { position: Point2D; score: number; reasoning: string }[] = [];
     const searchRadius = this.config.minimumDistances[beaconType] * 3;
     const attempts = 50;
 

@@ -11,22 +11,22 @@ import Animated, {
   runOnJS,
   useDerivedValue,
 } from 'react-native-reanimated';
+import { usePatternCount, usePatternVisibility } from '../../contexts/PatternSuggestionContext';
 
 interface PatternToggleButtonProps {
-  patternCount: number;
-  isMapVisualizationsVisible: boolean;
-  onToggleVisualizations: () => void;
-  onOpenPopup: () => void;
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 }
 
 export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
-  patternCount,
-  isMapVisualizationsVisible,
-  onToggleVisualizations,
-  onOpenPopup,
   position = 'bottom-right',
 }) => {
+  // Use context instead of props
+  const patternCount = usePatternCount();
+  const { 
+    mapVisualizationsVisible: isMapVisualizationsVisible, 
+    toggleMapVisualizations: onToggleVisualizations,
+    showPopup: onOpenPopup 
+  } = usePatternVisibility();
   const scaleValue = useSharedValue(1);
   const pulseValue = useSharedValue(0);
   

@@ -16,6 +16,7 @@ import { FloatingActionButton } from './src/components/ui/FloatingActionButton';
 import { StatisticsModal } from './src/components/ui/StatisticsModal';
 import { SettingsModal } from './src/components/ui/SettingsModal';
 import { PatternToggleButton } from './src/components/ui/PatternToggleButton';
+import { PatternSuggestionProvider } from './src/contexts/PatternSuggestionContext';
 import { ProbeInstance } from './src/types/probe';
 
 interface GalaxyMapScreenProps {
@@ -32,11 +33,6 @@ interface GalaxyMapScreenProps {
   selectedBeacon?: Beacon | null;
   beaconVersion: number;
   gameController: GameController;
-  mapVisualizationsVisible: boolean;
-  patternPopupVisible: boolean;
-  currentPatternCount: number;
-  onToggleMapVisualizations: () => void;
-  onTogglePatternPopup: () => void;
 }
 
 const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
@@ -53,11 +49,6 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   selectedBeacon = null,
   beaconVersion,
   gameController,
-  mapVisualizationsVisible,
-  patternPopupVisible,
-  currentPatternCount,
-  onToggleMapVisualizations,
-  onTogglePatternPopup,
 }) => {
   const screenData = Dimensions.get('window');
   const navHeight = 110; // Navigation and beacon selection height
@@ -162,31 +153,11 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           showDebugOverlay={showDebugOverlay}
           selectedBeacon={selectedBeacon}
           beaconUpdateTrigger={beaconVersion}
-          externalPatternControl={{
-            mapVisualizationsVisible: mapVisualizationsVisible,
-            popupVisible: patternPopupVisible,
-            onToggleMapVisualizations: () => {
-              setMapVisualizationsVisible(!mapVisualizationsVisible);
-              console.log('External toggle map visualizations:', !mapVisualizationsVisible);
-            },
-            onOpenPopup: () => {
-              setPatternPopupVisible(true);
-              console.log('External open pattern popup requested');
-            },
-            onClosePopup: () => {
-              setPatternPopupVisible(false);
-              console.log('External close pattern popup requested');
-            }
-          }}
           />
         </View>
         
         {/* Pattern Toggle Button - positioned at app level to avoid clipping */}
         <PatternToggleButton
-          patternCount={currentPatternCount}
-          isMapVisualizationsVisible={mapVisualizationsVisible}
-          onToggleVisualizations={onToggleMapVisualizations}
-          onOpenPopup={onTogglePatternPopup}
           position="bottom-right"
         />
         
@@ -215,13 +186,6 @@ export default function App() {
   const [processedProbeIds] = useState(() => new Set<string>()); // Track probes that have already created beacons
   const [lastPlacement, setLastPlacement] = useState<{ position: { x: number; y: number } | null; timestamp: number }>({ position: null, timestamp: 0 });
   
-  // Pattern suggestion state for galaxy map
-  const [patternSuggestionCount, setPatternSuggestionCount] = useState(0);
-  const [mapVisualizationsVisible, setMapVisualizationsVisible] = useState(true);
-  const [patternPopupVisible, setPatternPopupVisible] = useState(false);
-  
-  // Calculate pattern count based on current beacons (simplified calculation)
-  const currentPatternCount = gameState ? Object.keys(gameState.beacons).length >= 3 ? 4 : 0 : 0;
 
   // Create stable callback references using useCallback
   const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
@@ -466,7 +430,8 @@ export default function App() {
 
     return (
       <SafeAreaProvider>
-        <GalaxyMapScreen 
+        <PatternSuggestionProvider initialBeacons={getBeaconsForMap()}>
+          <GalaxyMapScreen 
           onBack={() => setShowGalaxyMap(false)}
           beacons={getBeaconsForMap()}
           probes={probes}
@@ -480,18 +445,8 @@ export default function App() {
           selectedBeacon={selectedBeacon}
           beaconVersion={beaconVersion}
           gameController={gameController}
-          mapVisualizationsVisible={mapVisualizationsVisible}
-          patternPopupVisible={patternPopupVisible}
-          currentPatternCount={currentPatternCount}
-          onToggleMapVisualizations={() => {
-            setMapVisualizationsVisible(!mapVisualizationsVisible);
-            console.log('Toggled map visualizations:', !mapVisualizationsVisible);
-          }}
-          onTogglePatternPopup={() => {
-            setPatternPopupVisible(!patternPopupVisible);
-            console.log('Toggled pattern popup:', !patternPopupVisible);
-          }}
-        />
+          />
+        </PatternSuggestionProvider>
         
         <BeaconSpecializationModal
           isVisible={showSpecializationModal}

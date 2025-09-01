@@ -494,8 +494,8 @@ export class PatternSuggestionEngine {
     position: Point2D,
     neighbors: Beacon[],
     patternType: PatternType
-  ): Array<{ quality: number; requiredMoves: number; riskFactors: string[] }> {
-    const formations: Array<{ quality: number; requiredMoves: number; riskFactors: string[] }> = [];
+  ): { quality: number; requiredMoves: number; riskFactors: string[] }[] {
+    const formations: { quality: number; requiredMoves: number; riskFactors: string[] }[] = [];
     const requiredBeacons = this.getRequiredBeaconCount(patternType);
     
     // Generate combinations of neighbors + position
@@ -520,7 +520,7 @@ export class PatternSuggestionEngine {
     return formations;
   }
   
-  private calculateConfidenceLevel(formations: Array<{ quality: number }>): number {
+  private calculateConfidenceLevel(formations: { quality: number }[]): number {
     if (formations.length === 0) return 0;
     
     const averageQuality = formations.reduce((sum, f) => sum + f.quality, 0) / formations.length;

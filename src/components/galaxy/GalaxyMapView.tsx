@@ -98,7 +98,8 @@ import BeaconRenderer from './BeaconRenderer';
 import BeaconClusterRenderer from './BeaconCluster';
 import ConnectionRenderer from './ConnectionRenderer';
 import PatternRenderer, { usePatternRenderingQuality } from './PatternRenderer';
-import { PatternSuggestionOverlay, usePatternSuggestionState } from './PatternSuggestionOverlay';
+import { PatternSuggestionOverlay } from './PatternSuggestionOverlay';
+import { usePatternSuggestions, usePatternSuggestionActions } from '../../contexts/PatternSuggestionContext';
 import { PlacementHintSystem } from '../ui/PlacementHintSystem';
 import { PatternToggleButton } from '../ui/PatternToggleButton';
 import StarField from './StarField';
@@ -127,7 +128,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   showDebugOverlay = false,
   selectedBeacon = null,
   beaconUpdateTrigger,
-  externalPatternControl,
   style,
 }) => {
   // Constants for galaxy content
@@ -218,7 +218,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Pattern completion analysis state
   const [patternAnalysis, setPatternAnalysis] = useState<any>(null);
-  const [patternSuggestions, setPatternSuggestions] = useState<any[]>([]);
 
   // Performance monitoring hook
   const { startFrame, endFrame, getQualitySettings } = usePerformanceMonitor();
@@ -279,32 +278,31 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     [spatialHashMap, placementValidator, spatialIndex]
   );
 
-  // Pattern suggestion state management
-  const [suggestionState, suggestionActions] = usePatternSuggestionState({
-    popupVisible: externalPatternControl?.popupVisible ?? true,
-    mapVisualizationsVisible: externalPatternControl?.mapVisualizationsVisible ?? true,
-    displayMode: 'best',
-  });
-
-  // Sync external pattern control with internal state
-  useEffect(() => {
-    if (externalPatternControl) {
-      if (suggestionState.mapVisualizationsVisible !== externalPatternControl.mapVisualizationsVisible) {
-        if (externalPatternControl.mapVisualizationsVisible) {
-          suggestionActions.showMapVisualizations();
-        } else {
-          suggestionActions.hideMapVisualizations();
-        }
-      }
-      if (suggestionState.popupVisible !== externalPatternControl.popupVisible) {
-        if (externalPatternControl.popupVisible) {
-          suggestionActions.showPopup();
-        } else {
-          suggestionActions.hidePopup();
-        }
-      }
-    }
-  }, [externalPatternControl?.mapVisualizationsVisible, externalPatternControl?.popupVisible, suggestionState.mapVisualizationsVisible, suggestionState.popupVisible, suggestionActions]);
+  // Pattern suggestion state from context
+  const {
+    popupVisible,
+    mapVisualizationsVisible,
+    selectedSuggestion,
+    hoveredSuggestion,
+    dismissedSuggestions,
+    displayMode,
+    suggestions,
+    updateBeacons,
+    hidePopup
+  } = usePatternSuggestions();
+  
+  const suggestionActions = usePatternSuggestionActions();
+  
+  // Create suggestionState object for backward compatibility
+  const suggestionState = {
+    popupVisible,
+    mapVisualizationsVisible,
+    selectedSuggestion,
+    hoveredSuggestion,
+    dismissedSuggestions,
+    displayMode,
+    autoHideTimer: null // Not used in context, but needed for interface compatibility
+  };
 
   // Debounced pattern analysis to prevent excessive calculations during pan/zoom
   const analyzePatternOpportunitiesDebounced = useMemo(
@@ -314,7 +312,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
           // Pass viewport bounds for culling optimization
           const analysis = suggestionEngine.analyzePatternOpportunities(beacons, [], { bounds: viewport.bounds });
           setPatternAnalysis(analysis);
-          setPatternSuggestions(analysis.suggestedPositions || []);
         } catch (error) {
           console.warn('Failed to analyze pattern opportunities:', error);
         }
@@ -372,8 +369,11 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     };
   }, []);
 
-  // Immediate pattern analysis trigger when beacons change (user placement)
+  // Update context with beacon changes and trigger pattern analysis
   useEffect(() => {
+    // Update context with current beacons for pattern count calculation
+    updateBeacons(beacons);
+    
     if (beacons.length > 0 && (suggestionState.popupVisible || suggestionState.mapVisualizationsVisible)) {
       // Update the suggestion engine's spatial index with current beacons
       suggestionEngine.updateSpatialIndex(beacons);
@@ -382,7 +382,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       analyzePatternOpportunitiesDebounced.cancel();
       analyzePatternOpportunitiesDebounced(beacons, viewportState, suggestionState);
     }
-  }, [beacons.length, analyzePatternOpportunitiesDebounced, viewportState, suggestionState.popupVisible, suggestionState.mapVisualizationsVisible, suggestionEngine]);
+  }, [beacons, beacons.length, updateBeacons, analyzePatternOpportunitiesDebounced, viewportState, suggestionState.popupVisible, suggestionState.mapVisualizationsVisible, suggestionEngine]);
 
   // Debug logging helper - defined early so it's available in worklets
   const logGesture = useCallback((type: string, data: any) => {
@@ -1019,18 +1019,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
   // Handle pattern suggestion interactions
   const handleSuggestionInteraction = useCallback((event: any) => {
-    switch (event.type) {
-      case 'select':
-        suggestionActions.selectSuggestion(event.suggestion);
-        break;
-      case 'dismiss':
-        suggestionActions.dismissSuggestion(event.suggestion.id);
-        break;
-      case 'hover':
-        suggestionActions.hoverSuggestion(event.suggestion);
-        break;
-    }
-  }, [suggestionActions, onMapPress]);
+    suggestionActions.onSuggestionInteraction(event);
+  }, [suggestionActions]);
 
   // Handle placement hint interactions
   const handleHintPress = useCallback((suggestion: any) => {
@@ -1334,7 +1324,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
                 qualitySettings={patternRenderingQuality}
                 onPatternPress={(pattern) => {
                   // TODO: Add pattern info modal or tooltip
-                  console.log('Pattern pressed:', pattern);
                 }}
               />
 
@@ -1365,7 +1354,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
               {/* Pattern suggestion overlay */}
               <PatternSuggestionOverlay
-                suggestions={patternSuggestions}
+                suggestions={suggestions}
                 beacons={beacons}
                 viewportState={viewportState}
                 suggestionState={suggestionState}
@@ -1394,8 +1383,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
             onHintPress={handleHintPress}
             onSuggestionInteraction={handleSuggestionInteraction}
             onClose={() => {
-              suggestionActions.hidePopup();
-              externalPatternControl?.onClosePopup();
+              hidePopup();
             }}
             position="top"
             enableAnimations={!renderingState.performanceMode}
