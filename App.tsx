@@ -1,11 +1,9 @@
-import { StatusBar } from 'expo-status-bar';
-import { Text, View, TouchableOpacity, Dimensions } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useState, useCallback } from 'react';
+import 'react-native-screens';
 import './global.css';
 import { GameController } from './src/core/GameController';
 import { GameState } from './src/storage/schemas/GameState';
+<<<<<<< HEAD
 import { GalaxyMapView } from './src/components/galaxy/GalaxyMapView';
 import { Beacon } from './src/types/galaxy';
 import { BeaconType, BeaconSpecialization } from './src/types/beacon';
@@ -17,8 +15,12 @@ import { StatisticsModal } from './src/components/ui/StatisticsModal';
 import { SettingsModal } from './src/components/ui/SettingsModal';
 import { PatternToggleButton } from './src/components/ui/PatternToggleButton';
 import { PatternSuggestionProvider } from './src/contexts/PatternSuggestionContext';
+=======
+>>>>>>> af36ed0 (feat: begin task 8 work. implement proper UI frame for each screen, including placeholders for future screen in task 8. fix other minor UI issues)
 import { ProbeInstance } from './src/types/probe';
+import { AppNavigator } from './src/navigation/AppNavigator';
 
+<<<<<<< HEAD
 interface GalaxyMapScreenProps {
   onBack: () => void;
   beacons: Beacon[];
@@ -164,7 +166,6 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
       </View>
   );
 };
-
 export default function App() {
   const [gameController] = useState(() => GameController.getInstance());
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -184,6 +185,8 @@ export default function App() {
   const [processedProbeIds] = useState(() => new Set<string>()); // Track probes that have already created beacons
   const [lastPlacement, setLastPlacement] = useState<{ position: { x: number; y: number } | null; timestamp: number }>({ position: null, timestamp: 0 });
   
+  const [probes, setProbes] = useState<ProbeInstance[]>([]);
+  const [processedProbeIds] = useState(() => new Set<string>());
 
   // Create stable callback references using useCallback
   const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
@@ -196,7 +199,6 @@ export default function App() {
       return;
     }
     
-    
     // Mark probe as processed to prevent duplicates
     processedProbeIds.add(probe.id);
     
@@ -207,14 +209,12 @@ export default function App() {
       // Update game state to show the new beacon
       const updatedState = gameController.getGameState();
       setGameState(updatedState);
-      setBeaconVersion(prev => prev + 1); // Force re-render
       
       const finalPos = result.finalPosition || result.beacon.position;
       const wasRelocated = finalPos.x !== probe.targetPosition.x || finalPos.y !== probe.targetPosition.y;
       
       if (wasRelocated) {
         // TODO: Add visual notification for user about beacon relocation
-      } else {
       }
     } else {
       console.error(`[App] Probe ${probe.id}: Failed to create beacon even with fallback positions - ${result.error}`);
@@ -250,7 +250,6 @@ export default function App() {
         if (mounted) {
           const state = gameController.getGameState();
           setGameState(state);
-          setBeaconVersion(prev => prev + 1); // Trigger beacon re-render
           setIsInitialized(true);
         }
       } catch (err) {
@@ -276,6 +275,7 @@ export default function App() {
     };
   }, [gameController, handleProbeUpdate, handleProbeDeployment]);
 
+<<<<<<< HEAD
   // Trigger beacon re-render when galaxy map becomes visible
   useEffect(() => {
     if (showGalaxyMap && gameState) {
@@ -592,5 +592,13 @@ export default function App() {
         />
       </GestureHandlerRootView>
     </SafeAreaProvider>
+  return (
+    <AppNavigator
+      gameState={gameState}
+      gameController={gameController}
+      probes={probes}
+      isInitialized={isInitialized}
+      error={error}
+    />
   );
 }

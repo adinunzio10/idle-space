@@ -130,16 +130,20 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
   };
 
   return (
-    <View className="flex-1 bg-surface rounded-t-xl overflow-hidden" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-surface rounded-t-xl overflow-hidden">
       {/* Header */}
-      <View className="bg-background px-4 py-3 border-b border-text/10">
+      <View className="bg-surface px-4 py-3">
         <View className="flex-row justify-between items-center">
-          <Text className="text-text text-lg font-semibold">Probe Manager</Text>
           {onClose && (
-            <TouchableOpacity onPress={onClose} className="px-3 py-1">
-              <Text className="text-text/60 text-base">✕</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              className="bg-primary px-4 py-2 rounded-lg"
+            >
+              <Text className="text-white font-semibold">← Back</Text>
             </TouchableOpacity>
           )}
+          <Text className="text-text text-lg font-semibold">Probe Manager</Text>
+          <View style={{ width: 72 }} />
         </View>
         <Text className="text-text/60 text-sm mt-1">
           {queueStatus.totalProbes} probes • {queueStatus.queuedProbes.length} queued • {queueStatus.activeProbes.length} active

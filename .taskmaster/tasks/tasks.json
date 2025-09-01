@@ -477,32 +477,43 @@
       {
         "id": 8,
         "title": "Create User Interface and HUD System",
-        "description": "Develop mobile-optimized UI with resource displays, floating action buttons, and modal overlays using NativeWind styling.",
-        "details": "Install NativeWind 2.0+ with Tailwind CSS configuration optimized for React Native. Create responsive HUD with fixed resource counters at top using safe-area-context. Implement floating action button at bottom for probe launches with haptic feedback. Design modal overlays for upgrades, statistics, and settings using react-native-modal. Add scientific notation formatting for large numbers using numeral.js. Create theme system with dark space aesthetic: deep purple/black backgrounds, cyan/white accents. Implement one-handed navigation with all controls within thumb reach. Add accessibility support with proper labeling and font scaling.",
-        "testStrategy": "Test responsive design across device sizes. Verify one-handed usability on various screen sizes. Accessibility testing with screen readers. Performance testing of modal animations and transitions.",
-        "priority": "medium",
+        "description": "Develop mobile-optimized UI with resource displays, floating action buttons, and strategic navigation architecture using NativeWind styling.",
+        "status": "in-progress",
         "dependencies": [
           4,
           6
         ],
+<<<<<<< HEAD
         "status": "done",
+=======
+        "priority": "medium",
+        "details": "Install NativeWind 2.0+ with Tailwind CSS configuration optimized for React Native. Create responsive HUD with fixed resource counters at top using safe-area-context. Implement floating action button at bottom for probe launches with haptic feedback. Design strategic navigation architecture: use full-screen React Native screens with proper navigation for main destinations (Settings, Statistics, Pattern Gallery), while reserving react-native-modal only for contextual actions over the galaxy map (beacon upgrades, probe details, quick info panels, temporary overlays). Galaxy map remains central persistent view with contextual modals. Add scientific notation formatting for large numbers using numeral.js. Create theme system with dark space aesthetic: deep purple/black backgrounds, cyan/white accents. Implement one-handed navigation with all controls within thumb reach. Add accessibility support with proper labeling and font scaling.",
+        "testStrategy": "Test responsive design across device sizes. Verify one-handed usability on various screen sizes. Test navigation flow between full screens and modal overlays. Verify modal performance over galaxy map. Accessibility testing with screen readers. Performance testing of modal animations and screen transitions.",
+>>>>>>> af36ed0 (feat: begin task 8 work. implement proper UI frame for each screen, including placeholders for future screen in task 8. fix other minor UI issues)
         "subtasks": [
           {
             "id": 1,
-            "title": "Setup NativeWind Configuration and Dark Space Theme System",
-            "description": "Install and configure NativeWind 2.0+ with Tailwind CSS for React Native, establish dark space theme with deep purple/black backgrounds and cyan/white accents",
+            "title": "Install and configure NativeWind 4.x with optimized Tailwind CSS",
+            "description": "Update NativeWind to latest version (already at 4.1.23) and verify Tailwind CSS configuration is optimized for React Native with proper content paths and theme colors",
             "dependencies": [],
+<<<<<<< HEAD
             "details": "Install NativeWind 2.0+ and configure tailwind.config.js for React Native compatibility. Create theme system with dark space aesthetic using deep purple (#1a0b2e) and black (#0a0a0a) backgrounds, cyan (#00bcd4) and white (#ffffff) accent colors. Setup color tokens, typography scales, and spacing system. Configure safe-area-context for proper screen edge handling.",
             "status": "done",
             "testStrategy": ""
+=======
+            "details": "NativeWind 4.1.23 is already installed. Verify tailwind.config.js configuration includes proper content paths for all component directories, confirm theme colors match design system (primary: #4F46E5, secondary: #7C3AED, accent: #F59E0B, background: #111827, surface: #1F2937, text: #F9FAFB), and ensure nativewind/preset is properly configured for React Native optimization.",
+            "status": "done",
+            "testStrategy": "Verify className utilities work correctly in components, test color theme consistency across light/dark modes, confirm Tailwind classes compile properly in production build"
+>>>>>>> af36ed0 (feat: begin task 8 work. implement proper UI frame for each screen, including placeholders for future screen in task 8. fix other minor UI issues)
           },
           {
             "id": 2,
-            "title": "Create Responsive HUD Layout with Resource Counters",
-            "description": "Build fixed HUD at top of screen with resource displays using safe-area-context for proper positioning across different device sizes",
+            "title": "Create responsive HUD with resource counters using safe-area-context",
+            "description": "Build fixed resource display at screen top with proper safe area handling and responsive layout for various screen sizes",
             "dependencies": [
               "8.1"
             ],
+<<<<<<< HEAD
             "details": "Create HUD component with fixed positioning at top using safe-area-context. Implement resource counter displays for energy, matter, and other resources with real-time updates. Design responsive layout that adapts to different screen sizes while maintaining one-handed usability. Add smooth animations for resource value changes.",
             "status": "done",
             "testStrategy": ""
@@ -517,30 +528,112 @@
             "details": "Build floating action button component positioned at bottom for easy thumb access. Implement haptic feedback using expo-haptics for button presses. Add accessibility labels and screen reader support. Create smooth press animations and visual feedback states (normal, pressed, disabled). Position within thumb reach zone for one-handed operation.",
             "status": "done",
             "testStrategy": ""
+=======
+            "details": "Create ResourceHUD component that displays Quantum Data, Stellar Essence, and Void Fragments counters at top of screen. Use useSafeAreaInsets() for proper spacing on devices with notches. Implement responsive typography that scales with screen size. Add smooth number animations and scientific notation formatting for large values. Position fixed at top of galaxy map and main screens.",
+            "status": "done",
+            "testStrategy": "Test on various device sizes including iPhone notch devices and Android punch-hole displays, verify safe area handling, test number formatting with values from 1 to 1e12+"
+          },
+          {
+            "id": 3,
+            "title": "Install numeral.js and implement scientific notation formatting",
+            "description": "Add numeral.js dependency and create number formatting utilities for large resource values with scientific notation",
+            "dependencies": [],
+            "details": "Install numeral.js package for number formatting. Create NumberFormatter utility class with methods for formatting large numbers: formatResource() for basic formatting (1K, 1M, 1B), formatScientific() for very large numbers (1.23e12), formatTime() for duration display. Support locale-aware formatting and customizable precision. Use throughout UI components for consistent number display.",
+            "status": "done",
+            "testStrategy": "Test formatting with edge cases: negative numbers, zero values, very small decimals, extremely large numbers (1e100+), verify locale support works correctly"
+>>>>>>> af36ed0 (feat: begin task 8 work. implement proper UI frame for each screen, including placeholders for future screen in task 8. fix other minor UI issues)
           },
           {
             "id": 4,
-            "title": "Build Modal Overlay System for Upgrades and Statistics",
-            "description": "Create modal overlay system using react-native-modal for upgrades, statistics, and settings screens with smooth animations",
+            "title": "Implement floating action button for probe launches with haptic feedback",
+            "description": "Create probe launch FAB at bottom-right of galaxy map with haptic feedback and smooth animations",
             "dependencies": [
               "8.1"
             ],
+<<<<<<< HEAD
             "details": "Install and configure react-native-modal. Create reusable modal components for upgrades, statistics, and settings screens. Implement smooth slide-up animations and backdrop handling. Add proper modal dismissal gestures and accessibility features. Design modal layouts that work within one-handed navigation patterns.",
             "status": "done",
             "testStrategy": ""
+=======
+            "details": "Build FloatingActionButton component positioned at bottom-right of galaxy map within thumb reach. Include probe type selection (Pioneer, Harvester, Architect) in expandable menu. Add haptic feedback using expo-haptics for button press, launch success/failure. Implement smooth expand/collapse animations using react-native-reanimated. Show resource cost and availability status.",
+            "status": "pending",
+            "testStrategy": "Test one-handed usability on various screen sizes, verify haptic feedback works on both iOS and Android, test animation performance during rapid interactions"
+>>>>>>> af36ed0 (feat: begin task 8 work. implement proper UI frame for each screen, including placeholders for future screen in task 8. fix other minor UI issues)
           },
           {
             "id": 5,
-            "title": "Add Number Formatting and Accessibility Features",
-            "description": "Implement scientific notation formatting for large numbers using numeral.js and comprehensive accessibility support with screen readers",
+            "title": "Install and configure React Navigation for full-screen destinations",
+            "description": "Set up React Navigation with stack navigator for main app screens (Settings, Statistics, Pattern Gallery)",
+            "dependencies": [],
+            "details": "Install @react-navigation/native, @react-navigation/native-stack, and required peer dependencies. Create navigation structure: MainScreen (current App.tsx content), GalaxyMapScreen, SettingsScreen, StatisticsScreen, PatternGalleryScreen. Configure proper navigation types with TypeScript. Set up navigation container with dark theme matching app colors. Implement proper screen transitions and header styling.\n<info added on 2025-09-01T18:19:57.718Z>\nSuccessfully completed the React Navigation implementation. All required packages installed and properly configured. Created complete navigation structure with AppNavigator using TypeScript types and dark theme. Implemented six screen components (MainScreen, GalaxyMapScreen, SettingsScreen, StatisticsScreen, PatternGalleryScreen, ProbeManagerScreen) with proper navigation integration. Updated App.tsx to use NavigationContainer instead of previous state-based screen switching. TypeScript compilation successful with no errors. Ready for screen-specific implementations.\n</info added on 2025-09-01T18:19:57.718Z>",
+            "status": "done",
+            "testStrategy": "Test navigation flow between all screens, verify back button behavior, test navigation state persistence, confirm TypeScript navigation typing works correctly"
+          },
+          {
+            "id": 6,
+            "title": "Create Settings screen with navigation integration",
+            "description": "Build comprehensive settings screen with game preferences, audio controls, and accessibility options",
             "dependencies": [
-              "8.2",
-              "8.3",
+              "8.5"
+            ],
+            "details": "Create SettingsScreen component with sections: Game Settings (auto-save interval, offline generation), Audio Settings (sound effects, haptic feedback toggle), Display Settings (theme selection, number format preference), Accessibility (text size scaling, high contrast mode). Use NativeWind styling consistent with app theme. Implement proper form handling and data persistence.",
+            "status": "pending",
+            "testStrategy": "Test all settings persist correctly, verify accessibility features work with system settings, test form validation and user feedback"
+          },
+          {
+            "id": 7,
+            "title": "Create Statistics screen with game progress tracking",
+            "description": "Build statistics screen showing game progress, resource generation rates, and achievement tracking",
+            "dependencies": [
+              "8.5",
+              "8.3"
+            ],
+            "details": "Create StatisticsScreen displaying: resource totals and generation rates, beacon counts by type and level, probe deployment statistics, pattern completion counts, play time and session statistics. Use charts for data visualization (consider react-native-chart-kit). Implement proper scientific notation formatting for large numbers. Add export functionality for statistics data.",
+            "status": "pending",
+            "testStrategy": "Test with various game state scenarios, verify chart performance with large datasets, test statistics accuracy against actual game state"
+          },
+          {
+            "id": 8,
+            "title": "Create Pattern Gallery screen for discovered formations",
+            "description": "Build pattern gallery showing discovered geometric patterns with visual previews and bonus information",
+            "dependencies": [
+              "8.5"
+            ],
+            "details": "Create PatternGalleryScreen displaying discovered beacon patterns (triangles, squares, pentagons, hexagons) with visual previews, bonus multipliers, and discovery timestamps. Include pattern difficulty ratings and completion statistics. Add search and filter functionality. Use SVG rendering for pattern previews with same styling as galaxy map.",
+            "status": "pending",
+            "testStrategy": "Test pattern preview rendering accuracy, verify pattern data synchronization with actual game state, test search and filter performance"
+          },
+          {
+            "id": 9,
+            "title": "Implement strategic modal system for contextual galaxy map actions",
+            "description": "Create modal overlay system using react-native-modal for beacon upgrades, probe details, and quick info panels over galaxy map",
+            "dependencies": [
               "8.4"
             ],
+<<<<<<< HEAD
             "details": "Install numeral.js for large number formatting with scientific notation. Create utility functions for readable number display (1.23e6, 4.56B, etc). Implement comprehensive accessibility support with proper ARIA labels, screen reader compatibility, and font scaling support. Add accessibility testing helpers and ensure all UI elements are properly labeled for assistive technologies.",
             "status": "done",
             "testStrategy": ""
+=======
+            "details": "Create ModalManager system using react-native-modal for contextual actions over galaxy map: BeaconDetailsModal (upgrade options, connections, statistics), ProbeDetailsModal (deployment progress, target info), QuickInfoModal (pattern suggestions, resource tips). Implement proper backdrop handling, smooth animations, and gesture-based dismissal. Ensure modals don't interfere with galaxy map gestures.",
+            "status": "pending",
+            "testStrategy": "Test modal interactions don't conflict with map gestures, verify modal animations are smooth, test modal dismissal methods (backdrop tap, gesture, button)"
+          },
+          {
+            "id": 10,
+            "title": "Implement one-handed navigation architecture and accessibility support",
+            "description": "Optimize entire UI for one-handed operation with accessibility features including proper labeling and font scaling",
+            "dependencies": [
+              "8.2",
+              "8.4",
+              "8.6",
+              "8.7",
+              "8.8"
+            ],
+            "details": "Ensure all interactive elements are within thumb reach (bottom 2/3 of screen). Implement accessibility features: proper accessibility labels for all interactive elements, support for system font scaling, high contrast mode support, screen reader compatibility. Add accessibility hints for complex gestures. Test with iOS VoiceOver and Android TalkBack. Implement proper focus management for keyboard navigation.",
+            "status": "pending",
+            "testStrategy": "Test with iOS VoiceOver and Android TalkBack enabled, verify one-handed usability on largest supported device sizes, test with system accessibility settings (large text, high contrast, reduced motion)"
+>>>>>>> af36ed0 (feat: begin task 8 work. implement proper UI frame for each screen, including placeholders for future screen in task 8. fix other minor UI issues)
           }
         ]
       },
@@ -1374,7 +1467,7 @@
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-01T17:19:21.751Z",
+      "updated": "2025-09-01T18:20:09.359Z",
       "description": "Tasks for master context"
     }
   }
