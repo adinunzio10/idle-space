@@ -11,6 +11,10 @@ import { Beacon } from './src/types/galaxy';
 import { BeaconType, BeaconSpecialization } from './src/types/beacon';
 import { BeaconSpecializationModal } from './src/components/ui/BeaconSpecializationModal';
 import { ProbeManagerUI } from './src/components/ui/ProbeManagerUI';
+import { GameHUD } from './src/components/ui/GameHUD';
+import { FloatingActionButton } from './src/components/ui/FloatingActionButton';
+import { StatisticsModal } from './src/components/ui/StatisticsModal';
+import { SettingsModal } from './src/components/ui/SettingsModal';
 import { ProbeInstance } from './src/types/probe';
 
 interface GalaxyMapScreenProps {
@@ -26,6 +30,7 @@ interface GalaxyMapScreenProps {
   onToggleDebugOverlay: () => void;
   selectedBeacon?: Beacon | null;
   beaconVersion: number;
+  gameController: GameController;
 }
 
 const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
@@ -41,64 +46,61 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   onToggleDebugOverlay,
   selectedBeacon = null,
   beaconVersion,
+  gameController,
 }) => {
-  const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
-  const headerHeight = 140 + insets.top; // Increased to accommodate beacon type selection
+  const navHeight = 110; // Navigation and beacon selection height
 
   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View className="flex-1 bg-background">
-        <View 
-          className="bg-surface"
-          style={{ paddingTop: insets.top + 16 }}
-        >
-          {/* Header */}
-          <View className="flex-row justify-between items-center px-4 py-4">
+        {/* GameHUD at the top */}
+        <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
+        
+        {/* Navigation and Controls Bar */}
+        <View className="bg-surface/95 border-b border-text/10 px-4 py-3">
+          <View className="flex-row justify-between items-center mb-3">
             <TouchableOpacity
               onPress={onBack}
-              className="bg-primary px-4 py-2 rounded-lg"
+              className="bg-primary px-3 py-2 rounded-lg"
             >
-              <Text className="text-white font-semibold">← Back</Text>
+              <Text className="text-white font-semibold text-sm">← Back</Text>
             </TouchableOpacity>
-            <View className="flex-row items-center space-x-3">
-              <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
-              {__DEV__ && (
-                <TouchableOpacity
-                  onPress={onToggleDebugOverlay}
-                  className={`px-2 py-1 rounded border ${
-                    showDebugOverlay 
-                      ? 'bg-accent/20 border-accent' 
-                      : 'bg-surface border-text/20'
-                  }`}
-                >
-                  <Text className={`text-xs font-semibold ${
-                    showDebugOverlay ? 'text-accent' : 'text-text/60'
-                  }`}>
-                    DEBUG
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <Text className="text-accent text-sm font-semibold">
-              {Math.floor(quantumData)} QD
-            </Text>
+            
+            <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
+            
+            {__DEV__ && (
+              <TouchableOpacity
+                onPress={onToggleDebugOverlay}
+                className={`px-2 py-1 rounded border ${
+                  showDebugOverlay 
+                    ? 'bg-accent/20 border-accent' 
+                    : 'bg-surface border-text/20'
+                }`}
+              >
+                <Text className={`text-xs font-semibold ${
+                  showDebugOverlay ? 'text-accent' : 'text-text/60'
+                }`}>
+                  DEBUG
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
           
-          {/* Beacon Type Selection */}
-          <View className="px-4 pb-4">
-            <Text className="text-text/80 text-sm mb-2">Select Beacon Type (Cost: 50 QD)</Text>
+          {/* Beacon Type Selection - Compact */}
+          <View>
+            <Text className="text-text/70 text-xs mb-2">Beacon Type (50 QD)</Text>
             <View className="flex-row space-x-2">
               <TouchableOpacity
                 onPress={() => onBeaconTypeSelect('pioneer')}
-                className={`px-3 py-2 rounded-lg border ${
+                className={`px-3 py-2 rounded-md border ${
                   selectedBeaconType === 'pioneer' 
                     ? 'bg-primary border-primary' 
                     : 'bg-surface border-text/20'
                 }`}
               >
-                <Text className={`text-sm font-semibold ${
+                <Text className={`text-xs font-semibold ${
                   selectedBeaconType === 'pioneer' ? 'text-white' : 'text-text'
                 }`}>
                   Pioneer
@@ -107,13 +109,13 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
               
               <TouchableOpacity
                 onPress={() => onBeaconTypeSelect('harvester')}
-                className={`px-3 py-2 rounded-lg border ${
+                className={`px-3 py-2 rounded-md border ${
                   selectedBeaconType === 'harvester' 
                     ? 'bg-secondary border-secondary' 
                     : 'bg-surface border-text/20'
                 }`}
               >
-                <Text className={`text-sm font-semibold ${
+                <Text className={`text-xs font-semibold ${
                   selectedBeaconType === 'harvester' ? 'text-white' : 'text-text'
                 }`}>
                   Harvester
@@ -122,13 +124,13 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
               
               <TouchableOpacity
                 onPress={() => onBeaconTypeSelect('architect')}
-                className={`px-3 py-2 rounded-lg border ${
+                className={`px-3 py-2 rounded-md border ${
                   selectedBeaconType === 'architect' 
                     ? 'bg-accent border-accent' 
                     : 'bg-surface border-text/20'
                 }`}
               >
-                <Text className={`text-sm font-semibold ${
+                <Text className={`text-xs font-semibold ${
                   selectedBeaconType === 'architect' ? 'text-white' : 'text-text'
                 }`}>
                   Architect
@@ -138,9 +140,10 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           </View>
         </View>
         
-        <GalaxyMapView
-          width={screenData.width}
-          height={screenData.height - headerHeight}
+        <View className="flex-1">
+          <GalaxyMapView
+            width={screenData.width}
+            height={screenData.height - navHeight}
           beacons={beacons}
           probes={probes}
           onBeaconSelect={onBeaconSelect}
@@ -148,7 +151,9 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           showDebugOverlay={showDebugOverlay}
           selectedBeacon={selectedBeacon}
           beaconUpdateTrigger={beaconVersion}
-        />
+          />
+        </View>
+        
         
         <StatusBar style="light" />
       </View>
@@ -169,6 +174,8 @@ export default function App() {
   const [selectedBeaconId, setSelectedBeaconId] = useState<string | null>(null);
   const [beaconVersion, setBeaconVersion] = useState(0);
   const [showProbeManager, setShowProbeManager] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [probes, setProbes] = useState<ProbeInstance[]>([]);
   const [processedProbeIds] = useState(() => new Set<string>()); // Track probes that have already created beacons
   const [lastPlacement, setLastPlacement] = useState<{ position: { x: number; y: number } | null; timestamp: number }>({ position: null, timestamp: 0 });
@@ -429,6 +436,7 @@ export default function App() {
           onToggleDebugOverlay={() => setShowDebugOverlay(!showDebugOverlay)}
           selectedBeacon={selectedBeacon}
           beaconVersion={beaconVersion}
+          gameController={gameController}
         />
         
         <BeaconSpecializationModal
@@ -464,20 +472,23 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <View className="flex-1 bg-background items-center justify-center p-4">
-          <Text className="text-text text-2xl font-bold mb-6">Signal Garden</Text>
-          
+        <View className="flex-1 bg-background">
+          {/* GameHUD at the top */}
           {gameState && (
-            <View className="items-center space-y-4">
-              <Text className="text-text/80 text-lg">
-                {gameState.player.name}
-              </Text>
-              <Text className="text-primary text-xl font-semibold">
-                Quantum Data: {Math.floor(gameState.resources.quantumData)}
-              </Text>
-              <Text className="text-text/60 text-sm">
-                Save #{gameState.saveCount} • Play time: {Math.floor(gameState.gameTime / 60)}m
-              </Text>
+            <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={true} />
+          )}
+          
+          <View className="flex-1 items-center justify-center p-4">
+            <Text className="text-text text-2xl font-bold mb-6">Signal Garden</Text>
+            
+            {gameState && (
+              <View className="items-center space-y-4">
+                <Text className="text-text/80 text-lg">
+                  {gameState.player.name}
+                </Text>
+                <Text className="text-text/60 text-sm">
+                  Save #{gameState.saveCount} • Play time: {Math.floor(gameState.gameTime / 60)}m
+                </Text>
               
               <View className="mt-8 space-y-4">
                 <TouchableOpacity
@@ -516,6 +527,24 @@ export default function App() {
                   </Text>
                 </TouchableOpacity>
                 
+                <TouchableOpacity
+                  onPress={() => setShowStatistics(true)}
+                  className="bg-blue-600 px-6 py-3 rounded-lg border border-blue-500"
+                >
+                  <Text className="text-white font-semibold text-center">
+                    📊 Statistics
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => setShowSettings(true)}
+                  className="bg-gray-600 px-6 py-3 rounded-lg border border-gray-500"
+                >
+                  <Text className="text-white font-semibold text-center">
+                    ⚙️ Settings
+                  </Text>
+                </TouchableOpacity>
+                
                 {__DEV__ && (
                   <TouchableOpacity
                     onPress={handleResetGameData}
@@ -535,7 +564,23 @@ export default function App() {
           )}
           
           <StatusBar style="light" />
+          </View>
+          
         </View>
+        
+        {/* Statistics Modal */}
+        <StatisticsModal
+          isVisible={showStatistics}
+          onClose={() => setShowStatistics(false)}
+          gameController={gameController}
+        />
+        
+        {/* Settings Modal */}
+        <SettingsModal
+          isVisible={showSettings}
+          onClose={() => setShowSettings(false)}
+          gameController={gameController}
+        />
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
