@@ -148,10 +148,13 @@ export function findCycles(
 ): string[][] {
   const cycles: string[][] = [];
   
+  console.log(`[findCycles] Looking for cycles of length ${cycleLength} in ${beacons.length} beacons`);
+  
   // Build adjacency list
   const adjacencyList = new Map<string, string[]>();
   for (const beacon of beacons) {
     adjacencyList.set(beacon.id, beacon.connections);
+    console.log(`[findCycles] Beacon ${beacon.id} has ${beacon.connections.length} connections:`, beacon.connections);
   }
   
   // DFS to find cycles
@@ -216,6 +219,7 @@ export function findCycles(
     dfs([beacon.id], visited, cycleLength);
   }
   
+  console.log(`[findCycles] Found ${cycles.length} cycles of length ${cycleLength}`);
   return cycles;
 }
 

@@ -6,7 +6,7 @@ import {
   SuggestionInteractionEvent,
   PatternCompletionAnalysis 
 } from '../types/spatialHashing';
-import { PatternDetector } from '../utils/patterns/detection';
+import { PatternDetector, buildConnectionsFromBeacons } from '../utils/patterns/detection';
 
 interface PatternSuggestionContextValue {
   // State
@@ -67,10 +67,26 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   
   // Calculate real pattern count using PatternDetector
   const calculatePatternCount = useCallback((currentBeacons: Beacon[]): number => {
-    if (currentBeacons.length < 3) return 0;
+    console.log(`[PatternSuggestionContext] calculatePatternCount called with ${currentBeacons.length} beacons`);
+    
+    if (currentBeacons.length < 3) {
+      console.log(`[PatternSuggestionContext] Not enough beacons for patterns (${currentBeacons.length} < 3)`);
+      return 0;
+    }
     
     try {
-      const patterns = patternDetector.detectPatternsOptimized(currentBeacons, []);
+      // Build connections from beacon network
+      const connections = buildConnectionsFromBeacons(currentBeacons);
+      console.log(`[PatternSuggestionContext] Built ${connections.length} connections from ${currentBeacons.length} beacons`);
+      
+      const patterns = patternDetector.detectPatternsOptimized(currentBeacons, connections);
+      console.log(`[PatternSuggestionContext] Detected ${patterns.length} patterns:`, patterns.map(p => ({ id: p.id, type: p.type, beacons: p.beaconIds })));
+      
+      // Special check for when we're reporting patterns but shouldn't
+      if (patterns.length > 0 && currentBeacons.length < 3) {
+        console.error(`[PatternSuggestionContext] ERROR: Detected ${patterns.length} patterns with only ${currentBeacons.length} beacons!`);
+      }
+      
       return patterns.length;
     } catch (error) {
       console.warn('Failed to detect patterns:', error);
@@ -80,8 +96,10 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   
   // Update beacons and recalculate patterns
   const updateBeacons = useCallback((newBeacons: Beacon[]) => {
+    console.log(`[PatternSuggestionContext] updateBeacons called with ${newBeacons.length} beacons`);
     setBeacons(newBeacons);
     const newPatternCount = calculatePatternCount(newBeacons);
+    console.log(`[PatternSuggestionContext] Setting pattern count to ${newPatternCount}`);
     setPatternCount(newPatternCount);
   }, [calculatePatternCount]);
   
@@ -122,6 +140,10 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   
   // Initialize pattern count on mount and when beacons change
   useEffect(() => {
+    console.log(`[PatternSuggestionContext] useEffect triggered with ${beacons.length} beacons`);
+    if (beacons.length > 0) {
+      console.log(`[PatternSuggestionContext] First beacon connections:`, beacons[0]?.connections);
+    }
     const newPatternCount = calculatePatternCount(beacons);
     setPatternCount(newPatternCount);
   }, [beacons, calculatePatternCount]);

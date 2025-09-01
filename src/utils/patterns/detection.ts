@@ -674,7 +674,9 @@ export class PatternDetector {
     
     // Return cached result if beacons haven't changed
     if (beaconHash === this.lastBeaconHash && this.cachedPatterns.has(beaconHash)) {
-      return this.cachedPatterns.get(beaconHash)!;
+      const cachedResult = this.cachedPatterns.get(beaconHash)!;
+      console.log(`[PatternDetector] Using cached result: ${cachedResult.length} patterns for ${beacons.length} beacons`);
+      return cachedResult;
     }
     
     let patterns: GeometricPattern[];
