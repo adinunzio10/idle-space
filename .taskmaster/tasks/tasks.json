@@ -1143,7 +1143,7 @@
         "description": "Restructure the economic model to make probe launches free (time-gated only) while implementing escalating resource costs for manual beacon placement, reversing the current cost structure.",
         "details": "Redesign the core economic model by modifying the ProbeManager and BeaconManager systems: 1) Remove all resource costs from probe launches in ProbeManager, keeping only time-based deployment delays (Pioneer: 30s, Harvester: 90s, Architect: 60s). Update probe queue system to be resource-free with unlimited queuing based on time slots only. 2) Implement escalating cost formula for manual beacon placement: base cost 50 QD, exponential scaling factor 1.5^(beacon_count), with additional costs for specialized beacon types (Efficiency: +100% cost, Range: +150% cost, Stability: +200% cost). 3) Update ResourceManager to handle new cost calculations and validation. 4) Modify BeaconPlacementValidator to check resource availability before placement confirmation. 5) Add cost preview UI showing exact resource requirements before beacon placement confirmation. 6) Update tutorial and help text to reflect the new economic model where probes are the free expansion method and beacons are premium instant placement. 7) Rebalance resource generation rates to accommodate the new cost structure, potentially reducing base generation to maintain economic tension. 8) Add visual feedback in galaxy map showing cost differences between probe-placed vs manually-placed beacons using different visual indicators.",
         "testStrategy": "Verify probe launches require no resources and only time delays work correctly. Test beacon placement cost escalation formula with various beacon counts and specializations. Validate resource deduction occurs correctly for beacon placement with insufficient resource error handling. Test cost preview UI accuracy before placement confirmation. Performance test cost calculations with large beacon counts (500+). Verify tutorial updates reflect new economic model accurately. Test game balance by playing through early game progression with new cost structure.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           4,
           5,
@@ -1156,8 +1156,8 @@
             "title": "Remove resource costs from ProbeManager system",
             "description": "Modify ProbeManager to eliminate all resource validation and costs for probe launches while maintaining time-based deployment delays",
             "dependencies": [],
-            "details": "Update ProbeManager class to remove resource cost validation from probe launch methods. Keep existing time-based delays (Pioneer: 30s, Harvester: 90s, Architect: 60s). Modify probe queue system to allow unlimited queuing based only on time slots. Remove resource deduction calls from probe deployment logic. Update probe launch UI to show only time delays without resource requirements.",
-            "status": "pending",
+            "details": "Update ProbeManager class to remove resource cost validation from probe launch methods. Keep existing time-based delays (Pioneer: 30s, Harvester: 90s, Architect: 60s). Modify probe queue system to allow unlimited queuing based only on time slots. Remove resource deduction calls from probe deployment logic. Update probe launch UI to show only time delays without resource requirements.\n<info added on 2025-09-01T22:54:25.310Z>\nSpecific implementation steps: 1) In PROBE_TYPE_CONFIG object, remove the 'cost' field from Pioneer, Harvester, and Architect configurations. 2) Update ProbeManager.queueProbe() method to remove resource validation checks that currently verify sufficient Quantum Data (100 QD for Pioneer, 200 QD for Architect) and combined resource checks for Harvester (50 QD + 10 SE). 3) Remove all ResourceManager.spendResources() calls from probe deployment logic. 4) Keep intact the existing time-based constraints and probe type characteristics (deployment speeds, bonuses, etc.).\n</info added on 2025-09-01T22:54:25.310Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1167,8 +1167,8 @@
             "dependencies": [
               "16.1"
             ],
-            "details": "Implement escalating cost formula: base cost 50 QD * 1.5^(beacon_count) with additional costs for specialized types (Efficiency: +100%, Range: +150%, Stability: +200%). Update BeaconManager to calculate costs before placement. Modify BeaconPlacementValidator to check resource availability. Add cost calculation methods to ResourceManager for beacon placement validation and resource deduction.",
-            "status": "pending",
+            "details": "Implement escalating cost formula: base cost 50 QD * 1.5^(beacon_count) with additional costs for specialized types (Efficiency: +100%, Range: +150%, Stability: +200%). Update BeaconManager to calculate costs before placement. Modify BeaconPlacementValidator to check resource availability. Add cost calculation methods to ResourceManager for beacon placement validation and resource deduction.\n<info added on 2025-09-01T22:55:21.115Z>\nStarted implementation of escalating beacon cost system. Added calculateBeaconCost() method to ResourceManager with base cost 50 QD * 1.5^beacon_count formula and specialization multipliers (Efficiency +100%, Range +150%, Stability +200%). Updated GameController.placeBeacon() to check resource availability before placement and deduct costs after successful placement. Modified BeaconManager to integrate with new cost calculation system. Cost validation prevents beacon placement when insufficient resources available. All core cost calculation and validation logic is now in place and functional.\n</info added on 2025-09-01T22:55:21.115Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1178,8 +1178,8 @@
             "dependencies": [
               "16.2"
             ],
-            "details": "Design and implement cost preview overlay showing exact QD requirements for beacon placement. Display base cost, exponential multiplier calculation, and specialization bonus costs. Add confirmation dialog with cost breakdown before finalizing beacon placement. Include visual indicators in galaxy map showing cost differences between probe-placed vs manually-placed beacons. Update placement flow to show cost preview on beacon selection.",
-            "status": "pending",
+            "details": "Design and implement cost preview overlay showing exact QD requirements for beacon placement. Display base cost, exponential multiplier calculation, and specialization bonus costs. Add confirmation dialog with cost breakdown before finalizing beacon placement. Include visual indicators in galaxy map showing cost differences between probe-placed vs manually-placed beacons. Update placement flow to show cost preview on beacon selection.\n<info added on 2025-09-01T22:56:23.025Z>\nStarting implementation of cost preview UI system. Located beacon placement components in src/core/BeaconManager.ts and UI components in src/screens/GalaxyMapScreen.tsx. Found existing beacon placement modal that needs cost display integration. Implementing cost calculation overlay that shows:\n\n1. Base cost (50 QD)\n2. Current beacon count multiplier (1.5^beacon_count)\n3. Specialization bonus costs if applicable\n4. Total cost calculation before placement\n\nAdded getCostPreview() method to BeaconManager that calculates exact costs using the escalating formula from subtask 16.2. Integrating cost display into placement confirmation dialog with real-time updates as user selects different beacon positions. Cost preview shows in red if insufficient resources, green if affordable.\n\nNext: Testing cost calculation accuracy and UI responsiveness during beacon selection.\n</info added on 2025-09-01T22:56:23.025Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1189,8 +1189,8 @@
             "dependencies": [
               "16.3"
             ],
-            "details": "Update tutorial text and help system to explain new economic model where probes are free expansion method and beacons are premium instant placement. Rebalance resource generation rates to maintain economic tension with new cost structure. Update onboarding flow to demonstrate time-gated probe launches vs resource-cost beacon placement. Modify existing help tooltips and UI text to reflect economic changes. Test and adjust base resource generation to ensure game balance.",
-            "status": "pending",
+            "details": "Update tutorial text and help system to explain new economic model where probes are free expansion method and beacons are premium instant placement. Rebalance resource generation rates to maintain economic tension with new cost structure. Update onboarding flow to demonstrate time-gated probe launches vs resource-cost beacon placement. Modify existing help tooltips and UI text to reflect economic changes. Test and adjust base resource generation to ensure game balance.\n<info added on 2025-09-01T22:57:28.203Z>\nImplementation started: Found tutorial files in src/screens/ and src/components/ that reference old economic model. Located TutorialScreen.tsx with hardcoded text about probe costs and beacon free placement that needs updating. Identified ResourceDisplay component showing misleading cost information. Need to search for all occurrences of resource cost references in help text, tooltips, and onboarding flow. Planning to implement new tutorial flow that demonstrates probe time-gating vs beacon resource costs with interactive examples.\n\nNext steps: Update tutorial text to explain probe launches are free but time-gated, while beacon placement requires escalating quantum data costs. Need to locate and modify base resource generation rates in ResourceManager to compensate for new economic balance. Will test resource generation rates with new cost structure to ensure players can afford beacon placements without breaking game progression curve.\n</info added on 2025-09-01T22:57:28.203Z>",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1436,7 +1436,7 @@
         "description": "Convert the existing Settings and Statistics modal dialogs into dedicated full-screen components that follow the same navigation pattern as Galaxy Map and Probe Manager screens for improved user experience and consistency.",
         "details": "Transform the modal-based Settings and Statistics components into full-screen dedicated screens following the established navigation patterns from Galaxy Map and Probe Manager implementations. Key changes include: 1) **Navigation Integration**: Implement screen-based navigation using React Navigation or similar pattern matching existing screen transitions. Add navigation buttons/tabs in main UI to access Settings and Statistics screens alongside Galaxy Map and Probe Manager. 2) **Component Restructuring**: Convert SettingsModal and StatisticsModal into dedicated screen components (SettingsScreen, StatisticsScreen) with proper header navigation including back buttons and screen titles. Maintain existing functionality while adapting to full-screen layout patterns. 3) **Layout Optimization**: Redesign component layouts to utilize full screen real estate effectively, improving readability and interaction space for touch interfaces. Implement consistent styling and spacing matching other full-screen components. 4) **State Management**: Update any modal-specific state management to work with screen-based navigation, ensuring proper state persistence and cleanup during screen transitions. 5) **Accessibility**: Enhance accessibility with proper focus management, screen reader navigation, and keyboard support following full-screen component patterns rather than modal accessibility patterns.",
         "testStrategy": "Verify Settings and Statistics screens are accessible through main navigation alongside Galaxy Map and Probe Manager screens. Test all existing Settings functionality works identically in full-screen format including save/load, input validation, and immediate setting application. Confirm Statistics display correctly shows all game metrics and updates in real-time. Test navigation transitions are smooth and consistent with other screens. Verify back button functionality returns to previous screen correctly. Test accessibility features including screen reader navigation, focus management, and touch target sizing. Validate responsive layout works across different device sizes and orientations. Ensure no regression in existing functionality during modal-to-screen conversion.",
-        "status": "pending",
+        "status": "cancelled",
         "dependencies": [
           17,
           3
@@ -1460,7 +1460,7 @@
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-01T22:38:42.269Z",
+      "updated": "2025-09-01T22:58:46.309Z",
       "description": "Tasks for master context"
     }
   }

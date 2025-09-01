@@ -208,6 +208,46 @@ export class ResourceManager {
     }
   }
 
+  /**
+   * Calculate the cost to place a beacon based on current beacon count and specialization
+   */
+  calculateBeaconPlacementCost(beaconCount: number, specialization?: 'efficiency' | 'range' | 'stability'): { quantumData: number } {
+    const baseCost = 50;
+    const scalingFactor = 1.5;
+    
+    // Calculate base escalating cost: 50 * 1.5^beacon_count
+    let cost = Math.floor(baseCost * Math.pow(scalingFactor, beaconCount));
+    
+    // Apply specialization multipliers
+    if (specialization) {
+      const multipliers = {
+        efficiency: 2.0,  // +100% cost
+        range: 2.5,       // +150% cost
+        stability: 3.0,   // +200% cost
+      };
+      
+      cost = Math.floor(cost * multipliers[specialization]);
+    }
+    
+    return { quantumData: cost };
+  }
+
+  /**
+   * Check if player can afford beacon placement at current beacon count
+   */
+  canAffordBeaconPlacement(beaconCount: number, specialization?: 'efficiency' | 'range' | 'stability'): boolean {
+    const cost = this.calculateBeaconPlacementCost(beaconCount, specialization);
+    return this.canAfford(cost);
+  }
+
+  /**
+   * Spend resources for beacon placement if affordable
+   */
+  spendBeaconPlacementCost(beaconCount: number, specialization?: 'efficiency' | 'range' | 'stability'): boolean {
+    const cost = this.calculateBeaconPlacementCost(beaconCount, specialization);
+    return this.spendResources(cost);
+  }
+
   private notifyChange(): void {
     if (this.onResourceChange) {
       this.onResourceChange(this.getResources());

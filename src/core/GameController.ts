@@ -200,18 +200,23 @@ export class GameController {
       return { success: false, error: 'Game not initialized' };
     }
 
-    // Check if player has enough resources (base cost is 50 quantum data)
-    const cost = 50;
-    if (this.resourceManager.getResource('quantumData').isLessThan(cost)) {
-      return { success: false, error: 'Insufficient quantum data' };
+    // Calculate escalating cost based on current beacon count
+    const currentBeaconCount = Object.keys(this.gameState.beacons).length;
+    const cost = this.resourceManager.calculateBeaconPlacementCost(currentBeaconCount);
+    
+    // Check if player has enough resources
+    if (!this.resourceManager.canAfford(cost)) {
+      return { success: false, error: `Insufficient resources: need ${cost.quantumData} Quantum Data` };
     }
 
     // Attempt to place the beacon
     const result = this.beaconPlacementManager.placeBeacon(position, type);
     
     if (result.success && result.beacon) {
-      // Deduct resources
-      this.resourceManager.subtractResource('quantumData', cost);
+      // Deduct escalating cost
+      if (!this.resourceManager.spendResources(cost)) {
+        return { success: false, error: 'Failed to spend resources' };
+      }
       
       // Add beacon to game state
       this.gameState.beacons[result.beacon.id] = {
@@ -257,18 +262,23 @@ export class GameController {
       return { success: false, error: 'Game not initialized' };
     }
 
-    // Check if player has enough resources (base cost is 50 quantum data)
-    const cost = 50;
-    if (this.resourceManager.getResource('quantumData').isLessThan(cost)) {
-      return { success: false, error: 'Insufficient quantum data' };
+    // Calculate escalating cost based on current beacon count
+    const currentBeaconCount = Object.keys(this.gameState.beacons).length;
+    const cost = this.resourceManager.calculateBeaconPlacementCost(currentBeaconCount);
+    
+    // Check if player has enough resources
+    if (!this.resourceManager.canAfford(cost)) {
+      return { success: false, error: `Insufficient resources: need ${cost.quantumData} Quantum Data` };
     }
 
     // Attempt to place the beacon with fallback
     const result = this.beaconPlacementManager.placeBeaconWithFallback(targetPosition, type);
     
     if (result.success && result.beacon) {
-      // Deduct resources
-      this.resourceManager.subtractResource('quantumData', cost);
+      // Deduct escalating cost
+      if (!this.resourceManager.spendResources(cost)) {
+        return { success: false, error: 'Failed to spend resources' };
+      }
       
       // Add beacon to game state
       this.gameState.beacons[result.beacon.id] = {
@@ -332,6 +342,30 @@ export class GameController {
       });
     }
     return beacons;
+  }
+
+  /**
+   * Get the current cost to place a beacon based on existing beacon count
+   */
+  getBeaconPlacementCost(specialization?: 'efficiency' | 'range' | 'stability'): { quantumData: number } {
+    if (!this.gameState) {
+      return { quantumData: 50 }; // Default to base cost if game not initialized
+    }
+    
+    const currentBeaconCount = Object.keys(this.gameState.beacons).length;
+    return this.resourceManager.calculateBeaconPlacementCost(currentBeaconCount, specialization);
+  }
+
+  /**
+   * Check if player can afford to place a beacon at current cost
+   */
+  canAffordBeaconPlacement(specialization?: 'efficiency' | 'range' | 'stability'): boolean {
+    if (!this.gameState) {
+      return false;
+    }
+    
+    const currentBeaconCount = Object.keys(this.gameState.beacons).length;
+    return this.resourceManager.canAffordBeaconPlacement(currentBeaconCount, specialization);
   }
 
   /**

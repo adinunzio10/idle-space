@@ -43,14 +43,14 @@ export interface ProbeDeploymentResult {
 export const PROBE_TYPE_CONFIG: Record<ProbeType, ProbeConfig> = {
   pioneer: {
     deploymentTime: 30, // 30 seconds
-    cost: { quantumData: 100 },
+    cost: {}, // No resource cost - time-gated only
     description: 'Fast deployment probe for rapid expansion',
     icon: '🚀',
     color: '#4F46E5', // Primary blue
   },
   harvester: {
     deploymentTime: 90, // 90 seconds
-    cost: { quantumData: 50, stellarEssence: 10 },
+    cost: {}, // No resource cost - time-gated only
     bonus: { stellarEssenceMultiplier: 1.5 }, // +50% Stellar Essence
     description: 'Specialized harvesting probe with resource bonus',
     icon: '⛏️',
@@ -58,7 +58,7 @@ export const PROBE_TYPE_CONFIG: Record<ProbeType, ProbeConfig> = {
   },
   architect: {
     deploymentTime: 60, // 60 seconds
-    cost: { quantumData: 200 },
+    cost: {}, // No resource cost - time-gated only
     bonus: { connectionRangeMultiplier: 2.0 }, // +100% connection range
     description: 'Advanced probe with enhanced beacon connectivity',
     icon: '🏗️',

@@ -92,11 +92,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
   const handleProbeTypeSelect = useCallback((type: ProbeType) => {
     const config = PROBE_TYPE_CONFIG[type];
     
-    if (!canAfford(config.cost)) {
-      // Error haptic for insufficient resources
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
+    // Probes are now free (time-gated only) - no resource check needed
     
     // Success haptic for valid selection
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -186,7 +182,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
         >
           {PROBE_DISPLAY_ORDER.map((type, index) => {
             const config = PROBE_TYPE_CONFIG[type];
-            const affordable = canAfford(config.cost);
+            const affordable = true; // Probes are always affordable (time-gated only)
             
             return (
               <AnimatedTouchableOpacity
@@ -210,7 +206,6 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
                   probeButtonAnimatedStyles[type]
                 ]}
                 onPress={() => handleProbeTypeSelect(type)}
-                disabled={!affordable}
                 activeOpacity={0.8}
               >
                 <Text style={{ fontSize: 20, marginRight: 8 }}>
@@ -229,10 +224,10 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
                   <Text style={{ 
                     color: '#FFFFFF', 
                     fontSize: 10, 
-                    opacity: affordable ? 0.8 : 0.4,
+                    opacity: 0.8,
                     marginTop: 2
                   }}>
-                    {formatCost(config.cost)}
+                    Free • Time-gated only
                   </Text>
                   <Text style={{ 
                     color: '#FFFFFF', 
@@ -243,15 +238,13 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
                     {config.deploymentTime}s deploy
                   </Text>
                 </View>
-                {!affordable && (
-                  <Text style={{ 
-                    color: '#EF4444', 
-                    fontSize: 10, 
-                    fontWeight: 'bold' 
-                  }}>
-                    ❌
-                  </Text>
-                )}
+                <Text style={{ 
+                  color: '#10B981', 
+                  fontSize: 10, 
+                  fontWeight: 'bold' 
+                }}>
+                  ✓
+                </Text>
               </AnimatedTouchableOpacity>
             );
           })}

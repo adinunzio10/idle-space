@@ -52,10 +52,11 @@ export class ProbeManager {
 
   /**
    * Check if player can afford to launch a probe of the given type
+   * NOTE: Probes are now free (time-gated only), so always return true
    */
   canAffordProbe(type: ProbeType): boolean {
-    const config = this.getProbeConfig(type);
-    return this.resourceManager.canAfford(config.cost);
+    // Probes no longer have resource costs - only time constraints
+    return true;
   }
 
   /**
@@ -64,16 +65,8 @@ export class ProbeManager {
   queueProbe(type: ProbeType, targetPosition: Point2D, priority: number = 1, startPosition: Point2D = { x: 0, y: 0 }): ProbeDeploymentResult {
     const config = this.getProbeConfig(type);
 
-    // Validate resources
-    if (!this.canAffordProbe(type)) {
-      return { success: false, error: 'Insufficient resources' };
-    }
-
-    // Spend resources
-    if (!this.resourceManager.spendResources(config.cost)) {
-      return { success: false, error: 'Failed to spend resources' };
-    }
-
+    // No resource validation needed - probes are now free (time-gated only)
+    
     // Create probe instance
     const probe: ProbeInstance = {
       id: `probe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

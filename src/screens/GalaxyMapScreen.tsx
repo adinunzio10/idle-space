@@ -93,14 +93,24 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
       return;
     }
 
+    // Check if player can afford beacon placement before attempting
+    if (!gameController.canAffordBeaconPlacement()) {
+      const cost = gameController.getBeaconPlacementCost();
+      console.warn(`Cannot place beacon: need ${cost.quantumData} Quantum Data`);
+      // Could add a toast notification here in the future
+      return;
+    }
+
     const result = gameController.placeBeacon(position, selectedBeaconType);
     
     if (result.success) {
       // Track successful placement
       setLastPlacement({ position, timestamp: now });
       setBeaconVersion(prev => prev + 1); // Force re-render
+      console.log(`Successfully placed ${selectedBeaconType} beacon at cost ${gameController.getBeaconPlacementCost().quantumData} QD`);
     } else {
       console.error('Failed to place beacon:', result.error);
+      // Could add a toast notification here in the future
     }
   };
 
@@ -175,7 +185,25 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
             
             {/* Beacon Type Selection */}
             <View className="pb-4">
-              <Text className="text-text/80 text-sm mb-2 px-4">Select Beacon Type (Cost: 50 QD)</Text>
+              {(() => {
+                const cost = gameController.getBeaconPlacementCost();
+                const canAfford = gameController.canAffordBeaconPlacement();
+                const currentQD = gameController.getResourceManager().getResource('quantumData').toNumber();
+                
+                return (
+                  <>
+                    <Text className="text-text/80 text-sm mb-1 px-4">
+                      Select Beacon Type - Cost: {cost.quantumData} QD
+                    </Text>
+                    <Text className={`text-xs mb-2 px-4 ${canAfford ? 'text-primary' : 'text-red-400'}`}>
+                      {canAfford 
+                        ? `✓ Affordable (You have ${Math.floor(currentQD)} QD)` 
+                        : `⚠️ Need ${cost.quantumData - Math.floor(currentQD)} more QD`
+                      }
+                    </Text>
+                  </>
+                );
+              })()}
               <View className="flex-row space-x-2 px-4">
                 <TouchableOpacity
                   onPress={() => setSelectedBeaconType('pioneer')}
