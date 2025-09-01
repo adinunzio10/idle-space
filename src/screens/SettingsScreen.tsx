@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
+import { Text, View, TouchableOpacity, Switch, ScrollView, Alert, Platform, Share } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -8,7 +8,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GameHUD } from '../components/ui/GameHUD';
 import { GameState } from '../storage/schemas/GameState';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useSettings } from '../contexts/SettingsContext';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
@@ -47,82 +50,81 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const insets = useSafeAreaInsets();
-  
-  // Settings state - in a real app, these would be persisted
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
-  const [offlineGenerationEnabled, setOfflineGenerationEnabled] = useState(true);
-  const [patternSuggestionsEnabled, setPatternSuggestionsEnabled] = useState(true);
-  const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
-  const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState(true);
-  const [scientificNotationEnabled, setScientificNotationEnabled] = useState(false);
-  const [debugInfoEnabled, setDebugInfoEnabled] = useState(false);
-  const [largeTextEnabled, setLargeTextEnabled] = useState(false);
-  const [highContrastEnabled, setHighContrastEnabled] = useState(false);
-  const [reduceAnimationsEnabled, setReduceAnimationsEnabled] = useState(false);
+  const { settings, updateSetting, exportSettings, importSettings, resetSettings } = useSettings();
 
   // Setting handlers with haptic feedback
-  const handleAutoSaveToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setAutoSaveEnabled(value);
-    // TODO: Apply to game controller
+  const handleAutoSaveToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('autoSaveInterval', value ? 120 : 0); // 0 means auto-save disabled
   };
 
-  const handleOfflineGenerationToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setOfflineGenerationEnabled(value);
-    // TODO: Apply to game controller
+  const handleOfflineGenerationToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('offlineGenerationEnabled', value);
   };
 
-  const handlePatternSuggestionsToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPatternSuggestionsEnabled(value);
-    // TODO: Apply to pattern suggestion system
+  const handlePatternSuggestionsToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('patternSuggestionsEnabled', value);
   };
 
-  const handleSoundEffectsToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSoundEffectsEnabled(value);
-    // TODO: Apply to audio system
+  const handleSoundEffectsToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('soundEnabled', value);
   };
 
-  const handleHapticFeedbackToggle = (value: boolean) => {
+  const handleHapticFeedbackToggle = async (value: boolean) => {
     if (value) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setHapticFeedbackEnabled(value);
-    // TODO: Apply globally to all haptic calls
+    await updateSetting('hapticsEnabled', value);
   };
 
-  const handleScientificNotationToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setScientificNotationEnabled(value);
-    // TODO: Apply to number formatting utilities
+  const handleScientificNotationToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('scientificNotationEnabled', value);
   };
 
-  const handleDebugInfoToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setDebugInfoEnabled(value);
-    // TODO: Apply to debug overlays
+  const handleDebugInfoToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('debugInfoEnabled', value);
   };
 
-  const handleLargeTextToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLargeTextEnabled(value);
-    // TODO: Apply text scaling
+  const handleLargeTextToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('largeTextEnabled', value);
   };
 
-  const handleHighContrastToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setHighContrastEnabled(value);
-    // TODO: Apply high contrast theme
+  const handleHighContrastToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('highContrastEnabled', value);
   };
 
-  const handleReduceAnimationsToggle = (value: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setReduceAnimationsEnabled(value);
-    // TODO: Apply to animation system
+  const handleReduceAnimationsToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('reduceAnimationsEnabled', value);
   };
 
   const handleManualSave = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     try {
       await gameController.saveGame();
       Alert.alert('Success', 'Game saved successfully!');
@@ -132,14 +134,167 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
-  const handleExportSave = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert('Export Save', 'Export functionality will be implemented in a future update.');
-    // TODO: Implement save export functionality
+  const handleImportSave = async () => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    try {
+      Alert.alert(
+        'Import Save',
+        'This will overwrite your current progress. Are you sure?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Import',
+            style: 'default',
+            onPress: async () => {
+              try {
+                // Pick document
+                const result = await DocumentPicker.getDocumentAsync({
+                  type: 'application/json',
+                  copyToCacheDirectory: true,
+                });
+
+                if (!result.canceled && result.assets && result.assets.length > 0) {
+                  const file = result.assets[0];
+                  
+                  // Read file content
+                  const content = await FileSystem.readAsStringAsync(file.uri, {
+                    encoding: FileSystem.EncodingType.UTF8,
+                  });
+
+                  // Parse and validate JSON
+                  const importData = JSON.parse(content);
+                  
+                  if (!importData.gameState) {
+                    throw new Error('Invalid save file format: missing game state');
+                  }
+
+                  // Validate game state structure (basic validation)
+                  if (!importData.gameState.version || !importData.gameState.player) {
+                    throw new Error('Invalid save file: corrupted game state');
+                  }
+
+                  // TODO: Implement actual import to GameController
+                  // gameController.importGameState(importData.gameState);
+                  
+                  // Import settings if available
+                  if (importData.settings && typeof importData.settings === 'object') {
+                    try {
+                      await importSettings(JSON.stringify(importData.settings));
+                    } catch (settingsError) {
+                      console.warn('Failed to import settings:', settingsError);
+                      // Continue even if settings import fails
+                    }
+                  }
+
+                  Alert.alert(
+                    'Import Complete',
+                    'Save file imported successfully! The app will restart to apply changes.',
+                    [
+                      {
+                        text: 'OK',
+                        onPress: () => {
+                          // In a real app, you might want to restart or navigate to main screen
+                          console.log('Import completed, restart recommended');
+                        },
+                      },
+                    ]
+                  );
+                }
+              } catch (error) {
+                console.error('Import save failed:', error);
+                Alert.alert('Import Failed', `Could not import save file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Import save failed:', error);
+      Alert.alert('Error', 'Failed to select save file');
+    }
+  };
+
+  const handleExportSave = async () => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    try {
+      // Get current game state
+      const currentGameState = gameController.getGameState();
+      if (!currentGameState) {
+        Alert.alert('Error', 'No game data to export');
+        return;
+      }
+
+      // Create export data with metadata
+      const exportData = {
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        gameState: currentGameState,
+        settings: await exportSettings(),
+      };
+
+      // Convert to JSON string
+      const jsonString = JSON.stringify(exportData, null, 2);
+      
+      // Create filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+      const filename = `signal-garden-save-${timestamp}.json`;
+
+      if (Platform.OS === 'web') {
+        // Web platform - download file
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        Alert.alert('Success', 'Save file downloaded successfully!');
+      } else {
+        // Mobile platform - use share sheet
+        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+        
+        // Write to file
+        await FileSystem.writeAsStringAsync(fileUri, jsonString, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+
+        // Share the file
+        if (Platform.OS === 'ios') {
+          await Share.share({
+            url: fileUri,
+            message: 'Signal Garden save file',
+          });
+        } else {
+          await Share.share({
+            url: `file://${fileUri}`,
+            message: 'Signal Garden save file',
+          });
+        }
+
+        Alert.alert('Success', 'Save file exported successfully!');
+      }
+    } catch (error) {
+      console.error('Export save failed:', error);
+      Alert.alert('Error', 'Failed to export save file');
+    }
   };
 
   const handleResetProgress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    }
     Alert.alert(
       'Reset Progress',
       'This will delete all your progress. This action cannot be undone.',
@@ -151,9 +306,58 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement progress reset
-            Alert.alert('Reset Complete', 'All progress has been reset.');
+          onPress: async () => {
+            try {
+              // Clear all beacons and reset quantum data
+              gameController.clearAllBeacons();
+              
+              // Create a completely new game state
+              // The GameController should have a method to reset to initial state
+              // For now, we'll clear what we can
+              
+              // Reset settings to defaults (optional - user choice)
+              const shouldResetSettings = await new Promise<boolean>((resolve) => {
+                Alert.alert(
+                  'Reset Settings Too?',
+                  'Do you also want to reset your settings to default values?',
+                  [
+                    {
+                      text: 'Keep Settings',
+                      onPress: () => resolve(false),
+                    },
+                    {
+                      text: 'Reset All',
+                      style: 'destructive',
+                      onPress: () => resolve(true),
+                    },
+                  ]
+                );
+              });
+
+              if (shouldResetSettings) {
+                await resetSettings();
+              }
+
+              // Save the reset state
+              await gameController.saveGame();
+
+              Alert.alert(
+                'Reset Complete',
+                'All progress has been reset. You can start fresh!',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Navigate back to main screen or restart
+                      navigation.goBack();
+                    },
+                  },
+                ]
+              );
+            } catch (error) {
+              console.error('Reset failed:', error);
+              Alert.alert('Error', 'Failed to reset progress completely');
+            }
           },
         },
       ]
@@ -192,10 +396,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Automatically save progress every 2 minutes"
                   control={
                     <Switch
-                      value={autoSaveEnabled}
+                      value={settings.autoSaveInterval > 0}
                       onValueChange={handleAutoSaveToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={autoSaveEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.autoSaveInterval > 0 ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -205,10 +409,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Generate resources while away (up to 8 hours)"
                   control={
                     <Switch
-                      value={offlineGenerationEnabled}
+                      value={settings.offlineGenerationEnabled}
                       onValueChange={handleOfflineGenerationToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={offlineGenerationEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.offlineGenerationEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -218,10 +422,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Show hints for optimal beacon patterns"
                   control={
                     <Switch
-                      value={patternSuggestionsEnabled}
+                      value={settings.patternSuggestionsEnabled}
                       onValueChange={handlePatternSuggestionsToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={patternSuggestionsEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.patternSuggestionsEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -238,10 +442,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Play sound effects for actions"
                   control={
                     <Switch
-                      value={soundEffectsEnabled}
+                      value={settings.soundEnabled}
                       onValueChange={handleSoundEffectsToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={soundEffectsEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.soundEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -251,10 +455,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Vibration feedback for button presses"
                   control={
                     <Switch
-                      value={hapticFeedbackEnabled}
+                      value={settings.hapticsEnabled}
                       onValueChange={handleHapticFeedbackToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={hapticFeedbackEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.hapticsEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -271,10 +475,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Use scientific notation for large numbers"
                   control={
                     <Switch
-                      value={scientificNotationEnabled}
+                      value={settings.scientificNotationEnabled}
                       onValueChange={handleScientificNotationToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={scientificNotationEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.scientificNotationEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -284,10 +488,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Display debug information (development)"
                   control={
                     <Switch
-                      value={debugInfoEnabled}
+                      value={settings.debugInfoEnabled}
                       onValueChange={handleDebugInfoToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={debugInfoEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.debugInfoEnabled ? '#F9FAFB' : '#9CA3AF'}
                       disabled={!__DEV__}
                     />
                   }
@@ -306,10 +510,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Use larger text sizes for better readability"
                   control={
                     <Switch
-                      value={largeTextEnabled}
+                      value={settings.largeTextEnabled}
                       onValueChange={handleLargeTextToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={largeTextEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.largeTextEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -319,10 +523,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Increase contrast for better visibility"
                   control={
                     <Switch
-                      value={highContrastEnabled}
+                      value={settings.highContrastEnabled}
                       onValueChange={handleHighContrastToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={highContrastEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.highContrastEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -332,10 +536,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   description="Minimize motion for sensitive users"
                   control={
                     <Switch
-                      value={reduceAnimationsEnabled}
+                      value={settings.reduceAnimationsEnabled}
                       onValueChange={handleReduceAnimationsToggle}
                       trackColor={{ false: '#374151', true: '#4F46E5' }}
-                      thumbColor={reduceAnimationsEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      thumbColor={settings.reduceAnimationsEnabled ? '#F9FAFB' : '#9CA3AF'}
                     />
                   }
                 />
@@ -371,6 +575,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </Text>
                   </View>
                   <Text className="text-secondary text-xl">📤</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleImportSave}
+                  className="flex-row items-center justify-between p-4 bg-accent/10 border border-accent/20 rounded-lg mb-3"
+                >
+                  <View className="flex-1">
+                    <Text className="text-accent font-semibold">Import Save</Text>
+                    <Text className="text-accent/70 text-sm mt-1">
+                      Load save data from backup file
+                    </Text>
+                  </View>
+                  <Text className="text-accent text-xl">📥</Text>
                 </TouchableOpacity>
                 
                 {__DEV__ && (

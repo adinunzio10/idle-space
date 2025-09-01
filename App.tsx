@@ -10,14 +10,37 @@ import { ProbeInstance } from './src/types/probe';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { PatternSuggestionProvider } from './src/contexts/PatternSuggestionContext';
 import { ResourceProvider } from './src/core/ResourceContext';
+import { SettingsProvider } from './src/contexts/SettingsContext';
+import { useGameSettings } from './src/hooks/useGameSettings';
 
-export default function App() {
+// Inner component that can use settings hooks
+function GameApp() {
   const [gameController] = useState(() => GameController.getInstance());
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [probes, setProbes] = useState<ProbeInstance[]>([]);
   const [processedProbeIds] = useState(() => new Set<string>()); // Track probes that have already created beacons
+  
+  // Synchronize settings with game controller and other systems
+  useGameSettings(gameController);
+
+  // Initialize additional managers
+  useEffect(() => {
+    const initializeManagers = async () => {
+      const { AudioManager } = await import('./src/core/AudioManager');
+      const { AccessibilityManager } = await import('./src/utils/AccessibilityManager');
+      
+      try {
+        await AudioManager.getInstance().initialize();
+        await AccessibilityManager.getInstance().initialize();
+      } catch (error) {
+        console.error('Failed to initialize additional managers:', error);
+      }
+    };
+
+    initializeManagers();
+  }, []);
   
   // Create stable callback references using useCallback
   const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
@@ -108,19 +131,27 @@ export default function App() {
 
 
   return (
+    <ResourceProvider>
+      <PatternSuggestionProvider initialBeacons={[]}>
+        <AppNavigator
+          gameState={gameState}
+          gameController={gameController}
+          probes={probes}
+          isInitialized={isInitialized}
+          error={error}
+        />
+      </PatternSuggestionProvider>
+    </ResourceProvider>
+  );
+}
+
+export default function App() {
+  return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <ResourceProvider>
-          <PatternSuggestionProvider initialBeacons={[]}>
-            <AppNavigator
-              gameState={gameState}
-              gameController={gameController}
-              probes={probes}
-              isInitialized={isInitialized}
-              error={error}
-            />
-          </PatternSuggestionProvider>
-        </ResourceProvider>
+        <SettingsProvider>
+          <GameApp />
+        </SettingsProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );

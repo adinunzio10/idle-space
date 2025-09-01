@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ResourceManager, ResourceState } from '../../core/ResourceManager';
-import { formatNumber } from '../../utils/numberFormatting';
+import { useSettingsFormatter } from '../../hooks/useSettingsFormatter';
 import { AccessibilityHelper, AccessibilityRoles } from '../../utils/accessibility';
 
 interface GameHUDProps {
@@ -23,6 +23,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   showDetailed = false 
 }) => {
   const [resources, setResources] = useState<ResourceState>(resourceManager.getResources());
+  const formatter = useSettingsFormatter();
   const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
   const isSmallScreen = screenData.width < 375; // iPhone SE and below
@@ -42,7 +43,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   }, [resourceManager]);
 
   const formatResource = (value: number): string => {
-    return formatNumber(value, { useShortNotation: true, precision: 2 });
+    return formatter.format(value, { useShortNotation: true, precision: 2 });
   };
 
   const getFormattedResources = (): FormattedResource[] => {

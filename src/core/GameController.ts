@@ -31,7 +31,7 @@ export class GameController {
   private isInitialized = false;
   private appStateSubscription: any = null;
 
-  private readonly config: GameControllerConfig = {
+  private config: GameControllerConfig = {
     autoSaveInterval: 120,
     enableAppStateHandling: true,
     enableBackgroundProcessing: true,
@@ -162,6 +162,34 @@ export class GameController {
 
   getProbeManager(): ProbeManager {
     return this.probeManager;
+  }
+
+  /**
+   * Update auto-save interval and restart auto-save with new interval
+   */
+  updateAutoSaveInterval(intervalSeconds: number): void {
+    console.log(`[GameController] Updating auto-save interval to ${intervalSeconds}s`);
+    this.config.autoSaveInterval = intervalSeconds;
+    
+    if (this.isInitialized) {
+      this.stopAutoSave();
+      this.startAutoSave();
+    }
+  }
+
+  /**
+   * Enable/disable offline generation processing
+   */
+  setOfflineGenerationEnabled(enabled: boolean): void {
+    console.log(`[GameController] ${enabled ? 'Enabling' : 'Disabling'} offline generation`);
+    this.config.enableBackgroundProcessing = enabled;
+  }
+
+  /**
+   * Get current configuration
+   */
+  getConfig(): Readonly<GameControllerConfig> {
+    return { ...this.config };
   }
 
   /**
@@ -581,10 +609,15 @@ export class GameController {
       
       console.log(`[GameController] Processing ${offlineHours.toFixed(2)} hours of offline progression`);
       
-      // Process offline resource generation using the generation engine
-      await this.processOfflineResourceGeneration(offlineSeconds);
+      // Only process offline resource generation if enabled
+      if (this.config.enableBackgroundProcessing) {
+        await this.processOfflineResourceGeneration(offlineSeconds);
+        console.log('[GameController] Offline resource generation processed');
+      } else {
+        console.log('[GameController] Offline resource generation disabled, skipping');
+      }
       
-      // Update game time
+      // Update game time regardless of offline generation setting
       this.gameState.gameTime += offlineSeconds;
       this.gameState.player.statistics.totalPlayTime += offlineSeconds;
     }

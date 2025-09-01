@@ -7,6 +7,7 @@ import {
   PatternCompletionAnalysis 
 } from '../types/spatialHashing';
 import { PatternDetector, buildConnectionsFromBeacons } from '../utils/patterns/detection';
+import { useSettings } from './SettingsContext';
 
 interface PatternSuggestionContextValue {
   // State
@@ -46,6 +47,7 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   children, 
   initialBeacons = [] 
 }) => {
+  const { settings } = useSettings();
   // Core suggestion state
   const [suggestionState, setSuggestionState] = useState<PatternSuggestionState>({
     popupVisible: false,
@@ -64,9 +66,14 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
   
   // Pattern detector instance - memoized to prevent recreation
   const patternDetector = useMemo(() => new PatternDetector(), []);
-  
+
   // Calculate pattern suggestion count using PatternDetector's suggestion engine
   const calculatePatternCount = useCallback((currentBeacons: Beacon[]): number => {
+    // Return 0 if pattern suggestions are disabled
+    if (!settings.patternSuggestionsEnabled) {
+      return 0;
+    }
+    
     // Need at least 2 beacons to have suggestions for completing patterns
     if (currentBeacons.length < 2) {
       return 0;
@@ -81,7 +88,7 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
       console.warn('Failed to get pattern suggestions:', error);
       return 0;
     }
-  }, [patternDetector]);
+  }, [patternDetector, settings.patternSuggestionsEnabled]);
   
   // Update beacons and recalculate pattern suggestions
   const updateBeacons = useCallback((newBeacons: Beacon[]) => {
@@ -91,15 +98,47 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
     const newPatternCount = calculatePatternCount(newBeacons);
     setPatternCount(newPatternCount);
     
-    // Also update the suggestions array for the UI
-    try {
-      const newSuggestions = patternDetector.getPatternSuggestions(newBeacons);
-      setSuggestions(newSuggestions);
-    } catch (error) {
-      console.warn('Failed to update suggestions array:', error);
+    // Only update suggestions if pattern suggestions are enabled
+    if (settings.patternSuggestionsEnabled) {
+      try {
+        const newSuggestions = patternDetector.getPatternSuggestions(newBeacons);
+        setSuggestions(newSuggestions);
+      } catch (error) {
+        console.warn('Failed to update suggestions array:', error);
+        setSuggestions([]);
+      }
+    } else {
+      // Clear suggestions if disabled
       setSuggestions([]);
     }
-  }, [calculatePatternCount, patternDetector]);
+  }, [calculatePatternCount, patternDetector, settings.patternSuggestionsEnabled]);
+
+  // Effect to handle pattern suggestions setting changes
+  useEffect(() => {
+    if (!settings.patternSuggestionsEnabled) {
+      // Clear suggestions and reset state when disabled
+      setSuggestions([]);
+      setPatternCount(0);
+      setSuggestionState(s => ({
+        ...s,
+        popupVisible: false,
+        selectedSuggestion: null,
+        hoveredSuggestion: null,
+      }));
+    } else {
+      // Recalculate suggestions when re-enabled
+      const newPatternCount = calculatePatternCount(beacons);
+      setPatternCount(newPatternCount);
+      
+      try {
+        const newSuggestions = patternDetector.getPatternSuggestions(beacons);
+        setSuggestions(newSuggestions);
+      } catch (error) {
+        console.warn('Failed to update suggestions array:', error);
+        setSuggestions([]);
+      }
+    }
+  }, [settings.patternSuggestionsEnabled, beacons, calculatePatternCount, patternDetector]);
   
   // Pattern suggestion actions
   const actions = useMemo(() => ({

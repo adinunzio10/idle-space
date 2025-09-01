@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RESOURCE_DEFINITIONS, ResourceType } from '../../types/resources';
 import { Resources } from '../../storage/schemas/GameState';
-import { NumberFormatter } from '../../utils/NumberFormatter';
+import { useSettingsFormatter } from '../../hooks/useSettingsFormatter';
 
 interface ResourceHUDProps {
   resources: Resources;
@@ -15,9 +15,10 @@ export const ResourceHUD: React.FC<ResourceHUDProps> = ({
   variant = 'full' 
 }) => {
   const insets = useSafeAreaInsets();
+  const formatter = useSettingsFormatter();
 
   const formatResourceValue = (value: number) => {
-    return NumberFormatter.formatResource(value);
+    return formatter.format(value);
   };
 
   const primaryResources: Array<keyof Resources> = ['quantumData', 'stellarEssence', 'voidFragments'];
