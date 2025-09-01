@@ -125,24 +125,6 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    onPress={() => navigation.navigate('Settings')}
-                    className="bg-secondary px-6 py-3 rounded-lg"
-                  >
-                    <Text className="text-white font-semibold text-center">
-                      ⚙️ Settings
-                    </Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('Statistics')}
-                    className="bg-primary px-6 py-3 rounded-lg border border-primary/50"
-                  >
-                    <Text className="text-white font-semibold text-center">
-                      📊 Statistics
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
                     onPress={() => navigation.navigate('PatternGallery')}
                     className="bg-secondary px-6 py-3 rounded-lg border border-secondary/50"
                   >
@@ -161,24 +143,22 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    onPress={handleSaveGame}
-                    className="bg-secondary px-6 py-3 rounded-lg"
+                    onPress={() => navigation.navigate('Statistics')}
+                    className="bg-primary px-6 py-3 rounded-lg border border-primary/50"
                   >
                     <Text className="text-white font-semibold text-center">
-                      Manual Save
+                      📊 Statistics
                     </Text>
                   </TouchableOpacity>
                   
-                  {__DEV__ && (
-                    <TouchableOpacity
-                      onPress={handleResetGameData}
-                      className="bg-red-600 px-6 py-3 rounded-lg border border-red-500"
-                    >
-                      <Text className="text-white font-semibold text-center">
-                        🔄 Reset All Data (Debug)
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Settings')}
+                    className="bg-secondary px-6 py-3 rounded-lg"
+                  >
+                    <Text className="text-white font-semibold text-center">
+                      ⚙️ Settings
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 
                 <Text className="text-text/40 text-xs mt-6 text-center">

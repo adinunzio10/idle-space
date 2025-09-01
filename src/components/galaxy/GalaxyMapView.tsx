@@ -105,6 +105,7 @@ import PatternRenderer, { usePatternRenderingQuality } from './PatternRenderer';
 import { PatternSuggestionOverlay } from './PatternSuggestionOverlay';
 import { usePatternSuggestions, usePatternSuggestionActions } from '../../contexts/PatternSuggestionContext';
 import { PlacementHintSystem } from '../ui/PlacementHintSystem';
+import { useSettings } from '../../contexts/SettingsContext';
 import StarField from './StarField';
 import { ProbeAnimationRenderer } from './ProbeAnimationRenderer';
 import { PatternSuggestionEngine } from '../../utils/patterns/PatternSuggestionEngine';
@@ -301,6 +302,9 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   } = usePatternSuggestions();
   
   const suggestionActions = usePatternSuggestionActions();
+  
+  // Settings context for pattern suggestions
+  const { settings } = useSettings();
   
   // Create suggestionState object for backward compatibility
   const suggestionState = {
@@ -1407,17 +1411,19 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
                 />
               ))}
 
-              {/* Pattern suggestion overlay */}
-              <PatternSuggestionOverlay
-                suggestions={suggestions}
-                beacons={beacons}
-                viewportState={viewportState}
-                suggestionState={suggestionState}
-                onSuggestionInteraction={handleSuggestionInteraction}
-                showGhostBeacons={true}
-                showPatternPreviews={true}
-                enableAnimations={!renderingState.performanceMode}
-              />
+              {/* Pattern suggestion overlay - only render when enabled in settings */}
+              {settings.patternSuggestionsEnabled && (
+                <PatternSuggestionOverlay
+                  suggestions={suggestions}
+                  beacons={beacons}
+                  viewportState={viewportState}
+                  suggestionState={suggestionState}
+                  onSuggestionInteraction={handleSuggestionInteraction}
+                  showGhostBeacons={true}
+                  showPatternPreviews={true}
+                  enableAnimations={!renderingState.performanceMode}
+                />
+              )}
             </AnimatedG>
           </AnimatedSvg>
           
