@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ResourceHUD } from '../components/ui/ResourceHUD';
+import { GameHUD } from '../components/ui/GameHUD';
 import { GameState } from '../storage/schemas/GameState';
 import { ProbeInstance } from '../types/probe';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -91,7 +91,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-background">
-          {gameState && <ResourceHUD resources={gameState.resources} />}
+          {gameState && <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />}
           
           <View className="flex-1 items-center justify-center p-4">
             <Text className="text-text text-2xl font-bold mb-6">Signal Garden</Text>

@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ResourceHUD } from '../components/ui/ResourceHUD';
+import { GameHUD } from '../components/ui/GameHUD';
 import { ProbeManagerUI } from '../components/ui/ProbeManagerUI';
 import { GameState } from '../storage/schemas/GameState';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -27,7 +27,7 @@ export const ProbeManagerScreen: React.FC<ProbeManagerScreenProps> = ({
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-background">
-          <ResourceHUD resources={gameState.resources} />
+          <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
           <ProbeManagerUI
             probeManager={gameController.getProbeManager()}
             onClose={() => navigation.goBack()}

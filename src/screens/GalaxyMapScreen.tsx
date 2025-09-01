@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GalaxyMapView } from '../components/galaxy/GalaxyMapView';
-import { ResourceHUD } from '../components/ui/ResourceHUD';
+import { GameHUD } from '../components/ui/GameHUD';
 import { BeaconSpecializationModal } from '../components/ui/BeaconSpecializationModal';
 import { ProbeManagerUI } from '../components/ui/ProbeManagerUI';
 import { ProbeLaunchFAB } from '../components/ui/ProbeLaunchFAB';
@@ -126,7 +126,7 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <View className="flex-1 bg-background">
-            <ResourceHUD resources={gameState.resources} />
+            <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
             <ProbeManagerUI
               probeManager={gameController.getProbeManager()}
               onClose={() => setShowProbeManager(false)}
@@ -141,7 +141,7 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-background">
-          <ResourceHUD resources={gameState.resources} />
+          <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
           
           <View className="bg-surface px-4 py-3">
             {/* Header */}
