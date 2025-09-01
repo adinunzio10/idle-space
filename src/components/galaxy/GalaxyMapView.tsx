@@ -24,6 +24,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { debounce } from 'lodash';
 import { View } from 'react-native';
 import Animated, {
   useAnimatedProps,
@@ -284,7 +285,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     [spatialHashMap, placementValidator, spatialIndex]
   );
 
-<<<<<<< HEAD
   // Pattern suggestion state from context
   const {
     popupVisible,
@@ -314,7 +314,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Debounced pattern analysis to prevent excessive calculations during pan/zoom
   const analyzePatternOpportunitiesDebounced = useMemo(
     () => debounce((beacons: any[], viewport: ViewportState, currentSuggestionState: any) => {
-      if (currentSuggestionState.popupVisible || currentSuggestionState.mapVisualizationsVisible) {
         try {
           // Pass viewport bounds for culling optimization
           const analysis = suggestionEngine.analyzePatternOpportunities(beacons, [], { bounds: viewport.bounds });
@@ -322,18 +321,16 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         } catch (error) {
           console.warn('Failed to analyze pattern opportunities:', error);
         }
+    }, 300),
+    [suggestionEngine]
+  );
+
   // Async pattern analyzer for background processing
   const asyncPatternAnalyzer = useMemo(() => 
     new AsyncPatternAnalyzer(suggestionEngine), 
     [suggestionEngine]
   );
 
-  // Pattern suggestion state management (disabled by default for performance)
-  const [suggestionState, suggestionActions] = usePatternSuggestionState({
-    popupVisible: false,
-    mapVisualizationsVisible: false,
-    displayMode: 'best',
-  });
 
   // Async pattern analysis to prevent frame drops
   const analyzePatternAsync = useCallback(async (beacons: Beacon[], viewport: ViewportState) => {
@@ -341,7 +338,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       try {
         const analysis = await asyncPatternAnalyzer.analyzeAsync(beacons, viewport);
         setPatternAnalysis(analysis);
-        setPatternSuggestions(analysis.suggestedPositions || []);
       } catch (error) {
         console.warn('Failed to analyze pattern opportunities:', error);
       }
@@ -398,7 +394,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     };
   }, [asyncPatternAnalyzer]);
 
-<<<<<<< HEAD
   // Update context with beacon changes and trigger pattern analysis
   useEffect(() => {
     // Update context with current beacons for pattern count calculation
@@ -420,7 +415,6 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       analyzePatternAsync(beacons, viewportState);
     }
   }, [beacons.length, beacons, analyzePatternAsync, viewportState]);
->>>>>>> 0d3c2ef (perf: fix severe frame drops during beacon placement)
 
   // Debug logging helper - defined early so it's available in worklets
   const logGesture = useCallback((type: string, data: any) => {

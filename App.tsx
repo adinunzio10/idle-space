@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StatusBar, Dimensions } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-screens';
 import './global.css';
 import { GameController } from './src/core/GameController';
 import { GameState } from './src/storage/schemas/GameState';
-<<<<<<< HEAD
 import { GalaxyMapView } from './src/components/galaxy/GalaxyMapView';
 import { Beacon } from './src/types/galaxy';
 import { BeaconType, BeaconSpecialization } from './src/types/beacon';
@@ -15,12 +17,9 @@ import { StatisticsModal } from './src/components/ui/StatisticsModal';
 import { SettingsModal } from './src/components/ui/SettingsModal';
 import { PatternToggleButton } from './src/components/ui/PatternToggleButton';
 import { PatternSuggestionProvider } from './src/contexts/PatternSuggestionContext';
-=======
->>>>>>> af36ed0 (feat: begin task 8 work. implement proper UI frame for each screen, including placeholders for future screen in task 8. fix other minor UI issues)
 import { ProbeInstance } from './src/types/probe';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
-<<<<<<< HEAD
 interface GalaxyMapScreenProps {
   onBack: () => void;
   beacons: Beacon[];
@@ -162,7 +161,7 @@ const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           position="bottom-right"
         />
         
-        <StatusBar style="light" />
+        <StatusBar barStyle="light-content" />
       </View>
   );
 };
@@ -185,9 +184,6 @@ export default function App() {
   const [processedProbeIds] = useState(() => new Set<string>()); // Track probes that have already created beacons
   const [lastPlacement, setLastPlacement] = useState<{ position: { x: number; y: number } | null; timestamp: number }>({ position: null, timestamp: 0 });
   
-  const [probes, setProbes] = useState<ProbeInstance[]>([]);
-  const [processedProbeIds] = useState(() => new Set<string>());
-
   // Create stable callback references using useCallback
   const handleProbeUpdate = useCallback((updatedProbes: ProbeInstance[]) => {
     setProbes(updatedProbes);
@@ -275,7 +271,6 @@ export default function App() {
     };
   }, [gameController, handleProbeUpdate, handleProbeDeployment]);
 
-<<<<<<< HEAD
   // Trigger beacon re-render when galaxy map becomes visible
   useEffect(() => {
     if (showGalaxyMap && gameState) {
@@ -395,7 +390,7 @@ export default function App() {
           <View className="flex-1 bg-background items-center justify-center p-4">
             <Text className="text-red-500 text-xl font-semibold mb-4">Error</Text>
             <Text className="text-text/80 text-base text-center">{error}</Text>
-            <StatusBar style="light" />
+            <StatusBar barStyle="light-content" />
           </View>
         </GestureHandlerRootView>
       </SafeAreaProvider>
@@ -411,7 +406,7 @@ export default function App() {
             <Text className="text-text/80 text-base mt-2">
               Initializing save system...
             </Text>
-            <StatusBar style="light" />
+            <StatusBar barStyle="light-content" />
           </View>
         </GestureHandlerRootView>
       </SafeAreaProvider>
@@ -572,7 +567,7 @@ export default function App() {
             </View>
           )}
           
-          <StatusBar style="light" />
+          <StatusBar barStyle="light-content" />
           </View>
           
         </View>
@@ -592,13 +587,5 @@ export default function App() {
         />
       </GestureHandlerRootView>
     </SafeAreaProvider>
-  return (
-    <AppNavigator
-      gameState={gameState}
-      gameController={gameController}
-      probes={probes}
-      isInitialized={isInitialized}
-      error={error}
-    />
   );
 }

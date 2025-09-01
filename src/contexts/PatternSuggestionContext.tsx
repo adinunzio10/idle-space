@@ -78,7 +78,7 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
     try {
       // Get pattern suggestions instead of completed patterns
       const suggestions = patternDetector.getPatternSuggestions(currentBeacons);
-      console.log(`[PatternSuggestionContext] Found ${suggestions.length} pattern suggestions:`, suggestions.map(s => ({ type: s.patternType, priority: s.priority })));
+      console.log(`[PatternSuggestionContext] Found ${suggestions.length} pattern suggestions:`, suggestions.map(s => ({ type: s.type, priority: s.priority })));
       
       return suggestions.length;
     } catch (error) {
