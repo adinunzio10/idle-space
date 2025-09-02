@@ -1,0 +1,9 @@
+npm warn Unknown cli config "--reset-cache". This will stop working in the next major version of npm.
+
+> signal-garden@1.0.0 start
+> expo start
+
+Starting project at /Users/alfredodinunzio/idle-space
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
