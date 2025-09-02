@@ -97,8 +97,16 @@ import {
 import { useBackgroundPatternDetection } from '../../hooks/useBackgroundPatternDetection';
 import { AsyncPatternAnalyzer } from '../../services/AsyncPatternAnalyzer';
 import { CONNECTION_CONFIG } from '../../constants/connections';
+import { useBatteryAwarePerformance } from '../../hooks/useBatteryOptimization';
 import { gestureConfig, GESTURE_THRESHOLDS } from '../../constants/gestures';
 import BeaconRenderer from './BeaconRenderer';
+import { 
+  useStableCallback, 
+  useSmartMemo, 
+  useBatchedState, 
+  useFrameLimitedState,
+  useRenderTracker
+} from '../../utils/performance/RenderOptimizations';
 import BeaconClusterRenderer from './BeaconCluster';
 import ConnectionRenderer from './ConnectionRenderer';
 import PatternRenderer, { usePatternRenderingQuality } from './PatternRenderer';
@@ -137,6 +145,21 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   style,
   gameController,
 }) => {
+  // Performance tracking for this complex component
+  useRenderTracker('GalaxyMapView', { 
+    beaconCount: beacons.length, 
+    probeCount: probes.length, 
+    debugOverlay: showDebugOverlay 
+  });
+  
+  // Battery-aware performance settings
+  const { 
+    targetFrameRate, 
+    shouldThrottleUpdates, 
+    updateInterval,
+    enableLOD,
+    lodDistance 
+  } = useBatteryAwarePerformance();
   // Constants for galaxy content
   const GALAXY_WIDTH = 2000;
   const GALAXY_HEIGHT = 2000;
@@ -232,20 +255,23 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   // Create a stable ref for updateViewportState to avoid circular dependencies
   const updateViewportStateRef = useRef<((x: number, y: number, s: number) => void) | null>(null);
 
-  // Spatial indexing for efficient beacon queries - now using R-tree
-  const spatialIndex = useMemo(() => {
+  // Optimized spatial indexing for efficient beacon queries - now using R-tree with smart memoization
+  const spatialIndex = useSmartMemo(() => {
     const index = new SpatialIndex();
     index.rebuild(beacons);
     return index;
-  }, [beacons]);
+  }, [beacons.length, beacons.map(b => b.id).join(',')], (prev, next) => {
+    // Custom comparison to avoid rebuilding if beacons haven't actually changed
+    return prev && next && prev.size === next.size;
+  });
 
 
   // Spatial hashing components for pattern suggestions
   const spatialHashMap = useMemo(() => new SpatialHashMap(), []);
   const spatialCache = useMemo(() => new SpatialPatternCache(), []);
   
-  // Create placement validator for pattern suggestions
-  const placementValidator = useMemo(() => {
+  // Optimized placement validator for pattern suggestions with smart memoization
+  const placementValidator = useSmartMemo(() => {
     const placementConfig: PlacementConfig = {
       bounds: {
         minX: -10000,
@@ -275,10 +301,13 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     
     validator.updateBeacons(entityBeacons);
     return validator;
-  }, [beacons]);
+  }, [beacons.length, beacons.map(b => `${b.id}-${b.position.x}-${b.position.y}`).join(',')]);
 
-  // Pattern detector for geometric patterns - now with spatial index
-  const patternDetector = useMemo(() => new PatternDetector(undefined, undefined, undefined, undefined, undefined, placementValidator, spatialIndex), [placementValidator, spatialIndex]);
+  // Pattern detector with optimized memoization
+  const patternDetector = useSmartMemo(() => 
+    new PatternDetector(undefined, undefined, undefined, undefined, undefined, placementValidator, spatialIndex), 
+    [placementValidator, spatialIndex]
+  );
 
   // Background pattern detection to prevent main thread blocking
   const { patterns: backgroundPatterns, detectPatternsAsync, isWorkerAvailable } = useBackgroundPatternDetection();
@@ -568,8 +597,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     // Apply performance-based beacon limit
     const limitedBeacons = visibleBeacons.slice(0, qualitySettings.maxVisibleBeacons);
     
-    const lodInfo = getLODRenderInfo(newScale, qualitySettings.lodBias);
-    const shouldCluster = shouldEnableClustering(limitedBeacons, newScale, newViewport);
+    // Use battery-aware LOD settings
+    const adjustedLodBias = qualitySettings.lodBias * lodDistance;
+    const lodInfo = getLODRenderInfo(newScale, adjustedLodBias);
+    const shouldCluster = enableLOD ? shouldEnableClustering(limitedBeacons, newScale, newViewport) : false;
     
     let clusters: BeaconCluster[] = [];
     let remainingBeacons = limitedBeacons;
@@ -1070,13 +1101,13 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       runOnJS(updateViewportState)(translateX.value, translateY.value, clampedScale);
     });
 
-  // Handle pattern suggestion interactions
-  const handleSuggestionInteraction = useCallback((event: any) => {
+  // Handle pattern suggestion interactions with stable callback
+  const handleSuggestionInteraction = useStableCallback((event: any) => {
     suggestionActions.onSuggestionInteraction(event);
   }, [suggestionActions]);
 
-  // Handle placement hint interactions
-  const handleHintPress = useCallback((suggestion: any) => {
+  // Handle placement hint interactions with stable callback
+  const handleHintPress = useStableCallback((suggestion: any) => {
     if (onMapPress && suggestion.allMissingPositions && suggestion.allMissingPositions.length > 1) {
       // Place multiple beacons with small delays to avoid race conditions
       suggestion.allMissingPositions.forEach((position: any, index: number) => {
@@ -1094,8 +1125,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
 
   // Handle single tap - worklet-safe callback that receives necessary data as parameters
-  // WORKLET PATTERN: Pass React state as parameters instead of closure capture
-  const handleSingleTap = useCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[], beaconsArray: any[], isPopupVisible: boolean) => {
+  // WORKLET PATTERN: Pass React state as parameters instead of closure capture  
+  const handleSingleTap = useStableCallback((tapX: number, tapY: number, currentScale: number, currentTranslateX: number, currentTranslateY: number, viewportBounds: any, clusters: any[], connections: any[], visibleBeacons: any[], beaconsArray: any[], isPopupVisible: boolean) => {
     // Don't process taps if the Pattern Opportunities popup is visible
     if (isPopupVisible) {
       return;
@@ -1271,10 +1302,10 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   });
 
 
-  // Get LOD rendering information
+  // Get LOD rendering information with battery-aware settings
   const lodRenderInfo = useMemo(() => {
-    return getLODRenderInfo(viewportState.scale);
-  }, [viewportState.scale]);
+    return getLODRenderInfo(viewportState.scale, 1.0 * lodDistance);
+  }, [viewportState.scale, lodDistance]);
 
   // Force update rendering state when beacons change
   React.useEffect(() => {

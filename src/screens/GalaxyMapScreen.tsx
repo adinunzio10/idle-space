@@ -8,9 +8,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GalaxyMapView } from '../components/galaxy/GalaxyMapView';
 import { GameHUD } from '../components/ui/GameHUD';
 import { BeaconSpecializationModal } from '../components/ui/BeaconSpecializationModal';
+import { BeaconDetailsModal } from '../components/ui/BeaconDetailsModal';
 import { ProbeManagerUI } from '../components/ui/ProbeManagerUI';
 import { ProbeLaunchFAB } from '../components/ui/ProbeLaunchFAB';
 import { PatternToggleButton } from '../components/ui/PatternToggleButton';
+import { PerformanceOverlay, usePerformanceOverlay } from '../components/debug/PerformanceOverlay';
 import { GameState } from '../storage/schemas/GameState';
 import { ProbeInstance } from '../types/probe';
 import { Beacon } from '../types/galaxy';
@@ -18,6 +20,7 @@ import { BeaconType, BeaconSpecialization } from '../types/beacon';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { ProbeType } from '../types/probe';
 import { Point2D } from '../types/galaxy';
+import { fpsMonitor } from '../utils/performance/FPSMonitor';
 
 type GalaxyMapScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'GalaxyMap'>;
 
@@ -42,9 +45,22 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   const [selectedBeaconForUpgrade, setSelectedBeaconForUpgrade] = useState<string | null>(null);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
   const [selectedBeaconId, setSelectedBeaconId] = useState<string | null>(null);
+  const [selectedBeaconForDetails, setSelectedBeaconForDetails] = useState<Beacon | null>(null);
+  const [showBeaconDetailsModal, setShowBeaconDetailsModal] = useState(false);
   const [beaconVersion, setBeaconVersion] = useState(0);
   const [showProbeManager, setShowProbeManager] = useState(false);
   const [lastPlacement, setLastPlacement] = useState<{ position: { x: number; y: number } | null; timestamp: number }>({ position: null, timestamp: 0 });
+  
+  // Performance monitoring
+  const performanceOverlay = usePerformanceOverlay();
+  
+  // Initialize FPS monitoring when component mounts
+  React.useEffect(() => {
+    fpsMonitor.start();
+    return () => {
+      fpsMonitor.stop();
+    };
+  }, []);
 
   // Handle probe launch from FAB
   const handleProbeLaunch = (type: ProbeType, launchPosition: Point2D) => {
@@ -73,6 +89,8 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   const handleBeaconSelect = (beacon: Beacon) => {
     console.log('Selected beacon:', beacon);
     setSelectedBeaconId(beacon.id);
+    setSelectedBeaconForDetails(beacon);
+    setShowBeaconDetailsModal(true);
   };
 
   const handleSpecializationSelect = (beaconId: string, specialization: BeaconSpecialization) => {
@@ -165,20 +183,36 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
               <View className="flex-row items-center space-x-3">
                 <Text className="text-text text-lg font-semibold">Galaxy Map</Text>
                 {__DEV__ && (
-                  <TouchableOpacity
-                    onPress={() => setShowDebugOverlay(!showDebugOverlay)}
-                    className={`px-2 py-1 rounded border ${
-                      showDebugOverlay 
-                        ? 'bg-accent/20 border-accent' 
-                        : 'bg-surface border-text/20'
-                    }`}
-                  >
-                    <Text className={`text-xs font-semibold ${
-                      showDebugOverlay ? 'text-accent' : 'text-text/60'
-                    }`}>
-                      DEBUG
-                    </Text>
-                  </TouchableOpacity>
+                  <View className="flex-row space-x-2">
+                    <TouchableOpacity
+                      onPress={() => setShowDebugOverlay(!showDebugOverlay)}
+                      className={`px-2 py-1 rounded border ${
+                        showDebugOverlay 
+                          ? 'bg-accent/20 border-accent' 
+                          : 'bg-surface border-text/20'
+                      }`}
+                    >
+                      <Text className={`text-xs font-semibold ${
+                        showDebugOverlay ? 'text-accent' : 'text-text/60'
+                      }`}>
+                        DEBUG
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={performanceOverlay.toggle}
+                      className={`px-2 py-1 rounded border ${
+                        performanceOverlay.visible 
+                          ? 'bg-green-500/20 border-green-500' 
+                          : 'bg-surface border-text/20'
+                      }`}
+                    >
+                      <Text className={`text-xs font-semibold ${
+                        performanceOverlay.visible ? 'text-green-400' : 'text-text/60'
+                      }`}>
+                        FPS
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
             </View>
@@ -284,6 +318,14 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           />
         </View>
         
+        {/* Performance overlay */}
+        <PerformanceOverlay
+          visible={performanceOverlay.visible}
+          position={performanceOverlay.position}
+          compact={performanceOverlay.compact}
+          onToggle={performanceOverlay.toggle}
+        />
+        
         <BeaconSpecializationModal
           isVisible={showSpecializationModal}
           beaconId={selectedBeaconForUpgrade || ''}
@@ -292,6 +334,17 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           onClose={() => {
             setShowSpecializationModal(false);
             setSelectedBeaconForUpgrade(null);
+          }}
+        />
+
+        <BeaconDetailsModal
+          isVisible={showBeaconDetailsModal}
+          beacon={selectedBeaconForDetails || undefined}
+          gameController={gameController}
+          onClose={() => {
+            setShowBeaconDetailsModal(false);
+            setSelectedBeaconId(null);
+            setSelectedBeaconForDetails(null);
           }}
         />
       </GestureHandlerRootView>

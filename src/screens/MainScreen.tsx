@@ -91,7 +91,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-background">
-          {gameState && <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />}
+          <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
           
           <View className="flex-1 items-center justify-center p-4">
             <Text className="text-text text-2xl font-bold mb-6">Signal Garden</Text>
@@ -112,6 +112,15 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                   >
                     <Text className="text-white font-semibold text-center">
                       Generate +100 Quantum Data
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Upgrades')}
+                    className="bg-primary px-6 py-3 rounded-lg border border-primary/50"
+                  >
+                    <Text className="text-white font-semibold text-center">
+                      ⬆️ Upgrades
                     </Text>
                   </TouchableOpacity>
                   

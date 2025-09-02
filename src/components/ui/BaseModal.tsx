@@ -67,8 +67,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     }
     
     return {
-      justifyContent: 'flex-end' as const,
-      margin: 0,
+      justifyContent: 'center' as const,
+      margin: 20,
     };
   };
   
@@ -81,7 +81,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       return Math.min(maxHeight, screenData.height * 0.9);
     }
     
-    return screenData.height * 0.75; // Default to 75% of screen height
+    return screenData.height * 0.70; // Default to 70% of screen height
   };
   
   return (
@@ -103,11 +103,11 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       testID={testID}
     >
       <View 
-        className="bg-surface rounded-t-xl overflow-hidden"
+        className="bg-surface rounded-xl overflow-hidden"
         style={{
           maxHeight: getContentHeight(),
           paddingTop: fullScreen ? insets.top : 0,
-          paddingBottom: insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 10),
         }}
       >
         {/* Modal Header */}

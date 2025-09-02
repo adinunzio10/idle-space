@@ -7,6 +7,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { StatisticsScreen } from '../screens/StatisticsScreen';
 import { PatternGalleryScreen } from '../screens/PatternGalleryScreen';
 import { ProbeManagerScreen } from '../screens/ProbeManagerScreen';
+import { UpgradeScreen } from '../screens/UpgradeScreen';
 import { GameState } from '../storage/schemas/GameState';
 import { ProbeInstance } from '../types/probe';
 
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Statistics: undefined;
   PatternGallery: undefined;
   ProbeManager: undefined;
+  Upgrades: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -149,6 +151,14 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
                 gameState={gameState}
                 gameController={gameController}
               />
+            ) : null
+          }
+        </Stack.Screen>
+        
+        <Stack.Screen name="Upgrades">
+          {() => 
+            gameState ? (
+              <UpgradeScreen />
             ) : null
           }
         </Stack.Screen>

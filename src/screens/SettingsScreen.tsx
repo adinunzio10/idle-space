@@ -9,6 +9,7 @@ import { GameHUD } from '../components/ui/GameHUD';
 import { GameState } from '../storage/schemas/GameState';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useSettings } from '../contexts/SettingsContext';
+import { useBatteryOptimizationWithSettings } from '../hooks/useBatteryOptimization';
 import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
@@ -51,6 +52,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const { settings, updateSetting, exportSettings, importSettings, resetSettings } = useSettings();
+  const { state: batteryState, metrics: batteryMetrics, recommendations } = useBatteryOptimizationWithSettings();
 
   // Setting handlers with haptic feedback
   const handleAutoSaveToggle = async (value: boolean) => {
@@ -119,6 +121,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     await updateSetting('reduceAnimationsEnabled', value);
+  };
+
+  // Battery optimization handlers
+  const handleBatteryOptimizationToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('batteryOptimizationEnabled', value);
+  };
+
+  const handleAdaptiveFrameRateToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('adaptiveFrameRateEnabled', value);
+  };
+
+  const handleBatteryEfficientModeToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('batteryEfficientModeEnabled', value);
+  };
+
+  const handleBackgroundThrottlingToggle = async (value: boolean) => {
+    if (settings.hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    await updateSetting('backgroundThrottlingEnabled', value);
   };
 
   const handleManualSave = async () => {
@@ -310,10 +341,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             try {
               // Clear all beacons and reset quantum data
               gameController.clearAllBeacons();
-              
-              // Create a completely new game state
-              // The GameController should have a method to reset to initial state
-              // For now, we'll clear what we can
               
               // Reset settings to defaults (optional - user choice)
               const shouldResetSettings = await new Promise<boolean>((resolve) => {
@@ -544,6 +571,110 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   }
                 />
               </SettingsSection>
+            </View>
+            
+            {/* Battery Optimization */}
+            <View className="mb-6">
+              <Text className="text-text text-lg font-semibold mb-4">Battery Optimization</Text>
+              
+              {/* Battery Status Display */}
+              <View className="bg-surface rounded-lg border border-text/10 mb-3 p-4">
+                <View className="flex-row justify-between items-center mb-2">
+                  <Text className="text-text font-medium">Battery Level</Text>
+                  <Text className="text-text">
+                    {Math.round(batteryMetrics.batteryLevel * 100)}%
+                  </Text>
+                </View>
+                <View className="flex-row justify-between items-center mb-2">
+                  <Text className="text-text font-medium">Status</Text>
+                  <Text className="text-text">
+                    {batteryMetrics.isCharging ? 'Charging' : batteryMetrics.batteryState}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-text font-medium">Optimization Level</Text>
+                  <Text className={`font-medium capitalize ${
+                    batteryState.currentOptimizationLevel === 'high' ? 'text-red-400' :
+                    batteryState.currentOptimizationLevel === 'medium' ? 'text-yellow-400' :
+                    batteryState.currentOptimizationLevel === 'low' ? 'text-blue-400' :
+                    'text-green-400'
+                  }`}>
+                    {batteryState.currentOptimizationLevel}
+                  </Text>
+                </View>
+              </View>
+              
+              <SettingsSection>
+                <SettingsRow
+                  title="Battery optimization"
+                  description="Automatically adjust performance based on battery level"
+                  control={
+                    <Switch
+                      value={settings.batteryOptimizationEnabled}
+                      onValueChange={handleBatteryOptimizationToggle}
+                      trackColor={{ false: '#374151', true: '#4F46E5' }}
+                      thumbColor={settings.batteryOptimizationEnabled ? '#F9FAFB' : '#9CA3AF'}
+                    />
+                  }
+                />
+                
+                <SettingsRow
+                  title="Adaptive frame rate"
+                  description="Dynamically adjust frame rate based on performance"
+                  control={
+                    <Switch
+                      value={settings.adaptiveFrameRateEnabled}
+                      onValueChange={handleAdaptiveFrameRateToggle}
+                      trackColor={{ false: '#374151', true: '#4F46E5' }}
+                      thumbColor={settings.adaptiveFrameRateEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      disabled={!settings.batteryOptimizationEnabled}
+                    />
+                  }
+                  disabled={!settings.batteryOptimizationEnabled}
+                />
+                
+                <SettingsRow
+                  title="Background throttling"
+                  description="Reduce background processing when battery is low"
+                  control={
+                    <Switch
+                      value={settings.backgroundThrottlingEnabled}
+                      onValueChange={handleBackgroundThrottlingToggle}
+                      trackColor={{ false: '#374151', true: '#4F46E5' }}
+                      thumbColor={settings.backgroundThrottlingEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      disabled={!settings.batteryOptimizationEnabled}
+                    />
+                  }
+                  disabled={!settings.batteryOptimizationEnabled}
+                />
+                
+                <SettingsRow
+                  title="Battery efficient mode"
+                  description="Force maximum battery savings (reduces performance)"
+                  control={
+                    <Switch
+                      value={settings.batteryEfficientModeEnabled}
+                      onValueChange={handleBatteryEfficientModeToggle}
+                      trackColor={{ false: '#374151', true: '#4F46E5' }}
+                      thumbColor={settings.batteryEfficientModeEnabled ? '#F9FAFB' : '#9CA3AF'}
+                      disabled={!settings.batteryOptimizationEnabled}
+                    />
+                  }
+                  disabled={!settings.batteryOptimizationEnabled}
+                />
+              </SettingsSection>
+              
+              {/* Optimization Recommendations */}
+              {recommendations.length > 0 && (
+                <View className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mt-3">
+                  <Text className="text-yellow-400 font-medium mb-2">💡 Battery Recommendations</Text>
+                  {recommendations.map((recommendation, index) => (
+                    <Text key={index} className="text-yellow-300 text-sm mb-1">
+                      • {recommendation.message}
+                    </Text>
+                  ))}
+                </View>
+              )}
             </View>
             
             {/* Data Management */}

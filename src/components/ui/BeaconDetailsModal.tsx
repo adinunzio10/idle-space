@@ -18,22 +18,47 @@ export const BeaconDetailsModal: React.FC<BeaconDetailsModalProps> = ({
   onClose,
   gameController
 }) => {
+  // Store beacon data to prevent loss during re-renders
+  const [stableBeacon, setStableBeacon] = React.useState<Beacon | undefined>(undefined);
+  
+  React.useEffect(() => {
+    if (beacon && isVisible) {
+      console.log('[BeaconDetailsModal] Setting stable beacon:', beacon);
+      setStableBeacon(beacon);
+    } else if (!isVisible) {
+      // Clear when modal closes
+      setStableBeacon(undefined);
+    }
+  }, [beacon, isVisible]);
   // Calculate beacon stats and information
   const beaconStats = useMemo(() => {
-    if (!beacon) return null;
+    const activeBeacon = stableBeacon || beacon;
+    
+    if (!activeBeacon) {
+      console.log('[BeaconDetailsModal] No beacon provided');
+      return null;
+    }
+
+    console.log('[BeaconDetailsModal] Beacon data:', activeBeacon);
+
+    // Handle different beacon data structures
+    const beaconType = activeBeacon.type || 'pioneer';
+    const beaconLevel = activeBeacon.level || 1;
+    const beaconConnections = activeBeacon.connections || [];
+    const beaconPosition = activeBeacon.position || { x: 0, y: 0 };
 
     return {
-      type: beacon.type,
-      level: beacon.level,
-      connections: beacon.connections.length,
-      position: `(${beacon.position.x.toFixed(1)}, ${beacon.position.y.toFixed(1)})`,
+      type: beaconType,
+      level: beaconLevel,
+      connections: Array.isArray(beaconConnections) ? beaconConnections.length : 0,
+      position: `(${beaconPosition.x.toFixed(1)}, ${beaconPosition.y.toFixed(1)})`,
       // Mock data - would come from actual calculations
-      resourceGeneration: beacon.level * 10,
-      efficiency: Math.min(100, beacon.level * 15 + beacon.connections.length * 5),
-      upgradeCost: beacon.level * 50,
-      nextLevelBonus: (beacon.level + 1) * 10 - beacon.level * 10
+      resourceGeneration: beaconLevel * 10,
+      efficiency: Math.min(100, beaconLevel * 15 + (Array.isArray(beaconConnections) ? beaconConnections.length : 0) * 5),
+      upgradeCost: beaconLevel * 50,
+      nextLevelBonus: (beaconLevel + 1) * 10 - beaconLevel * 10
     };
-  }, [beacon]);
+  }, [stableBeacon, beacon]);
 
   const getBeaconTypeInfo = (type: string) => {
     switch (type) {
@@ -69,7 +94,8 @@ export const BeaconDetailsModal: React.FC<BeaconDetailsModalProps> = ({
   };
 
   const handleUpgradeBeacon = () => {
-    if (!beacon || !beaconStats) return;
+    const activeBeacon = stableBeacon || beacon;
+    if (!activeBeacon || !beaconStats || !gameController) return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
@@ -85,9 +111,47 @@ export const BeaconDetailsModal: React.FC<BeaconDetailsModalProps> = ({
           text: 'Upgrade',
           style: 'default',
           onPress: () => {
-            // TODO: Implement actual upgrade logic through gameController
-            Alert.alert('Upgrade Complete', 'Beacon has been upgraded!');
-            onClose();
+            try {
+              const beaconUpgradeManager = gameController.getBeaconUpgradeManager?.();
+              const beaconManager = gameController.getBeaconManager();
+              const resourceManager = gameController.getResourceManager();
+              
+              if (!beaconUpgradeManager || !resourceManager) {
+                Alert.alert('Error', 'Upgrade system not available.');
+                return;
+              }
+
+              // Check if player can afford the upgrade
+              if (resourceManager.getResource('quantumData') < beaconStats.upgradeCost) {
+                Alert.alert(
+                  'Insufficient Resources',
+                  `You need ${formatNumber(beaconStats.upgradeCost)} Quantum Data but only have ${formatNumber(resourceManager.getResource('quantumData'))}.`
+                );
+                return;
+              }
+
+              // Get the actual beacon entity
+              const beaconEntity = beaconManager.getBeacon(activeBeacon.id);
+              if (!beaconEntity) {
+                Alert.alert('Error', 'Beacon not found.');
+                return;
+              }
+
+              // Spend resources and upgrade beacon
+              const success = resourceManager.spendResource('quantumData', beaconStats.upgradeCost);
+              if (success && beaconUpgradeManager.levelUpBeacon(beaconEntity)) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Alert.alert('Upgrade Complete', 'Beacon has been upgraded successfully!');
+                onClose();
+              } else {
+                // Refund resources if upgrade failed
+                resourceManager.addResource('quantumData', beaconStats.upgradeCost);
+                Alert.alert('Upgrade Failed', 'Unable to upgrade beacon. Please try again.');
+              }
+            } catch (error) {
+              console.error('Error upgrading beacon:', error);
+              Alert.alert('Error', 'An error occurred while upgrading the beacon.');
+            }
           }
         }
       ]
@@ -95,7 +159,8 @@ export const BeaconDetailsModal: React.FC<BeaconDetailsModalProps> = ({
   };
 
   const handleDeleteBeacon = () => {
-    if (!beacon) return;
+    const activeBeacon = stableBeacon || beacon;
+    if (!activeBeacon) return;
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     
@@ -120,142 +185,93 @@ export const BeaconDetailsModal: React.FC<BeaconDetailsModalProps> = ({
     );
   };
 
-  if (!beacon || !beaconStats) {
+  const activeBeacon = stableBeacon || beacon;
+  
+  if (!activeBeacon || !beaconStats) {
     return (
       <BaseModal
         isVisible={isVisible}
         onClose={onClose}
-        title="Error"
+        title="Beacon Details"
       >
-        <Text className="text-text/60 text-center">
-          No beacon data available.
-        </Text>
+        <View className="items-center py-8">
+          <Text className="text-text/60 text-center text-lg mb-4">
+            Loading beacon data...
+          </Text>
+          <Text className="text-text/40 text-center text-sm">
+            Debug: {activeBeacon ? 'Has beacon' : 'No beacon'} | {beaconStats ? 'Has stats' : 'No stats'}
+          </Text>
+        </View>
       </BaseModal>
     );
   }
 
-  const typeInfo = getBeaconTypeInfo(beacon.type);
+  const typeInfo = getBeaconTypeInfo((stableBeacon || beacon)?.type || 'pioneer');
 
   return (
     <BaseModal
       isVisible={isVisible}
       onClose={onClose}
       title="Beacon Details"
-      maxHeight={600}
+      maxHeight={500}
     >
       <View className="space-y-6">
-        {/* Beacon Header */}
-        <View className="items-center mb-2">
-          <Text className="text-4xl mb-2">{typeInfo.emoji}</Text>
-          <Text className={`${typeInfo.color} text-xl font-bold`}>
-            {typeInfo.name}
+        {/* DEBUG: Show raw data */}
+        <View className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+          <Text className="text-red-400 font-semibold text-sm mb-2">DEBUG INFO:</Text>
+          <Text className="text-text/80 text-xs mb-1">
+            Beacon: {beacon ? 'EXISTS' : 'NULL'}
           </Text>
-          <Text className="text-text/60 text-center mt-1">
-            {typeInfo.description}
+          <Text className="text-text/80 text-xs mb-1">
+            BeaconStats: {beaconStats ? 'EXISTS' : 'NULL'}
           </Text>
-        </View>
-
-        {/* Basic Stats */}
-        <View className="bg-background/50 rounded-lg p-4">
-          <Text className="text-text font-semibold text-lg mb-3">Basic Information</Text>
-          
-          <View className="space-y-2">
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Level</Text>
-              <Text className="text-text font-semibold">{beaconStats.level}</Text>
-            </View>
-            
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Position</Text>
-              <Text className="text-text font-semibold">{beaconStats.position}</Text>
-            </View>
-            
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Connections</Text>
-              <Text className="text-text font-semibold">{beaconStats.connections}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Performance Stats */}
-        <View className="bg-background/50 rounded-lg p-4">
-          <Text className="text-text font-semibold text-lg mb-3">Performance</Text>
-          
-          <View className="space-y-2">
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Resource Generation</Text>
-              <Text className="text-primary font-semibold">
-                {formatNumber(beaconStats.resourceGeneration)}/min
-              </Text>
-            </View>
-            
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Efficiency</Text>
-              <Text className="text-green-400 font-semibold">
-                {beaconStats.efficiency}%
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Upgrade Information */}
-        <View className="bg-background/50 rounded-lg p-4">
-          <Text className="text-text font-semibold text-lg mb-3">Upgrade Options</Text>
-          
-          <View className="space-y-2 mb-4">
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Next Level</Text>
-              <Text className="text-text font-semibold">{beaconStats.level + 1}</Text>
-            </View>
-            
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Upgrade Cost</Text>
-              <Text className="text-accent font-semibold">
-                {formatNumber(beaconStats.upgradeCost)} QD
-              </Text>
-            </View>
-            
-            <View className="flex-row justify-between">
-              <Text className="text-text/70">Bonus Gain</Text>
-              <Text className="text-green-400 font-semibold">
-                +{beaconStats.nextLevelBonus}/min
-              </Text>
-            </View>
-          </View>
-          
-          <TouchableOpacity
-            onPress={handleUpgradeBeacon}
-            className="bg-primary px-4 py-3 rounded-lg mb-3"
-          >
-            <Text className="text-white font-semibold text-center">
-              Upgrade Beacon
+          {(stableBeacon || beacon) && (
+            <Text className="text-text/80 text-xs">
+              Raw: {JSON.stringify(stableBeacon || beacon, null, 2)}
             </Text>
-          </TouchableOpacity>
+          )}
+        </View>
+        {/* Simple Test Content */}
+        <View className="items-center mb-4">
+          <Text className="text-text text-xl font-bold mb-2">
+            SIMPLE TEST CONTENT
+          </Text>
+          {(stableBeacon || beacon) && beaconStats && (
+            <>
+              <Text className="text-primary text-lg">
+                {beaconStats.type} Beacon
+              </Text>
+              <Text className="text-text/70">
+                Level {beaconStats.level} at {beaconStats.position}
+              </Text>
+              <Text className="text-accent">
+                {beaconStats.connections} connections
+              </Text>
+            </>
+          )}
         </View>
 
-        {/* Action Buttons */}
-        <View className="space-y-3">
-          <TouchableOpacity
-            onPress={() => {
-              // TODO: Implement beacon specialization
-              Alert.alert('Coming Soon', 'Beacon specialization will be available in a future update.');
-            }}
-            className="bg-secondary/20 border border-secondary/30 px-4 py-3 rounded-lg"
-          >
-            <Text className="text-secondary font-semibold text-center">
-              Customize Specialization
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            onPress={handleDeleteBeacon}
-            className="bg-red-500/20 border border-red-500/30 px-4 py-3 rounded-lg"
-          >
-            <Text className="text-red-400 font-semibold text-center">
-              Delete Beacon
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Temporarily Simplified - Test Basic Display */}
+        {(stableBeacon || beacon) && beaconStats && (
+          <View className="space-y-4">
+            <View className="bg-background/50 rounded-lg p-4">
+              <Text className="text-text font-semibold text-lg mb-3">Basic Information</Text>
+              <Text className="text-text">Level: {beaconStats.level}</Text>
+              <Text className="text-text">Type: {beaconStats.type}</Text>
+              <Text className="text-text">Position: {beaconStats.position}</Text>
+              <Text className="text-text">Connections: {beaconStats.connections}</Text>
+            </View>
+            
+            <TouchableOpacity
+              onPress={handleUpgradeBeacon}
+              className="bg-primary px-4 py-3 rounded-lg"
+            >
+              <Text className="text-white font-semibold text-center">
+                Upgrade Beacon (Cost: {formatNumber(beaconStats.upgradeCost)} QD)
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </BaseModal>
   );
