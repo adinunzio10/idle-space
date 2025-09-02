@@ -7,11 +7,29 @@ import {
   RadialGradient,
   Stop,
 } from 'react-native-svg';
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  withRepeat,
+  withTiming,
+  interpolate,
+  Easing,
+} from 'react-native-reanimated';
 
 import { Beacon, LODRenderInfo, ViewportState } from '../../types/galaxy';
 import { RENDERING_CONFIG } from '../../constants/rendering';
 import { galaxyToScreen } from '../../utils/spatial/viewport';
 import { getBeaconLevelScale, shouldShowLevelIndicators } from '../../utils/rendering/lod';
+import { poolManager, PooledBeaconRenderData } from '../../utils/performance/ObjectPool';
+import { 
+  withPerformanceMemo, 
+  compareBeacons, 
+  useStableCallback, 
+  useRenderTracker 
+} from '../../utils/performance/RenderOptimizations';
+import { useBatteryAwareVisualEffects } from '../../hooks/useBatteryOptimization';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 
 interface BeaconRendererProps {
@@ -20,11 +38,17 @@ interface BeaconRendererProps {
   viewportState: ViewportState;
 }
 
-export const BeaconRenderer: React.FC<BeaconRendererProps> = memo(({
+const BeaconRendererComponent: React.FC<BeaconRendererProps> = ({
   beacon,
   lodInfo,
   viewportState,
 }) => {
+  // Performance tracking for this component
+  useRenderTracker('BeaconRenderer', { beaconId: beacon.id, lodLevel: lodInfo.level });
+  
+  // Battery-aware visual effects
+  const { enableVisualEffects, enableGlowEffects, enableAnimations, animationScale } = useBatteryAwareVisualEffects();
+  
   // Convert galaxy coordinates to screen coordinates
   const screenPosition = galaxyToScreen(beacon.position, viewportState);
   
@@ -35,8 +59,109 @@ export const BeaconRenderer: React.FC<BeaconRendererProps> = memo(({
   const levelScale = getBeaconLevelScale(beacon.level);
   const finalSize = lodInfo.size * levelScale;
   
-  // Simple opacity for glow effect (no complex animations for performance)
-  const glowOpacity = lodInfo.showAnimations ? RENDERING_CONFIG.ANIMATIONS.GLOW_OPACITY : 0.3;
+  // Enhanced animations for high LOD levels
+  const pulseAnimation = useSharedValue(0);
+  const glowAnimation = useSharedValue(0);
+  
+  React.useEffect(() => {
+    const shouldAnimate = lodInfo.showAnimations && enableAnimations;
+    
+    if (shouldAnimate) {
+      // Pulse animation for the beacon with battery-aware duration
+      const adjustedDuration = RENDERING_CONFIG.ANIMATIONS.PULSE_DURATION / animationScale;
+      
+      pulseAnimation.value = withRepeat(
+        withTiming(1, {
+          duration: adjustedDuration,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        -1,
+        true
+      );
+      
+      // Glow animation only if glow effects are enabled
+      if (enableGlowEffects) {
+        glowAnimation.value = withRepeat(
+          withTiming(1, {
+            duration: adjustedDuration * 1.5,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          -1,
+          true
+        );
+      } else {
+        glowAnimation.value = 0;
+      }
+    } else {
+      pulseAnimation.value = 0;
+      glowAnimation.value = 0;
+    }
+  }, [lodInfo.showAnimations, enableAnimations, enableGlowEffects, animationScale, pulseAnimation, glowAnimation]);
+  
+  // Pooled render data for performance
+  const renderData = useMemo((): PooledBeaconRenderData => {
+    const pool = poolManager.getPool<PooledBeaconRenderData>('beaconRender');
+    const data = pool?.acquire() || {
+      id: beacon.id,
+      x: screenPosition.x,
+      y: screenPosition.y,
+      size: finalSize,
+      color: colors.primary,
+      glowSize: finalSize * 1.5,
+      glowOpacity: (lodInfo.showAnimations && enableGlowEffects) ? RENDERING_CONFIG.ANIMATIONS.GLOW_OPACITY : 0.3,
+      level: beacon.level,
+      type: beacon.type,
+      active: true,
+    };
+    
+    // Update with current values
+    data.id = beacon.id;
+    data.x = screenPosition.x;
+    data.y = screenPosition.y;
+    data.size = finalSize;
+    data.color = colors.primary;
+    data.glowSize = finalSize * 1.5;
+    data.glowOpacity = (lodInfo.showAnimations && enableGlowEffects) ? RENDERING_CONFIG.ANIMATIONS.GLOW_OPACITY : 0.3;
+    data.level = beacon.level;
+    data.type = beacon.type;
+    data.active = true;
+    
+    return data;
+  }, [beacon.id, screenPosition.x, screenPosition.y, finalSize, colors.primary, beacon.level, beacon.type, lodInfo.showAnimations, enableGlowEffects]);
+  
+  // Animated props for pulse effect
+  const animatedGlowProps = useAnimatedProps(() => {
+    const opacity = interpolate(
+      glowAnimation.value,
+      [0, 1],
+      [renderData.glowOpacity * 0.5, renderData.glowOpacity]
+    );
+    const scale = interpolate(
+      pulseAnimation.value,
+      [0, 1],
+      [0.8, 1.2]
+    );
+    
+    return {
+      opacity: lodInfo.showAnimations ? opacity : renderData.glowOpacity,
+      r: renderData.glowSize * (lodInfo.showAnimations ? scale : 1),
+    };
+  });
+  
+  // Animated props for main beacon
+  const animatedBeaconProps = useAnimatedProps(() => {
+    const scale = interpolate(
+      pulseAnimation.value,
+      [0, 1],
+      [0.95, 1.05]
+    );
+    
+    return {
+      transform: lodInfo.showAnimations 
+        ? `scale(${scale})` 
+        : 'scale(1)',
+    };
+  });
   
   // Generate shapes based on beacon type and LOD level
   const beaconShape = useMemo(() => {
@@ -112,16 +237,14 @@ export const BeaconRenderer: React.FC<BeaconRendererProps> = memo(({
         </RadialGradient>
       </Defs>
       
-      {/* Glow effect (only for full/standard LOD) */}
+      {/* Enhanced glow effect with animation */}
       {lodInfo.showEffects && (
-        <G opacity={glowOpacity}>
-          <Circle
-            cx={screenPosition.x}
-            cy={screenPosition.y}
-            r={finalSize}
-            fill={`url(#glow-${beacon.id})`}
-          />
-        </G>
+        <AnimatedCircle
+          cx={renderData.x}
+          cy={renderData.y}
+          fill={`url(#glow-${beacon.id})`}
+          animatedProps={animatedGlowProps}
+        />
       )}
       
       {/* Level indicators */}
@@ -135,8 +258,49 @@ export const BeaconRenderer: React.FC<BeaconRendererProps> = memo(({
       </G>
     </G>
   );
-});
+};
 
+// Custom comparison function for beacon rendering props
+const compareBeaconProps = (
+  prevProps: BeaconRendererProps,
+  nextProps: BeaconRendererProps
+): boolean => {
+  // Compare beacon data
+  if (
+    prevProps.beacon.id !== nextProps.beacon.id ||
+    prevProps.beacon.position.x !== nextProps.beacon.position.x ||
+    prevProps.beacon.position.y !== nextProps.beacon.position.y ||
+    prevProps.beacon.level !== nextProps.beacon.level ||
+    prevProps.beacon.type !== nextProps.beacon.type
+  ) {
+    return false;
+  }
+
+  // Compare LOD info
+  if (
+    prevProps.lodInfo.level !== nextProps.lodInfo.level ||
+    prevProps.lodInfo.renderMode !== nextProps.lodInfo.renderMode ||
+    prevProps.lodInfo.showAnimations !== nextProps.lodInfo.showAnimations ||
+    prevProps.lodInfo.showEffects !== nextProps.lodInfo.showEffects
+  ) {
+    return false;
+  }
+
+  // Compare viewport state with tolerance for floating point precision
+  const threshold = 0.1;
+  if (
+    Math.abs(prevProps.viewportState.translateX - nextProps.viewportState.translateX) > threshold ||
+    Math.abs(prevProps.viewportState.translateY - nextProps.viewportState.translateY) > threshold ||
+    Math.abs(prevProps.viewportState.scale - nextProps.viewportState.scale) > 0.01
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+// Export optimized component with performance memoization
+export const BeaconRenderer = withPerformanceMemo(BeaconRendererComponent, compareBeaconProps);
 BeaconRenderer.displayName = 'BeaconRenderer';
 
 /**

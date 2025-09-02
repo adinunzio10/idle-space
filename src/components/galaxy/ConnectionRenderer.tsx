@@ -1,11 +1,20 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
 import {
   Path,
   Defs,
   LinearGradient,
   Stop,
   G,
+  Circle,
 } from 'react-native-svg';
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  interpolate,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 import { 
   Connection, 
@@ -16,6 +25,16 @@ import {
 import { CONNECTION_COLORS } from '../../constants/connections';
 import { galaxyToScreen } from '../../utils/spatial/viewport';
 import { generateConnectionPath } from '../../utils/rendering/connections';
+import { 
+  createConnectionFlowAnimation, 
+  createConnectionSparkAnimation,
+  COLOR_EFFECTS,
+  globalEffectManager
+} from '../../utils/effects/VisualEffects';
+import { useBatteryAwareVisualEffects, useBatteryAwarePerformance } from '../../hooks/useBatteryOptimization';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface ConnectionRendererProps {
   connection: Connection;
@@ -34,6 +53,74 @@ export const ConnectionRenderer: React.FC<ConnectionRendererProps> = memo(({
   viewportState,
   onPress,
 }) => {
+  // Battery-aware visual effects
+  const { enableVisualEffects, enableGlowEffects, enableAnimations, animationScale } = useBatteryAwareVisualEffects();
+  const { shouldThrottleUpdates, updateInterval } = useBatteryAwarePerformance();
+  
+  // Animation values for visual effects
+  const flowProgress = useSharedValue(0);
+  const sparkProgress = useSharedValue(0);
+  const sparkOpacity = useSharedValue(0);
+  const glowIntensity = useSharedValue(0.5);
+
+  // Start animations based on connection state and battery optimization
+  useEffect(() => {
+    const effectId = `connection-${connection.id}`;
+    
+    if (renderInfo.showFlow && connection.isActive && enableAnimations) {
+      // Start flow animation for active connections
+      globalEffectManager.registerEffect(`${effectId}-flow`, () => {
+        createConnectionFlowAnimation(flowProgress);
+      });
+      globalEffectManager.startEffect(`${effectId}-flow`);
+
+      // Add glow animation for strong connections only if glow effects are enabled
+      if (connection.strength >= 3 && enableGlowEffects) {
+        const adjustedDuration = 2000 / animationScale;
+        glowIntensity.value = withRepeat(
+          withTiming(1, {
+            duration: adjustedDuration,
+            easing: Easing.inOut(Easing.sin),
+          }),
+          -1,
+          true
+        );
+      }
+
+      // Occasional sparks for very active connections with battery-aware intervals
+      if (connection.strength >= 4 && enableVisualEffects) {
+        const sparkInterval = setInterval(() => {
+          if (Math.random() < 0.3) { // 30% chance every interval
+            createConnectionSparkAnimation(sparkProgress, sparkOpacity);
+          }
+        }, shouldThrottleUpdates ? updateInterval * 3 : 3000);
+
+        return () => {
+          clearInterval(sparkInterval);
+          globalEffectManager.stopEffect(`${effectId}-flow`);
+        };
+      }
+    }
+
+    return () => {
+      globalEffectManager.stopEffect(`${effectId}-flow`);
+    };
+  }, [
+    connection.id, 
+    connection.isActive, 
+    connection.strength, 
+    renderInfo.showFlow, 
+    flowProgress, 
+    sparkProgress, 
+    sparkOpacity, 
+    glowIntensity,
+    enableAnimations,
+    enableGlowEffects,
+    enableVisualEffects,
+    animationScale,
+    shouldThrottleUpdates,
+    updateInterval
+  ]);
   // Convert galaxy coordinates to screen coordinates
   const sourceScreen = galaxyToScreen(sourceBeacon.position, viewportState);
   const targetScreen = galaxyToScreen(targetBeacon.position, viewportState);
@@ -65,6 +152,69 @@ export const ConnectionRenderer: React.FC<ConnectionRendererProps> = memo(({
 
   // Create gradient ID
   const gradientId = `connection-gradient-${connection.id}`;
+
+  // Animated properties for flow effect
+  const animatedPathProps = useAnimatedProps(() => {
+    const dashOffset = interpolate(
+      flowProgress.value,
+      [0, 1],
+      [0, -50] // Negative to make flow go from source to target
+    );
+
+    return {
+      strokeDasharray: renderInfo.showFlow ? '10,5' : undefined,
+      strokeDashoffset: renderInfo.showFlow ? dashOffset : 0,
+    };
+  });
+
+  // Animated properties for glow effect
+  const animatedGlowProps = useAnimatedProps(() => {
+    const opacity = interpolate(
+      glowIntensity.value,
+      [0, 1],
+      [0.3, 0.8]
+    );
+
+    const strokeWidth = interpolate(
+      glowIntensity.value,
+      [0, 1],
+      [renderInfo.lineWidth * 2, renderInfo.lineWidth * 3]
+    );
+
+    return {
+      opacity,
+      strokeWidth,
+    };
+  });
+
+  // Spark position calculation
+  const sparkPosition = useMemo(() => {
+    const distance = Math.sqrt(
+      Math.pow(targetScreen.x - sourceScreen.x, 2) + 
+      Math.pow(targetScreen.y - sourceScreen.y, 2)
+    );
+    
+    return {
+      x: sourceScreen.x + (targetScreen.x - sourceScreen.x) * 0.5,
+      y: sourceScreen.y + (targetScreen.y - sourceScreen.y) * 0.5,
+      distance,
+    };
+  }, [sourceScreen, targetScreen]);
+
+  // Animated spark properties
+  const animatedSparkProps = useAnimatedProps(() => {
+    const progress = sparkProgress.value;
+    const x = sourceScreen.x + (targetScreen.x - sourceScreen.x) * progress;
+    const y = sourceScreen.y + (targetScreen.y - sourceScreen.y) * progress;
+    const size = interpolate(progress, [0, 0.5, 1], [2, 6, 2]);
+
+    return {
+      cx: x,
+      cy: y,
+      r: size,
+      opacity: sparkOpacity.value,
+    };
+  });
 
   return (
     <G onPress={onPress ? () => onPress(connection) : undefined}>
@@ -98,20 +248,20 @@ export const ConnectionRenderer: React.FC<ConnectionRendererProps> = memo(({
         )}
       </Defs>
 
-      {/* Glow effect for strong connections */}
+      {/* Enhanced glow effect for strong connections */}
       {renderInfo.showFlow && connection.strength >= 3 && (
-        <Path
+        <AnimatedPath
           d={pathData}
           stroke={`url(#${gradientId}-glow)`}
-          strokeWidth={renderInfo.lineWidth + 2}
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
+          animatedProps={animatedGlowProps}
         />
       )}
 
-      {/* Main connection line */}
-      <Path
+      {/* Main connection line with flow animation */}
+      <AnimatedPath
         d={pathData}
         stroke={`url(#${gradientId})`}
         strokeWidth={renderInfo.lineWidth}
@@ -119,7 +269,16 @@ export const ConnectionRenderer: React.FC<ConnectionRendererProps> = memo(({
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity={renderInfo.opacity}
+        animatedProps={animatedPathProps}
       />
+
+      {/* Animated spark effect for high-strength connections */}
+      {connection.strength >= 4 && (
+        <AnimatedCircle
+          fill={colors.flow}
+          animatedProps={animatedSparkProps}
+        />
+      )}
 
       {/* Flow animation effect (for active connections at high LOD) */}
       {renderInfo.showAnimation && renderInfo.showFlow && (
