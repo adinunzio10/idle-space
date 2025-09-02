@@ -1,11 +1,19 @@
-import { GeometricPattern, Beacon, Point2D, PatternType } from '../../types/galaxy';
+import {
+  GeometricPattern,
+  Beacon,
+  Point2D,
+  PatternType,
+} from '../../types/galaxy';
 import {
   SpatialPatternCacheEntry,
   SpatialCacheConfig,
   CacheStatistics,
   CacheInvalidationStrategy,
 } from '../../types/spatialHashing';
-import { DEFAULT_SPATIAL_CACHE_CONFIG, SPATIAL_PERFORMANCE_THRESHOLDS } from '../../constants/spatialHashing';
+import {
+  DEFAULT_SPATIAL_CACHE_CONFIG,
+  SPATIAL_PERFORMANCE_THRESHOLDS,
+} from '../../constants/spatialHashing';
 
 /**
  * LRU (Least Recently Used) cache implementation
@@ -93,7 +101,9 @@ class LRUCache<K, V> {
  */
 export class SpatialPatternCache {
   private config: SpatialCacheConfig;
-  private cache: LRUCache<string, SpatialPatternCacheEntry> | Map<string, SpatialPatternCacheEntry>;
+  private cache:
+    | LRUCache<string, SpatialPatternCacheEntry>
+    | Map<string, SpatialPatternCacheEntry>;
   private regionIndex: Map<string, Set<string>>; // pattern ID -> region IDs
   private statistics: CacheStatistics;
   private lastCleanup: number;
@@ -101,16 +111,16 @@ export class SpatialPatternCache {
 
   constructor(config: Partial<SpatialCacheConfig> = {}) {
     this.config = { ...DEFAULT_SPATIAL_CACHE_CONFIG, ...config };
-    
+
     // Choose cache implementation based on configuration
     this.cache = this.config.enableLRU
       ? new LRUCache<string, SpatialPatternCacheEntry>(this.config.maxEntries)
       : new Map<string, SpatialPatternCacheEntry>();
-      
+
     this.regionIndex = new Map();
     this.version = 1;
     this.lastCleanup = Date.now();
-    
+
     this.statistics = {
       hitRate: 0,
       missRate: 0,
@@ -128,11 +138,12 @@ export class SpatialPatternCache {
   getRegionPatterns(regionId: string): GeometricPattern[] | null {
     const startTime = performance.now();
     this.statistics.totalQueries++;
-    
-    const entry = this.cache instanceof LRUCache 
-      ? this.cache.get(regionId)
-      : this.cache.get(regionId);
-    
+
+    const entry =
+      this.cache instanceof LRUCache
+        ? this.cache.get(regionId)
+        : this.cache.get(regionId);
+
     if (entry) {
       // Check if entry is still valid
       if (this.isEntryValid(entry)) {
@@ -145,7 +156,7 @@ export class SpatialPatternCache {
         this.removeRegion(regionId);
       }
     }
-    
+
     this.statistics.missRate = (this.statistics.missRate + 1) / 2;
     this.updateQueryTime(performance.now() - startTime);
     return null;
@@ -168,10 +179,10 @@ export class SpatialPatternCache {
       accessCount: 1,
       isDirty: false,
     };
-    
+
     // Remove old entry if it exists
     this.removeRegion(regionId);
-    
+
     // Add new entry
     if (this.cache instanceof LRUCache) {
       this.cache.set(regionId, entry);
@@ -182,7 +193,7 @@ export class SpatialPatternCache {
       }
       this.cache.set(regionId, entry);
     }
-    
+
     // Update region index for patterns
     for (const pattern of patterns) {
       if (!this.regionIndex.has(pattern.id)) {
@@ -190,7 +201,7 @@ export class SpatialPatternCache {
       }
       this.regionIndex.get(pattern.id)!.add(regionId);
     }
-    
+
     this.updateStatistics();
   }
 
@@ -199,17 +210,17 @@ export class SpatialPatternCache {
    */
   invalidateByBeaconChange(beacon: Beacon, oldPosition?: Point2D): void {
     const affectedRegions = new Set<string>();
-    
+
     // Get regions affected by new position
     const newRegions = this.getRegionsForPosition(beacon.position);
     newRegions.forEach(region => affectedRegions.add(region));
-    
+
     // Get regions affected by old position if provided
     if (oldPosition) {
       const oldRegions = this.getRegionsForPosition(oldPosition);
       oldRegions.forEach(region => affectedRegions.add(region));
     }
-    
+
     // Invalidate all affected regions
     for (const regionId of affectedRegions) {
       this.invalidateRegion(regionId);
@@ -221,14 +232,14 @@ export class SpatialPatternCache {
    */
   invalidatePatterns(patternIds: string[]): void {
     const affectedRegions = new Set<string>();
-    
+
     for (const patternId of patternIds) {
       const regions = this.regionIndex.get(patternId);
       if (regions) {
         regions.forEach(region => affectedRegions.add(region));
       }
     }
-    
+
     // Invalidate all affected regions
     for (const regionId of affectedRegions) {
       this.invalidateRegion(regionId);
@@ -239,25 +250,26 @@ export class SpatialPatternCache {
    * Invalidate a specific region
    */
   invalidateRegion(regionId: string): void {
-    const entry = this.cache instanceof LRUCache 
-      ? this.cache.get(regionId)
-      : this.cache.get(regionId);
-      
+    const entry =
+      this.cache instanceof LRUCache
+        ? this.cache.get(regionId)
+        : this.cache.get(regionId);
+
     if (entry) {
       switch (this.config.invalidationStrategy) {
         case 'immediate':
           this.removeRegion(regionId);
           break;
-          
+
         case 'lazy':
           entry.isDirty = true;
           break;
-          
+
         case 'periodic':
           entry.isDirty = true;
           this.scheduleCleanup();
           break;
-          
+
         case 'on-demand':
           entry.isDirty = true;
           break;
@@ -273,9 +285,11 @@ export class SpatialPatternCache {
     bounds?: { minX: number; maxX: number; minY: number; maxY: number }
   ): GeometricPattern[] {
     const results: GeometricPattern[] = [];
-    
-    const regions = bounds ? this.getRegionsInBounds(bounds) : this.getAllRegions();
-    
+
+    const regions = bounds
+      ? this.getRegionsInBounds(bounds)
+      : this.getAllRegions();
+
     for (const regionId of regions) {
       const patterns = this.getRegionPatterns(regionId);
       if (patterns) {
@@ -283,7 +297,7 @@ export class SpatialPatternCache {
         results.push(...matchingPatterns);
       }
     }
-    
+
     return results;
   }
 
@@ -292,7 +306,7 @@ export class SpatialPatternCache {
    */
   preloadRegions(centerPosition: Point2D, radius: number): void {
     const preloadRegions = this.getRegionsInRadius(centerPosition, radius);
-    
+
     // This would typically trigger pattern detection for these regions
     // The actual implementation would depend on the pattern detection system
     for (const regionId of preloadRegions) {
@@ -310,32 +324,39 @@ export class SpatialPatternCache {
     let removedCount = 0;
     const now = Date.now();
     const entriesToRemove: string[] = [];
-    
-    const entries = this.cache instanceof LRUCache 
-      ? Array.from(this.cache.keys()).map(k => [k, this.cache.get(k)] as [string, SpatialPatternCacheEntry | undefined])
-      : Array.from(this.cache.entries());
-    
+
+    const entries =
+      this.cache instanceof LRUCache
+        ? Array.from(this.cache.keys()).map(
+            k =>
+              [k, this.cache.get(k)] as [
+                string,
+                SpatialPatternCacheEntry | undefined,
+              ]
+          )
+        : Array.from(this.cache.entries());
+
     for (const [regionId, entry] of entries) {
       if (!entry) continue;
-      
+
       // Remove expired entries
       if (!this.isEntryValid(entry)) {
         entriesToRemove.push(regionId);
         continue;
       }
-      
+
       // Remove least accessed entries if over memory limit
       if (this.isOverMemoryLimit() && entry.accessCount < 2) {
         entriesToRemove.push(regionId);
         continue;
       }
     }
-    
+
     for (const regionId of entriesToRemove) {
       this.removeRegion(regionId);
       removedCount++;
     }
-    
+
     this.updateStatistics();
     return removedCount;
   }
@@ -344,7 +365,7 @@ export class SpatialPatternCache {
    * Clear all cached data
    */
   clear(): void {
-    this.cache instanceof LRUCache ? this.cache.clear() : this.cache.clear();
+    this.cache.clear();
     this.regionIndex.clear();
     this.version++;
     this.resetStatistics();
@@ -362,7 +383,7 @@ export class SpatialPatternCache {
    * Check if cache has patterns for a region
    */
   hasRegion(regionId: string): boolean {
-    return this.cache instanceof LRUCache 
+    return this.cache instanceof LRUCache
       ? this.cache.has(regionId)
       : this.cache.has(regionId);
   }
@@ -372,30 +393,37 @@ export class SpatialPatternCache {
    */
   getMemoryUsage(): number {
     let totalSize = 0;
-    
-    const entries = this.cache instanceof LRUCache 
-      ? Array.from(this.cache.keys()).map(k => [k, this.cache.get(k)] as [string, SpatialPatternCacheEntry | undefined])
-      : Array.from(this.cache.entries());
-    
+
+    const entries =
+      this.cache instanceof LRUCache
+        ? Array.from(this.cache.keys()).map(
+            k =>
+              [k, this.cache.get(k)] as [
+                string,
+                SpatialPatternCacheEntry | undefined,
+              ]
+          )
+        : Array.from(this.cache.entries());
+
     for (const [regionId, entry] of entries) {
       if (entry) {
         totalSize += this.estimateEntrySize(entry);
       }
     }
-    
+
     return totalSize;
   }
 
   /**
    * Private helper methods
    */
-  
+
   private getRegionsForPosition(position: Point2D): string[] {
     // Calculate which regions this position affects
     const regionSize = this.config.regionSize;
     const regionX = Math.floor(position.x / regionSize);
     const regionY = Math.floor(position.y / regionSize);
-    
+
     // Return the region and its neighbors (since patterns can span regions)
     const regions: string[] = [];
     for (let dx = -1; dx <= 1; dx++) {
@@ -403,36 +431,41 @@ export class SpatialPatternCache {
         regions.push(`${regionX + dx},${regionY + dy}`);
       }
     }
-    
+
     return regions;
   }
-  
-  private getRegionsInBounds(bounds: { minX: number; maxX: number; minY: number; maxY: number }): string[] {
+
+  private getRegionsInBounds(bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  }): string[] {
     const regionSize = this.config.regionSize;
     const regions: string[] = [];
-    
+
     const minRegionX = Math.floor(bounds.minX / regionSize);
     const maxRegionX = Math.floor(bounds.maxX / regionSize);
     const minRegionY = Math.floor(bounds.minY / regionSize);
     const maxRegionY = Math.floor(bounds.maxY / regionSize);
-    
+
     for (let x = minRegionX; x <= maxRegionX; x++) {
       for (let y = minRegionY; y <= maxRegionY; y++) {
         regions.push(`${x},${y}`);
       }
     }
-    
+
     return regions;
   }
-  
+
   private getRegionsInRadius(center: Point2D, radius: number): string[] {
     const regionSize = this.config.regionSize;
     const regions: string[] = [];
-    
+
     const regionRadius = Math.ceil(radius / regionSize);
     const centerRegionX = Math.floor(center.x / regionSize);
     const centerRegionY = Math.floor(center.y / regionSize);
-    
+
     for (let dx = -regionRadius; dx <= regionRadius; dx++) {
       for (let dy = -regionRadius; dy <= regionRadius; dy++) {
         if (dx * dx + dy * dy <= regionRadius * regionRadius) {
@@ -440,37 +473,38 @@ export class SpatialPatternCache {
         }
       }
     }
-    
+
     return regions;
   }
-  
+
   private getAllRegions(): string[] {
-    return this.cache instanceof LRUCache 
+    return this.cache instanceof LRUCache
       ? Array.from(this.cache.keys())
       : Array.from(this.cache.keys());
   }
-  
+
   private isEntryValid(entry: SpatialPatternCacheEntry): boolean {
     const now = Date.now();
-    
+
     // Check if entry is expired
     if (now - entry.lastUpdated > this.config.maxAge) {
       return false;
     }
-    
+
     // Check if entry is dirty and should be invalidated
     if (entry.isDirty && this.config.invalidationStrategy === 'on-demand') {
       return false;
     }
-    
+
     return true;
   }
-  
+
   private removeRegion(regionId: string): void {
-    const entry = this.cache instanceof LRUCache 
-      ? this.cache.get(regionId)
-      : this.cache.get(regionId);
-      
+    const entry =
+      this.cache instanceof LRUCache
+        ? this.cache.get(regionId)
+        : this.cache.get(regionId);
+
     if (entry) {
       // Remove from pattern index
       for (const pattern of entry.patterns) {
@@ -483,12 +517,10 @@ export class SpatialPatternCache {
         }
       }
     }
-    
-    this.cache instanceof LRUCache 
-      ? this.cache.delete(regionId)
-      : this.cache.delete(regionId);
+
+    this.cache.delete(regionId);
   }
-  
+
   private evictOldestEntry(): void {
     if (this.cache instanceof Map && this.cache.size > 0) {
       const oldestKey = this.cache.keys().next().value;
@@ -498,12 +530,12 @@ export class SpatialPatternCache {
       }
     }
   }
-  
+
   private isOverMemoryLimit(): boolean {
     const memoryUsageMB = this.getMemoryUsage() / (1024 * 1024);
     return memoryUsageMB > this.config.memoryLimitMB;
   }
-  
+
   private estimateEntrySize(entry: SpatialPatternCacheEntry): number {
     // Rough estimate of entry size in bytes
     return (
@@ -512,27 +544,27 @@ export class SpatialPatternCache {
       entry.regionId.length * 2 // String storage
     );
   }
-  
+
   private scheduleCleanup(): void {
     const now = Date.now();
-    if (now - this.lastCleanup > 30000) { // 30 seconds
+    if (now - this.lastCleanup > 30000) {
+      // 30 seconds
       setTimeout(() => this.compact(), 0);
       this.lastCleanup = now;
     }
   }
-  
+
   private updateQueryTime(queryTime: number): void {
-    this.statistics.averageQueryTime = 
+    this.statistics.averageQueryTime =
       (this.statistics.averageQueryTime + queryTime) / 2;
   }
-  
+
   private updateStatistics(): void {
-    this.statistics.entriesCount = this.cache instanceof LRUCache 
-      ? this.cache.size()
-      : this.cache.size;
+    this.statistics.entriesCount =
+      this.cache instanceof LRUCache ? this.cache.size() : this.cache.size;
     this.statistics.memoryUsageMB = this.getMemoryUsage() / (1024 * 1024);
   }
-  
+
   private resetStatistics(): void {
     this.statistics = {
       hitRate: 0,

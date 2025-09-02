@@ -77,7 +77,9 @@ export class PerformanceMonitor {
   private metricsHistory: PerformanceMetrics[] = [];
   private maxHistorySize: number = 60; // Keep 1 minute of data at 1fps sampling
 
-  constructor(thresholds: PerformanceThresholds = DEFAULT_PERFORMANCE_THRESHOLDS) {
+  constructor(
+    thresholds: PerformanceThresholds = DEFAULT_PERFORMANCE_THRESHOLDS
+  ) {
     this.thresholds = thresholds;
   }
 
@@ -143,12 +145,15 @@ export class PerformanceMonitor {
    * Get current performance metrics
    */
   getCurrentMetrics(): PerformanceMetrics {
-    const avgFrameTime = this.frameTimes.length > 0
-      ? this.frameTimes.reduce((sum, time) => sum + time, 0) / this.frameTimes.length
-      : 16.67;
+    const avgFrameTime =
+      this.frameTimes.length > 0
+        ? this.frameTimes.reduce((sum, time) => sum + time, 0) /
+          this.frameTimes.length
+        : 16.67;
 
     const fps = Math.min(60, 1000 / avgFrameTime);
-    const frameDropRate = this.frameTimes.length > 0 ? this.frameDrops / this.frameCount : 0;
+    const frameDropRate =
+      this.frameTimes.length > 0 ? this.frameDrops / this.frameCount : 0;
 
     return {
       fps,
@@ -248,7 +253,7 @@ export class PerformanceMonitor {
    */
   private adjustQualityIfNeeded(): void {
     const now = Date.now();
-    
+
     // Don't adjust too frequently (every 5 seconds minimum)
     if (now - this.lastQualityAdjustment < 5000) {
       return;
@@ -330,7 +335,7 @@ export class PerformanceMonitor {
    * Measure interaction delay
    */
   private measureInteractionDelay(): number {
-    return new Promise<number>((resolve) => {
+    return new Promise<number>(resolve => {
       const start = performance.now();
       InteractionManager.runAfterInteractions(() => {
         const delay = performance.now() - start;

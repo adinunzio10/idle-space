@@ -41,11 +41,12 @@ export class AccessibilityManager {
   async initialize(): Promise<void> {
     try {
       console.log('[AccessibilityManager] Initializing...');
-      
+
       // Check initial system accessibility state
-      const isScreenReaderEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      const isScreenReaderEnabled =
+        await AccessibilityInfo.isScreenReaderEnabled();
       const fontScale = PixelRatio.getFontScale();
-      
+
       this.currentState = {
         ...this.currentState,
         isScreenReaderEnabled,
@@ -53,10 +54,13 @@ export class AccessibilityManager {
       };
 
       // Set up listeners for system accessibility changes
-      const screenReaderSubscription = AccessibilityInfo.addEventListener('screenReaderChanged', this.handleScreenReaderChange);
+      const screenReaderSubscription = AccessibilityInfo.addEventListener(
+        'screenReaderChanged',
+        this.handleScreenReaderChange
+      );
       // Store the subscription for cleanup
       this.screenReaderSubscription = screenReaderSubscription;
-      
+
       console.log('[AccessibilityManager] Initialized successfully');
     } catch (error) {
       console.error('[AccessibilityManager] Failed to initialize:', error);
@@ -76,7 +80,7 @@ export class AccessibilityManager {
 
     this.currentState = newState;
     this.notifyListeners();
-    
+
     console.log('[AccessibilityManager] Settings updated:', settings);
   }
 
@@ -92,7 +96,7 @@ export class AccessibilityManager {
    */
   addListener(callback: (state: AccessibilityState) => void): () => void {
     this.listeners.push(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.listeners.indexOf(callback);
@@ -107,11 +111,11 @@ export class AccessibilityManager {
    */
   getTextSizeMultiplier(): number {
     let multiplier = this.currentState.fontScale;
-    
+
     if (this.currentState.isLargeTextEnabled) {
       multiplier *= 1.2; // Additional 20% increase when large text is enabled
     }
-    
+
     return Math.max(multiplier, 1); // Ensure minimum of 1x
   }
 
@@ -147,19 +151,19 @@ export class AccessibilityManager {
     state?: string
   ): string {
     const parts: string[] = [element];
-    
+
     if (value !== undefined) {
       parts.push(String(value));
     }
-    
+
     if (context) {
       parts.push(context);
     }
-    
+
     if (state) {
       parts.push(state);
     }
-    
+
     return parts.join(', ');
   }
 
@@ -179,19 +183,19 @@ export class AccessibilityManager {
   getThemeAdjustments() {
     const contrast = this.getContrastMultiplier();
     const textScale = this.getTextSizeMultiplier();
-    
+
     return {
       // Color adjustments for high contrast
       textColorOpacity: Math.min(1, 0.87 * contrast),
-      secondaryTextOpacity: Math.min(1, 0.60 * contrast),
+      secondaryTextOpacity: Math.min(1, 0.6 * contrast),
       borderOpacity: Math.min(1, 0.12 * contrast),
-      
+
       // Size adjustments for large text
       baseFontSize: Math.floor(14 * textScale),
       smallFontSize: Math.floor(12 * textScale),
       largeFontSize: Math.floor(16 * textScale),
       titleFontSize: Math.floor(20 * textScale),
-      
+
       // Spacing adjustments
       touchTargetSize: this.getMinTouchTargetSize(),
       paddingMultiplier: Math.min(textScale, 1.3), // Cap padding growth

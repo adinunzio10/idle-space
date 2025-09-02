@@ -15,16 +15,19 @@ export class AccessibilityTesting {
   /**
    * Test component accessibility compliance
    */
-  static testComponent(componentName: string, element: {
-    hasLabel?: boolean;
-    hasRole?: boolean;
-    isInteractive?: boolean;
-    hasContrast?: boolean;
-    hasFocusState?: boolean;
-    hasHint?: boolean;
-    touchTargetSize?: { width: number; height: number };
-    children?: any[];
-  }): boolean {
+  static testComponent(
+    componentName: string,
+    element: {
+      hasLabel?: boolean;
+      hasRole?: boolean;
+      isInteractive?: boolean;
+      hasContrast?: boolean;
+      hasFocusState?: boolean;
+      hasHint?: boolean;
+      touchTargetSize?: { width: number; height: number };
+      children?: any[];
+    }
+  ): boolean {
     const results = [];
     let allPassed = true;
 
@@ -34,7 +37,7 @@ export class AccessibilityTesting {
       hasRole: element.hasRole,
       isInteractive: element.isInteractive,
       hasContrast: element.hasContrast,
-      hasFocusState: element.hasFocusState
+      hasFocusState: element.hasFocusState,
     });
 
     results.push({
@@ -42,7 +45,7 @@ export class AccessibilityTesting {
       test: 'Basic Accessibility',
       passed: basicTest.valid,
       message: basicTest.issues.join(', ') || 'All basic tests passed',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     if (!basicTest.valid) allPassed = false;
@@ -57,10 +60,10 @@ export class AccessibilityTesting {
         component: componentName,
         test: 'Touch Target Size',
         passed: targetSizePassed,
-        message: targetSizePassed 
+        message: targetSizePassed
           ? `Touch target ${width}x${height}px meets requirements`
           : `Touch target ${width}x${height}px too small (minimum ${minSize}x${minSize}px)`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       if (!targetSizePassed) allPassed = false;
@@ -72,18 +75,22 @@ export class AccessibilityTesting {
         component: componentName,
         test: 'Accessibility Hint',
         passed: false,
-        message: 'Interactive element should have accessibility hint for better user guidance',
-        timestamp: Date.now()
+        message:
+          'Interactive element should have accessibility hint for better user guidance',
+        timestamp: Date.now(),
       });
       allPassed = false;
     }
 
     // Test for complex UI structures
     if (element.children && element.children.length > 5) {
-      const hasGrouping = element.children.some(child => 
-        child.role === 'group' || child.role === 'list' || child.role === 'tablist'
+      const hasGrouping = element.children.some(
+        child =>
+          child.role === 'group' ||
+          child.role === 'list' ||
+          child.role === 'tablist'
       );
-      
+
       results.push({
         component: componentName,
         test: 'Complex UI Structure',
@@ -91,7 +98,7 @@ export class AccessibilityTesting {
         message: hasGrouping
           ? 'Complex UI properly grouped for navigation'
           : 'Complex UI should use grouping roles for easier navigation',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       if (!hasGrouping) allPassed = false;
@@ -106,24 +113,33 @@ export class AccessibilityTesting {
   /**
    * Test one-handed navigation compliance
    */
-  static testOneHandedNavigation(screenName: string, elements: {
-    name: string;
-    position: { bottom: number };
-    isImportant: boolean;
-    isInteractive: boolean;
-  }[], screenHeight: number): boolean {
+  static testOneHandedNavigation(
+    screenName: string,
+    elements: {
+      name: string;
+      position: { bottom: number };
+      isImportant: boolean;
+      isInteractive: boolean;
+    }[],
+    screenHeight: number
+  ): boolean {
     const thumbReachHeight = screenHeight * 0.65; // Bottom 65% is reachable
     const reachableTop = screenHeight - thumbReachHeight;
-    
+
     let allPassed = true;
     const results = [];
 
     // Test important interactive elements are in reach zone
-    const importantElements = elements.filter(el => el.isImportant && el.isInteractive);
-    const elementsInReach = importantElements.filter(el => el.position.bottom >= reachableTop);
-    
-    const reachabilityPassed = elementsInReach.length === importantElements.length;
-    
+    const importantElements = elements.filter(
+      el => el.isImportant && el.isInteractive
+    );
+    const elementsInReach = importantElements.filter(
+      el => el.position.bottom >= reachableTop
+    );
+
+    const reachabilityPassed =
+      elementsInReach.length === importantElements.length;
+
     results.push({
       component: screenName,
       test: 'One-Handed Reachability',
@@ -131,27 +147,30 @@ export class AccessibilityTesting {
       message: reachabilityPassed
         ? `All ${importantElements.length} important elements are within thumb reach`
         : `${importantElements.length - elementsInReach.length} important elements are outside thumb reach zone`,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     if (!reachabilityPassed) allPassed = false;
 
     // Test navigation elements distribution
-    const navElements = elements.filter(el => 
-      el.name.toLowerCase().includes('nav') || 
-      el.name.toLowerCase().includes('button') ||
-      el.name.toLowerCase().includes('tab')
+    const navElements = elements.filter(
+      el =>
+        el.name.toLowerCase().includes('nav') ||
+        el.name.toLowerCase().includes('button') ||
+        el.name.toLowerCase().includes('tab')
     );
-    
-    const navInReach = navElements.filter(el => el.position.bottom >= reachableTop);
+
+    const navInReach = navElements.filter(
+      el => el.position.bottom >= reachableTop
+    );
     const navReachabilityPassed = navInReach.length / navElements.length >= 0.8; // At least 80%
-    
+
     results.push({
       component: screenName,
       test: 'Navigation Reachability',
       passed: navReachabilityPassed,
       message: `${navInReach.length}/${navElements.length} navigation elements are reachable`,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     if (!navReachabilityPassed) allPassed = false;
@@ -163,19 +182,24 @@ export class AccessibilityTesting {
   /**
    * Test screen reader compatibility
    */
-  static testScreenReaderCompatibility(screenName: string, elements: {
-    type: 'text' | 'button' | 'image' | 'list' | 'header';
-    hasLabel: boolean;
-    hasRole: boolean;
-    hasState?: boolean;
-    isDecorative?: boolean;
-  }[]): boolean {
+  static testScreenReaderCompatibility(
+    screenName: string,
+    elements: {
+      type: 'text' | 'button' | 'image' | 'list' | 'header';
+      hasLabel: boolean;
+      hasRole: boolean;
+      hasState?: boolean;
+      isDecorative?: boolean;
+    }[]
+  ): boolean {
     let allPassed = true;
     const results = [];
 
     // Test text elements
     const textElements = elements.filter(el => el.type === 'text');
-    const textWithLabels = textElements.filter(el => el.hasLabel || el.isDecorative);
+    const textWithLabels = textElements.filter(
+      el => el.hasLabel || el.isDecorative
+    );
     const textPassed = textWithLabels.length === textElements.length;
 
     results.push({
@@ -183,26 +207,27 @@ export class AccessibilityTesting {
       test: 'Text Accessibility',
       passed: textPassed,
       message: `${textWithLabels.length}/${textElements.length} text elements properly labeled`,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     if (!textPassed) allPassed = false;
 
     // Test interactive elements
-    const interactiveElements = elements.filter(el => 
-      el.type === 'button' || el.type === 'list'
+    const interactiveElements = elements.filter(
+      el => el.type === 'button' || el.type === 'list'
     );
-    const interactiveProperlyLabeled = interactiveElements.filter(el => 
-      el.hasLabel && el.hasRole
+    const interactiveProperlyLabeled = interactiveElements.filter(
+      el => el.hasLabel && el.hasRole
     );
-    const interactivePassed = interactiveProperlyLabeled.length === interactiveElements.length;
+    const interactivePassed =
+      interactiveProperlyLabeled.length === interactiveElements.length;
 
     results.push({
       component: screenName,
       test: 'Interactive Element Accessibility',
       passed: interactivePassed,
       message: `${interactiveProperlyLabeled.length}/${interactiveElements.length} interactive elements properly configured`,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     if (!interactivePassed) allPassed = false;
@@ -217,7 +242,7 @@ export class AccessibilityTesting {
       test: 'Screen Structure',
       passed: headersPassed,
       message: `${headersWithRoles.length}/${headerElements.length} headers have proper roles`,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     if (!headersPassed) allPassed = false;
@@ -236,12 +261,15 @@ export class AccessibilityTesting {
       failedTests: number;
       passRate: number;
     };
-    componentResults: Record<string, {
-      totalTests: number;
-      passed: number;
-      failed: number;
-      issues: string[];
-    }>;
+    componentResults: Record<
+      string,
+      {
+        totalTests: number;
+        passed: number;
+        failed: number;
+        issues: string[];
+      }
+    >;
     recommendations: string[];
     detailedResults: typeof AccessibilityTesting.testResults;
   } {
@@ -259,7 +287,7 @@ export class AccessibilityTesting {
           totalTests: 0,
           passed: 0,
           failed: 0,
-          issues: []
+          issues: [],
         };
       }
 
@@ -268,8 +296,12 @@ export class AccessibilityTesting {
         componentResults[result.component].passed++;
       } else {
         componentResults[result.component].failed++;
-        componentResults[result.component].issues.push(`${result.test}: ${result.message}`);
-        allIssues.push(`${result.component} - ${result.test}: ${result.message}`);
+        componentResults[result.component].issues.push(
+          `${result.test}: ${result.message}`
+        );
+        allIssues.push(
+          `${result.component} - ${result.test}: ${result.message}`
+        );
       }
     });
 
@@ -281,11 +313,12 @@ export class AccessibilityTesting {
         totalTests,
         passedTests,
         failedTests,
-        passRate: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0
+        passRate:
+          totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
       },
       componentResults,
       recommendations,
-      detailedResults: [...this.testResults]
+      detailedResults: [...this.testResults],
     };
   }
 
@@ -294,7 +327,7 @@ export class AccessibilityTesting {
    */
   private static generateRecommendations(issues: string[]): string[] {
     const recommendations: string[] = [];
-    
+
     if (issues.some(issue => issue.includes('accessibility label'))) {
       recommendations.push(
         'Add descriptive accessibility labels to all interactive elements using accessibilityLabel prop'
@@ -356,16 +389,16 @@ export class AccessibilityTesting {
       hasContrast: true,
       hasFocusState: true,
       hasHint: true,
-      touchTargetSize: { width: 48, height: 48 }
+      touchTargetSize: { width: 48, height: 48 },
     };
 
     const passed = this.testComponent(componentName, mockElement);
-    
+
     return {
       passed,
-      message: passed 
+      message: passed
         ? `${componentName} passes basic accessibility tests`
-        : `${componentName} has accessibility issues - check detailed report`
+        : `${componentName} has accessibility issues - check detailed report`,
     };
   }
 }
@@ -378,9 +411,17 @@ export const testAccessibility = (componentName: string, element: any) => {
   return true;
 };
 
-export const testOneHandedNavigation = (screenName: string, elements: any[], screenHeight: number) => {
+export const testOneHandedNavigation = (
+  screenName: string,
+  elements: any[],
+  screenHeight: number
+) => {
   if (__DEV__) {
-    return AccessibilityTesting.testOneHandedNavigation(screenName, elements, screenHeight);
+    return AccessibilityTesting.testOneHandedNavigation(
+      screenName,
+      elements,
+      screenHeight
+    );
   }
   return true;
 };

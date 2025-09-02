@@ -17,10 +17,10 @@ import { GeometryUtils } from './GeometryUtils';
 
 /**
  * High-performance Delaunay triangulation engine using Bowyer-Watson algorithm.
- * 
+ *
  * Provides O(n log n) triangulation construction and efficient neighbor queries
  * for pattern detection optimization.
- * 
+ *
  * @example
  * ```typescript
  * const engine = new TriangulationEngine();
@@ -40,7 +40,7 @@ export class TriangulationEngine {
 
   /**
    * Perform Delaunay triangulation on a set of beacons.
-   * 
+   *
    * @param beacons - Array of beacons to triangulate
    * @returns Complete triangulation result with neighbor mapping
    */
@@ -82,7 +82,7 @@ export class TriangulationEngine {
 
   /**
    * Build Delaunay triangulation using Bowyer-Watson algorithm.
-   * 
+   *
    * @param points - Points to triangulate
    * @returns Complete triangulation mesh
    */
@@ -114,14 +114,17 @@ export class TriangulationEngine {
 
   /**
    * Insert a point into the triangulation using Bowyer-Watson algorithm.
-   * 
+   *
    * @param mesh - Current triangulation mesh
    * @param point - Point to insert
    */
-  private insertPoint(mesh: TriangulationMesh, point: TriangulationPoint): void {
+  private insertPoint(
+    mesh: TriangulationMesh,
+    point: TriangulationPoint
+  ): void {
     // Find triangles whose circumcircle contains the point
     const badTriangles: Triangle[] = [];
-    
+
     for (const triangle of mesh.triangles.values()) {
       const test = this.circumcircleTest(triangle, point);
       if (test.isInside) {
@@ -145,7 +148,7 @@ export class TriangulationEngine {
     for (let i = 0; i < polygon.length; i++) {
       const p1 = polygon[i];
       const p2 = polygon[(i + 1) % polygon.length];
-      
+
       const newTriangle = this.createTriangle([point, p1, p2]);
       this.addTriangle(mesh, newTriangle);
     }
@@ -153,11 +156,16 @@ export class TriangulationEngine {
 
   /**
    * Create a super-triangle that contains all points.
-   * 
+   *
    * @param bounds - Bounding box of all points
    * @returns Super-triangle
    */
-  private createSuperTriangle(bounds: { minX: number; maxX: number; minY: number; maxY: number }): Triangle {
+  private createSuperTriangle(bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  }): Triangle {
     const dx = bounds.maxX - bounds.minX;
     const dy = bounds.maxY - bounds.minY;
     const deltaMax = Math.max(dx, dy);
@@ -177,14 +185,17 @@ export class TriangulationEngine {
 
   /**
    * Create a triangle from three vertices.
-   * 
+   *
    * @param vertices - Three vertices of the triangle
    * @param isSuperTriangle - Whether this is a super-triangle
    * @returns New triangle
    */
-  private createTriangle(vertices: [Point2D, Point2D, Point2D], isSuperTriangle: boolean = false): Triangle {
+  private createTriangle(
+    vertices: [Point2D, Point2D, Point2D],
+    isSuperTriangle: boolean = false
+  ): Triangle {
     const circumcircle = this.calculateCircumcircle(vertices);
-    
+
     return {
       id: `tri_${this.triangleIdCounter++}`,
       vertices,
@@ -197,19 +208,25 @@ export class TriangulationEngine {
 
   /**
    * Calculate circumcircle of a triangle.
-   * 
+   *
    * @param vertices - Triangle vertices
    * @returns Circumcircle center and radius
    */
-  private calculateCircumcircle(vertices: [Point2D, Point2D, Point2D]): { center: Point2D; radius: number } {
+  private calculateCircumcircle(vertices: [Point2D, Point2D, Point2D]): {
+    center: Point2D;
+    radius: number;
+  } {
     const [p1, p2, p3] = vertices;
 
-    const ax = p1.x, ay = p1.y;
-    const bx = p2.x, by = p2.y;
-    const cx = p3.x, cy = p3.y;
+    const ax = p1.x,
+      ay = p1.y;
+    const bx = p2.x,
+      by = p2.y;
+    const cx = p3.x,
+      cy = p3.y;
 
     const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
-    
+
     if (Math.abs(d) < this.options.tolerance) {
       // Degenerate triangle, return centroid
       const center = {
@@ -224,8 +241,16 @@ export class TriangulationEngine {
       return { center, radius };
     }
 
-    const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
-    const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+    const ux =
+      ((ax * ax + ay * ay) * (by - cy) +
+        (bx * bx + by * by) * (cy - ay) +
+        (cx * cx + cy * cy) * (ay - by)) /
+      d;
+    const uy =
+      ((ax * ax + ay * ay) * (cx - bx) +
+        (bx * bx + by * by) * (ax - cx) +
+        (cx * cx + cy * cy) * (bx - ax)) /
+      d;
 
     const center = { x: ux, y: uy };
     const radius = this.geometryUtils.distance(center, p1);
@@ -235,12 +260,15 @@ export class TriangulationEngine {
 
   /**
    * Test if a point is inside a triangle's circumcircle.
-   * 
+   *
    * @param triangle - Triangle to test
    * @param point - Point to test
    * @returns Circumcircle test result
    */
-  private circumcircleTest(triangle: Triangle, point: Point2D): CircumcircleTest {
+  private circumcircleTest(
+    triangle: Triangle,
+    point: Point2D
+  ): CircumcircleTest {
     const distance = this.geometryUtils.distance(triangle.circumcenter, point);
     const isInside = distance <= triangle.circumradius + this.options.tolerance;
 
@@ -253,7 +281,7 @@ export class TriangulationEngine {
 
   /**
    * Find polygon boundary formed by bad triangles.
-   * 
+   *
    * @param badTriangles - Triangles to remove
    * @returns Polygon vertices in order
    */
@@ -290,7 +318,7 @@ export class TriangulationEngine {
 
   /**
    * Order polygon vertices from boundary edges.
-   * 
+   *
    * @param edges - Boundary edges
    * @returns Ordered polygon vertices
    */
@@ -307,10 +335,10 @@ export class TriangulationEngine {
     // Connect remaining edges
     while (remainingEdges.length > 0) {
       const lastPoint = polygon[polygon.length - 1];
-      
+
       for (let i = 0; i < remainingEdges.length; i++) {
         const edge = remainingEdges[i];
-        
+
         if (pointsEqual(edge[0], lastPoint, this.options.tolerance)) {
           polygon.push(edge[1]);
           remainingEdges.splice(i, 1);
@@ -321,7 +349,7 @@ export class TriangulationEngine {
           break;
         }
       }
-      
+
       // Prevent infinite loop
       if (remainingEdges.length > 0 && polygon.length > edges.length * 2) {
         break;
@@ -329,7 +357,14 @@ export class TriangulationEngine {
     }
 
     // Remove duplicate last point if it equals first
-    if (polygon.length > 2 && pointsEqual(polygon[0], polygon[polygon.length - 1], this.options.tolerance)) {
+    if (
+      polygon.length > 2 &&
+      pointsEqual(
+        polygon[0],
+        polygon[polygon.length - 1],
+        this.options.tolerance
+      )
+    ) {
       polygon.pop();
     }
 
@@ -338,7 +373,7 @@ export class TriangulationEngine {
 
   /**
    * Add triangle to mesh with proper indexing.
-   * 
+   *
    * @param mesh - Triangulation mesh
    * @param triangle - Triangle to add
    */
@@ -380,7 +415,7 @@ export class TriangulationEngine {
 
   /**
    * Remove triangle from mesh.
-   * 
+   *
    * @param mesh - Triangulation mesh
    * @param triangle - Triangle to remove
    */
@@ -419,9 +454,9 @@ export class TriangulationEngine {
         } else if (edge.triangles[1] === triangle.id) {
           edge.triangles[1] = null;
         }
-        
+
         edge.isHull = edge.triangles[1] === null;
-        
+
         if (!edge.triangles[0] || edge.triangles[0] === '') {
           mesh.edges.delete(key);
         }
@@ -431,16 +466,22 @@ export class TriangulationEngine {
 
   /**
    * Remove super-triangle and its associated structures.
-   * 
+   *
    * @param mesh - Triangulation mesh
    * @param superTriangle - Super-triangle to remove
    */
-  private removeSuperTriangle(mesh: TriangulationMesh, superTriangle: Triangle): void {
+  private removeSuperTriangle(
+    mesh: TriangulationMesh,
+    superTriangle: Triangle
+  ): void {
     const trianglesToRemove: Triangle[] = [];
-    
+
     // Find all triangles that share vertices with super-triangle
     for (const triangle of mesh.triangles.values()) {
-      if (triangle.isSuperTriangle || this.sharesSuperTriangleVertex(triangle, superTriangle)) {
+      if (
+        triangle.isSuperTriangle ||
+        this.sharesSuperTriangleVertex(triangle, superTriangle)
+      ) {
         trianglesToRemove.push(triangle);
       }
     }
@@ -453,12 +494,15 @@ export class TriangulationEngine {
 
   /**
    * Check if triangle shares vertices with super-triangle.
-   * 
+   *
    * @param triangle - Triangle to check
    * @param superTriangle - Super-triangle
    * @returns True if shares vertices
    */
-  private sharesSuperTriangleVertex(triangle: Triangle, superTriangle: Triangle): boolean {
+  private sharesSuperTriangleVertex(
+    triangle: Triangle,
+    superTriangle: Triangle
+  ): boolean {
     for (const vertex of triangle.vertices) {
       for (const superVertex of superTriangle.vertices) {
         if (pointsEqual(vertex, superVertex, this.options.tolerance)) {
@@ -471,14 +515,17 @@ export class TriangulationEngine {
 
   /**
    * Build neighbor mapping from triangulation mesh.
-   * 
+   *
    * @param mesh - Triangulation mesh
    * @param beacons - Original beacon array for ID mapping
    * @returns Neighbor mapping for pattern detection
    */
-  private buildNeighborMap(mesh: TriangulationMesh, beacons?: Beacon[]): Map<string, Set<string>> {
+  private buildNeighborMap(
+    mesh: TriangulationMesh,
+    beacons?: Beacon[]
+  ): Map<string, Set<string>> {
     const neighborMap = new Map<string, Set<string>>();
-    
+
     // Create point-to-beacon mapping
     const pointToBeaconMap = new Map<string, string>();
     if (beacons) {
@@ -493,14 +540,14 @@ export class TriangulationEngine {
       const beaconIds = this.extractBeaconIds(edge, pointToBeaconMap);
       if (beaconIds.length === 2) {
         const [id1, id2] = beaconIds;
-        
+
         if (!neighborMap.has(id1)) {
           neighborMap.set(id1, new Set());
         }
         if (!neighborMap.has(id2)) {
           neighborMap.set(id2, new Set());
         }
-        
+
         neighborMap.get(id1)!.add(id2);
         neighborMap.get(id2)!.add(id1);
       }
@@ -511,40 +558,50 @@ export class TriangulationEngine {
 
   /**
    * Extract beacon IDs from edge vertices using point-to-beacon mapping.
-   * 
+   *
    * @param edge - Edge to extract from
    * @param pointToBeaconMap - Mapping from points to beacon IDs
    * @returns Array of beacon IDs
    */
-  private extractBeaconIds(edge: Edge, pointToBeaconMap?: Map<string, string>): string[] {
+  private extractBeaconIds(
+    edge: Edge,
+    pointToBeaconMap?: Map<string, string>
+  ): string[] {
     if (!pointToBeaconMap) return [];
-    
+
     const beaconIds: string[] = [];
     const startKey = createPointKey(edge.start);
     const endKey = createPointKey(edge.end);
-    
+
     const startBeaconId = pointToBeaconMap.get(startKey);
     const endBeaconId = pointToBeaconMap.get(endKey);
-    
+
     if (startBeaconId) beaconIds.push(startBeaconId);
     if (endBeaconId) beaconIds.push(endBeaconId);
-    
+
     return beaconIds;
   }
 
   /**
    * Calculate bounding box of points.
-   * 
+   *
    * @param points - Points to bound
    * @returns Bounding box
    */
-  private calculateBounds(points: TriangulationPoint[]): { minX: number; maxX: number; minY: number; maxY: number } {
+  private calculateBounds(points: TriangulationPoint[]): {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } {
     if (points.length === 0) {
       return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
     }
 
-    let minX = points[0].x, maxX = points[0].x;
-    let minY = points[0].y, maxY = points[0].y;
+    let minX = points[0].x,
+      maxX = points[0].x;
+    let minY = points[0].y,
+      maxY = points[0].y;
 
     for (const point of points) {
       minX = Math.min(minX, point.x);
@@ -558,7 +615,7 @@ export class TriangulationEngine {
 
   /**
    * Create empty result for degenerate cases.
-   * 
+   *
    * @param startTime - Start time for metrics
    * @returns Empty triangulation result
    */
@@ -581,7 +638,7 @@ export class TriangulationEngine {
 
   /**
    * Update triangulation options.
-   * 
+   *
    * @param options - New options
    */
   updateOptions(options: Partial<TriangulationOptions>): void {
@@ -590,7 +647,7 @@ export class TriangulationEngine {
 
   /**
    * Get current triangulation options.
-   * 
+   *
    * @returns Current options
    */
   getOptions(): TriangulationOptions {

@@ -1,4 +1,8 @@
-import { ObjectPool, PooledParticle, poolManager } from '../performance/ObjectPool';
+import {
+  ObjectPool,
+  PooledParticle,
+  poolManager,
+} from '../performance/ObjectPool';
 
 /**
  * Particle system configuration
@@ -33,7 +37,10 @@ export enum ParticleEmitterType {
 /**
  * Predefined particle configurations
  */
-export const PARTICLE_CONFIGS: Record<ParticleEmitterType, ParticleSystemConfig> = {
+export const PARTICLE_CONFIGS: Record<
+  ParticleEmitterType,
+  ParticleSystemConfig
+> = {
   [ParticleEmitterType.BEACON_PULSE]: {
     maxParticles: 20,
     emissionRate: 10,
@@ -128,7 +135,12 @@ export class ParticleSystem {
     customConfig?: Partial<ParticleSystemConfig>
   ) {
     this.config = { ...PARTICLE_CONFIGS[type], ...customConfig };
-    this.pool = poolManager.getPool('particles') || new ObjectPool(() => this.createParticle(), (p) => this.resetParticle(p));
+    this.pool =
+      poolManager.getPool('particles') ||
+      new ObjectPool(
+        () => this.createParticle(),
+        p => this.resetParticle(p)
+      );
   }
 
   /**
@@ -180,13 +192,16 @@ export class ParticleSystem {
    */
   update(deltaTime: number): void {
     const now = Date.now();
-    
+
     // Emit new particles if active
     if (this.isActive && this.particles.length < this.config.maxParticles) {
       this.accumulatedTime += deltaTime;
       const emissionInterval = 1000 / this.config.emissionRate;
-      
-      while (this.accumulatedTime >= emissionInterval && this.particles.length < this.config.maxParticles) {
+
+      while (
+        this.accumulatedTime >= emissionInterval &&
+        this.particles.length < this.config.maxParticles
+      ) {
         this.emitParticle();
         this.accumulatedTime -= emissionInterval;
       }
@@ -195,7 +210,7 @@ export class ParticleSystem {
     // Update existing particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const particle = this.particles[i];
-      
+
       if (!particle.active) {
         this.particles.splice(i, 1);
         this.pool.release(particle);
@@ -206,10 +221,10 @@ export class ParticleSystem {
       particle.x += particle.vx * (deltaTime / 1000);
       particle.y += particle.vy * (deltaTime / 1000);
       particle.vy += this.config.gravity * (deltaTime / 1000);
-      
+
       // Update particle life
       particle.life += deltaTime;
-      
+
       if (particle.life >= particle.maxLife) {
         particle.active = false;
         continue;
@@ -235,16 +250,23 @@ export class ParticleSystem {
    */
   private emitParticle(): void {
     const particle = this.pool.acquire();
-    
+
     particle.x = this.position.x;
     particle.y = this.position.y;
-    particle.vx = this.randomBetween(this.config.velocity.x.min, this.config.velocity.x.max);
-    particle.vy = this.randomBetween(this.config.velocity.y.min, this.config.velocity.y.max);
+    particle.vx = this.randomBetween(
+      this.config.velocity.x.min,
+      this.config.velocity.x.max
+    );
+    particle.vy = this.randomBetween(
+      this.config.velocity.y.min,
+      this.config.velocity.y.max
+    );
     particle.life = 0;
     particle.maxLife = this.config.particleLifetime;
     particle.size = this.config.startSize;
     particle.opacity = this.config.startOpacity;
-    particle.color = this.config.colors[Math.floor(Math.random() * this.config.colors.length)];
+    particle.color =
+      this.config.colors[Math.floor(Math.random() * this.config.colors.length)];
     particle.active = true;
 
     this.particles.push(particle);
@@ -334,17 +356,17 @@ class ParticleManager {
    * Create a particle system
    */
   createSystem(
-    id: string, 
-    type: ParticleEmitterType, 
+    id: string,
+    type: ParticleEmitterType,
     config?: Partial<ParticleSystemConfig>
   ): ParticleSystem {
     const system = new ParticleSystem(type, config);
     this.systems.set(id, system);
-    
+
     if (!this.isRunning) {
       this.start();
     }
-    
+
     return system;
   }
 
@@ -375,7 +397,7 @@ class ParticleManager {
    */
   start(): void {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     this.lastUpdateTime = Date.now();
     this.update();

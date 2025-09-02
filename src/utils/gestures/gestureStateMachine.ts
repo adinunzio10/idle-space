@@ -1,9 +1,9 @@
 /**
  * GESTURE STATE MACHINE
- * 
+ *
  * Advanced gesture state management system for handling complex gesture interactions
  * with proper conflict resolution, priority handling, and debugging tools.
- * 
+ *
  * Features:
  * - Hierarchical gesture state management
  * - Conflict resolution with priority-based arbitration
@@ -100,13 +100,17 @@ interface ConflictContext {
 
 /**
  * Advanced Gesture State Machine
- * 
+ *
  * Manages complex gesture state transitions with conflict resolution,
  * priority handling, and debugging capabilities.
  */
 export class GestureStateMachine {
   private currentState: SharedValue<GestureStateType>;
-  private stateHistory: { state: GestureStateType; timestamp: number; event?: GestureEventData }[] = [];
+  private stateHistory: {
+    state: GestureStateType;
+    timestamp: number;
+    event?: GestureEventData;
+  }[] = [];
   private activeGestures: Set<GestureStateType> = new Set();
   private debugMode: boolean = __DEV__;
   private performanceMetrics: PerformanceMetrics = {
@@ -118,7 +122,10 @@ export class GestureStateMachine {
 
   // Debugging and monitoring callbacks
   private onStateChange?: (transition: StateTransitionResult) => void;
-  private onConflictResolution?: (context: ConflictContext, resolution: string) => void;
+  private onConflictResolution?: (
+    context: ConflictContext,
+    resolution: string
+  ) => void;
   private onPerformanceUpdate?: (metrics: PerformanceMetrics) => void;
 
   constructor(sharedState: SharedValue<GestureStateType>) {
@@ -148,11 +155,11 @@ export class GestureStateMachine {
           validTransitions: VALID_TRANSITIONS[previousState],
         },
       };
-      
+
       if (this.debugMode) {
         console.warn('[GestureStateMachine] Invalid transition:', result);
       }
-      
+
       return result;
     }
 
@@ -174,7 +181,7 @@ export class GestureStateMachine {
           newState: previousState,
           conflictResolution,
         };
-        
+
         return result;
       } else if (conflictResolution.startsWith('override:')) {
         finalState = conflictResolution.split(':')[1] as GestureStateType;
@@ -188,7 +195,8 @@ export class GestureStateMachine {
       success: true,
       previousState,
       newState: finalState,
-      conflictResolution: conflictResolution !== 'allow' ? conflictResolution : undefined,
+      conflictResolution:
+        conflictResolution !== 'allow' ? conflictResolution : undefined,
       debugInfo: {
         transitionTime: Date.now() - startTime,
         eventData,
@@ -264,7 +272,10 @@ export class GestureStateMachine {
    */
   setDebugCallbacks(callbacks: {
     onStateChange?: (transition: StateTransitionResult) => void;
-    onConflictResolution?: (context: ConflictContext, resolution: string) => void;
+    onConflictResolution?: (
+      context: ConflictContext,
+      resolution: string
+    ) => void;
     onPerformanceUpdate?: (metrics: PerformanceMetrics) => void;
   }): void {
     this.onStateChange = callbacks.onStateChange;
@@ -274,7 +285,10 @@ export class GestureStateMachine {
 
   // Private methods
 
-  private isValidTransition(from: GestureStateType, to: GestureStateType): boolean {
+  private isValidTransition(
+    from: GestureStateType,
+    to: GestureStateType
+  ): boolean {
     return VALID_TRANSITIONS[from]?.includes(to) ?? false;
   }
 
@@ -288,7 +302,9 @@ export class GestureStateMachine {
     }
 
     // Special cases for simultaneous gestures - simplified
-    if (this.shouldAllowSimultaneous(activeGestures, incomingGesture, eventData)) {
+    if (
+      this.shouldAllowSimultaneous(activeGestures, incomingGesture, eventData)
+    ) {
       // Just allow the transition - let React Native Gesture Handler handle simultaneity
       const resolution = 'allow';
       this.onConflictResolution?.(context, resolution);
@@ -297,7 +313,9 @@ export class GestureStateMachine {
     }
 
     // Priority-based resolution
-    const currentPriority = Math.max(...activeGestures.map(g => GESTURE_PRIORITIES[g]));
+    const currentPriority = Math.max(
+      ...activeGestures.map(g => GESTURE_PRIORITIES[g])
+    );
     const incomingPriority = GESTURE_PRIORITIES[incomingGesture];
 
     if (incomingPriority > currentPriority) {
@@ -314,7 +332,7 @@ export class GestureStateMachine {
     const resolution = this.resolveEqualPriorityConflict(context);
     this.onConflictResolution?.(context, resolution);
     this.performanceMetrics.conflictResolutionTime = Date.now() - startTime;
-    
+
     return resolution;
   }
 
@@ -326,7 +344,7 @@ export class GestureStateMachine {
     // Allow pan + pinch combinations using simplified states
     const hasPan = activeGestures.some(g => g === GestureStateType.PANNING);
     const hasPinch = activeGestures.some(g => g === GestureStateType.PINCHING);
-    
+
     const incomingIsPan = incomingGesture === GestureStateType.PANNING;
     const incomingIsPinch = incomingGesture === GestureStateType.PINCHING;
 
@@ -357,8 +375,8 @@ export class GestureStateMachine {
         .slice()
         .reverse()
         .find(h => h.state === GestureStateType.TAPPING);
-      
-      if (lastTap && (eventData.timestamp - lastTap.timestamp) < 300) {
+
+      if (lastTap && eventData.timestamp - lastTap.timestamp < 300) {
         return 'allow'; // Allow double tap behavior in the gesture itself
       }
     }
@@ -367,7 +385,10 @@ export class GestureStateMachine {
     return 'block';
   }
 
-  private areGesturesSimilar(gesture1: GestureStateType | undefined, gesture2: GestureStateType): boolean {
+  private areGesturesSimilar(
+    gesture1: GestureStateType | undefined,
+    gesture2: GestureStateType
+  ): boolean {
     if (!gesture1) return false;
 
     // Simplified - just check if they're the same type
@@ -397,7 +418,10 @@ export class GestureStateMachine {
     }
   }
 
-  private updateActiveGestures(from: GestureStateType, to: GestureStateType): void {
+  private updateActiveGestures(
+    from: GestureStateType,
+    to: GestureStateType
+  ): void {
     // Remove completed gestures
     if (to === GestureStateType.IDLE) {
       this.activeGestures.clear();
@@ -406,7 +430,7 @@ export class GestureStateMachine {
       if (this.isActiveGesture(to)) {
         this.activeGestures.add(to);
       }
-      
+
       // Remove previous gesture if it's not active anymore
       if (!this.isActiveGesture(from)) {
         this.activeGestures.delete(from);
@@ -418,9 +442,13 @@ export class GestureStateMachine {
     return state !== GestureStateType.IDLE;
   }
 
-  private recordState(state: GestureStateType, timestamp: number, eventData?: GestureEventData): void {
+  private recordState(
+    state: GestureStateType,
+    timestamp: number,
+    eventData?: GestureEventData
+  ): void {
     this.stateHistory.push({ state, timestamp, event: eventData });
-    
+
     // Keep only recent history (last 50 states)
     if (this.stateHistory.length > 50) {
       this.stateHistory = this.stateHistory.slice(-50);
@@ -439,31 +467,37 @@ export function createStateChecker(sharedState: SharedValue<GestureStateType>) {
       'worklet';
       return sharedState.value === state;
     },
-    
+
     isAnyState: (states: GestureStateType[]) => {
       'worklet';
       return states.includes(sharedState.value);
     },
-    
+
     canTransition: (toState: GestureStateType) => {
       'worklet';
       const currentState = sharedState.value;
-      
+
       // Simplified worklet-safe transition validation
       // Much more permissive to prevent blocking issues
       switch (currentState) {
         case GestureStateType.IDLE:
           return true; // IDLE can transition to any state
         case GestureStateType.TAPPING:
-          return toState === GestureStateType.IDLE ||
-                 toState === GestureStateType.PANNING; // Tap can become pan
+          return (
+            toState === GestureStateType.IDLE ||
+            toState === GestureStateType.PANNING
+          ); // Tap can become pan
         case GestureStateType.PANNING:
-          return toState === GestureStateType.IDLE ||
-                 toState === GestureStateType.MOMENTUM ||
-                 toState === GestureStateType.PINCHING; // Allow simultaneous pan+pinch
+          return (
+            toState === GestureStateType.IDLE ||
+            toState === GestureStateType.MOMENTUM ||
+            toState === GestureStateType.PINCHING
+          ); // Allow simultaneous pan+pinch
         case GestureStateType.PINCHING:
-          return toState === GestureStateType.IDLE ||
-                 toState === GestureStateType.PANNING; // Allow simultaneous pan+pinch
+          return (
+            toState === GestureStateType.IDLE ||
+            toState === GestureStateType.PANNING
+          ); // Allow simultaneous pan+pinch
         case GestureStateType.MOMENTUM:
           return true; // Momentum can be interrupted by any gesture
         default:
@@ -487,13 +521,17 @@ export interface DebugOverlayInfo {
 /**
  * Get debug information for overlay rendering
  */
-export function getDebugOverlayInfo(stateMachine: GestureStateMachine): DebugOverlayInfo {
+export function getDebugOverlayInfo(
+  stateMachine: GestureStateMachine
+): DebugOverlayInfo {
   const history = stateMachine.getStateHistory();
-  
+
   return {
     currentState: stateMachine.getCurrentState(),
     activeGestures: [], // Would need to expose this from state machine
-    stateHistory: history.slice(-5).map(h => `${h.state}@${h.timestamp % 10000}`),
+    stateHistory: history
+      .slice(-5)
+      .map(h => `${h.state}@${h.timestamp % 10000}`),
     performanceMetrics: stateMachine.getPerformanceMetrics(),
   };
 }

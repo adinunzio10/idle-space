@@ -20,7 +20,7 @@ export const compareBeacons = (
   for (let i = 0; i < prevProps.beacons.length; i++) {
     const prev = prevProps.beacons[i];
     const next = nextProps.beacons[i];
-    
+
     if (
       prev.id !== next.id ||
       prev.position.x !== next.position.x ||
@@ -53,12 +53,22 @@ export const compareBeacons = (
  * Compare viewport state objects
  */
 export const compareViewportState = (
-  prev: { translateX: number; translateY: number; scale: number; [key: string]: any },
-  next: { translateX: number; translateY: number; scale: number; [key: string]: any }
+  prev: {
+    translateX: number;
+    translateY: number;
+    scale: number;
+    [key: string]: any;
+  },
+  next: {
+    translateX: number;
+    translateY: number;
+    scale: number;
+    [key: string]: any;
+  }
 ): boolean => {
   // Use threshold for floating point comparison
   const threshold = 0.001;
-  
+
   return (
     Math.abs(prev.translateX - next.translateX) < threshold &&
     Math.abs(prev.translateY - next.translateY) < threshold &&
@@ -111,7 +121,7 @@ export function useStableCallback<T extends (...args: any[]) => any>(
   deps: React.DependencyList
 ): T {
   const stableRef = useRef<T>(callback);
-  
+
   // Only update the ref when dependencies actually change
   useEffect(() => {
     stableRef.current = callback;
@@ -199,15 +209,18 @@ export function useBatchedState<T>(
     }
   }, []);
 
-  const setBatchedState = useCallback((newState: T | ((prev: T) => T)) => {
-    pendingUpdateRef.current = newState;
-    
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+  const setBatchedState = useCallback(
+    (newState: T | ((prev: T) => T)) => {
+      pendingUpdateRef.current = newState;
 
-    timeoutRef.current = setTimeout(flushUpdates, batchDelay);
-  }, [flushUpdates, batchDelay]);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(flushUpdates, batchDelay);
+    },
+    [flushUpdates, batchDelay]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -241,8 +254,14 @@ export function useVirtualizedList<T>(
   const { visibleItems, startIndex, endIndex, totalHeight } = useMemo(() => {
     const totalHeight = items.length * itemHeight;
     const visibleCount = Math.ceil(containerHeight / itemHeight);
-    const startIndex = Math.max(0, Math.floor(scrollOffset / itemHeight) - overscan);
-    const endIndex = Math.min(items.length - 1, startIndex + visibleCount + overscan * 2);
+    const startIndex = Math.max(
+      0,
+      Math.floor(scrollOffset / itemHeight) - overscan
+    );
+    const endIndex = Math.min(
+      items.length - 1,
+      startIndex + visibleCount + overscan * 2
+    );
 
     const visibleItems = [];
     for (let i = startIndex; i <= endIndex; i++) {
@@ -271,7 +290,7 @@ export function createOptimizedComponent<P extends Record<string, any>>(
 ): React.ComponentType<P> {
   const Component = (props: P) => render(props);
   Component.displayName = displayName;
-  
+
   return memo(Component, compareProps);
 }
 
@@ -289,7 +308,7 @@ export function useRenderTracker(componentName: string, props?: any) {
 
   useEffect(() => {
     const renderTime = performance.now() - renderStartRef.current;
-    
+
     if (__DEV__ && renderTime > 16.67) {
       console.warn(
         `[Performance] ${componentName} render took ${renderTime.toFixed(2)}ms (render #${renderCountRef.current})`,
@@ -302,7 +321,9 @@ export function useRenderTracker(componentName: string, props?: any) {
     renderCount: renderCountRef.current,
     logRenderTime: (customName?: string) => {
       const renderTime = performance.now() - renderStartRef.current;
-      console.log(`[Performance] ${customName || componentName} render: ${renderTime.toFixed(2)}ms`);
+      console.log(
+        `[Performance] ${customName || componentName} render: ${renderTime.toFixed(2)}ms`
+      );
     },
   };
 }

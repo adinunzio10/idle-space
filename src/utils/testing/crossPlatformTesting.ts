@@ -1,9 +1,9 @@
 /**
  * CROSS-PLATFORM GESTURE TESTING
- * 
+ *
  * Comprehensive testing suite for verifying gesture behavior consistency
  * across different platforms (iOS/Android), device sizes, and touch sensitivities.
- * 
+ *
  * Features:
  * - Platform-specific behavior validation
  * - Device size compatibility testing
@@ -14,7 +14,7 @@
  */
 
 import { Platform, Dimensions, PixelRatio } from 'react-native';
-import { 
+import {
   SyntheticTouchEventGenerator,
   GESTURE_TEST_PATTERNS,
   GesturePattern,
@@ -93,7 +93,7 @@ const DEVICE_SIZES: Record<string, DeviceSize> = {
     density: 2,
     category: 'tablet',
   },
-  
+
   // Android devices
   android_small: {
     name: 'Android Small',
@@ -133,9 +133,21 @@ const DEVICE_SIZES: Record<string, DeviceSize> = {
 };
 
 const TOUCH_SENSITIVITIES: TouchSensitivity[] = [
-  { name: 'Low', multiplier: 0.7, description: 'Reduced sensitivity for precision' },
-  { name: 'Normal', multiplier: 1.0, description: 'Standard touch sensitivity' },
-  { name: 'High', multiplier: 1.3, description: 'Increased sensitivity for accessibility' },
+  {
+    name: 'Low',
+    multiplier: 0.7,
+    description: 'Reduced sensitivity for precision',
+  },
+  {
+    name: 'Normal',
+    multiplier: 1.0,
+    description: 'Standard touch sensitivity',
+  },
+  {
+    name: 'High',
+    multiplier: 1.3,
+    description: 'Increased sensitivity for accessibility',
+  },
 ];
 
 // Platform-specific test configurations
@@ -176,7 +188,7 @@ const PLATFORM_CONFIGS: Record<string, PlatformTestConfig> = {
         ],
       },
       pinch: {
-        recognitionThreshold: 0.90,
+        recognitionThreshold: 0.9,
         responseTimeRange: { min: 20, max: 50 },
         accuracyThreshold: 0.93,
         platformSpecificNotes: [
@@ -186,7 +198,7 @@ const PLATFORM_CONFIGS: Record<string, PlatformTestConfig> = {
       },
     },
   },
-  
+
   android: {
     platform: 'android',
     deviceSizes: [
@@ -205,7 +217,7 @@ const PLATFORM_CONFIGS: Record<string, PlatformTestConfig> = {
     ],
     expectedBehaviors: {
       tap: {
-        recognitionThreshold: 0.90,
+        recognitionThreshold: 0.9,
         responseTimeRange: { min: 15, max: 45 },
         accuracyThreshold: 0.95,
         platformSpecificNotes: [
@@ -225,7 +237,7 @@ const PLATFORM_CONFIGS: Record<string, PlatformTestConfig> = {
       pinch: {
         recognitionThreshold: 0.85,
         responseTimeRange: { min: 25, max: 60 },
-        accuracyThreshold: 0.90,
+        accuracyThreshold: 0.9,
         platformSpecificNotes: [
           'Lower precision due to hardware variation',
           'Better with newer Android versions',
@@ -274,7 +286,7 @@ export class CrossPlatformGestureTester {
   private touchGenerator: SyntheticTouchEventGenerator;
   private performanceMonitor: GesturePerformanceMonitor;
   private testResults: CrossPlatformTestResult[] = [];
-  
+
   constructor() {
     this.touchGenerator = new SyntheticTouchEventGenerator();
     this.performanceMonitor = new GesturePerformanceMonitor();
@@ -285,23 +297,27 @@ export class CrossPlatformGestureTester {
    */
   async runFullTestSuite(): Promise<PlatformComparisonReport> {
     console.log('Starting cross-platform gesture test suite...');
-    
+
     this.testResults = [];
-    
+
     // Get current platform config
     const currentPlatform = Platform.OS === 'ios' ? 'ios' : 'android';
     const platformConfig = PLATFORM_CONFIGS[currentPlatform];
-    
+
     // Test on different device sizes
     for (const deviceSize of platformConfig.deviceSizes) {
       console.log(`Testing on ${deviceSize.name}...`);
-      
+
       // Test with different touch sensitivities
       for (const touchSensitivity of platformConfig.touchSensitivities) {
-        console.log(`  Testing with ${touchSensitivity.name} touch sensitivity...`);
-        
+        console.log(
+          `  Testing with ${touchSensitivity.name} touch sensitivity...`
+        );
+
         // Run gesture pattern tests
-        for (const [patternName, pattern] of Object.entries(GESTURE_TEST_PATTERNS)) {
+        for (const [patternName, pattern] of Object.entries(
+          GESTURE_TEST_PATTERNS
+        )) {
           const result = await this.runGestureTest(
             patternName,
             pattern,
@@ -310,7 +326,7 @@ export class CrossPlatformGestureTester {
           );
           this.testResults.push(result);
         }
-        
+
         // Run platform-specific tests
         for (const testName of platformConfig.specificTests) {
           const result = await this.runPlatformSpecificTest(
@@ -322,7 +338,7 @@ export class CrossPlatformGestureTester {
         }
       }
     }
-    
+
     // Generate comparison report
     return this.generateComparisonReport();
   }
@@ -338,26 +354,32 @@ export class CrossPlatformGestureTester {
   ): Promise<CrossPlatformTestResult> {
     // Set up device simulation
     this.simulateDevice(deviceSize);
-    
+
     // Configure touch generator for device
     this.configureTouchGenerator(deviceSize, touchSensitivity);
-    
+
     // Start performance monitoring
-    this.performanceMonitor.startMonitoring(pattern.name, pattern.touchPoints.length);
-    
+    this.performanceMonitor.startMonitoring(
+      pattern.name,
+      pattern.touchPoints.length
+    );
+
     let recognitionAccuracy = 0;
     const issues: string[] = [];
-    
+
     try {
       // Execute gesture pattern
       await this.touchGenerator.playGesturePattern(pattern);
-      
+
       // Record response time
       this.performanceMonitor.recordResponseTime(20); // Simulated
-      
+
       // Calculate recognition accuracy
-      recognitionAccuracy = await this.calculateRecognitionAccuracy(pattern, deviceSize);
-      
+      recognitionAccuracy = await this.calculateRecognitionAccuracy(
+        pattern,
+        deviceSize
+      );
+
       // Check for platform-specific issues
       const platformIssues = this.checkPlatformSpecificIssues(
         pattern.name,
@@ -365,20 +387,24 @@ export class CrossPlatformGestureTester {
         touchSensitivity
       );
       issues.push(...platformIssues);
-      
     } catch (error) {
       console.error(`Test failed for ${testName}:`, error);
       issues.push(`Test execution failed: ${error}`);
     }
-    
+
     // Stop monitoring and get metrics
     const performanceMetrics = this.performanceMonitor.stopMonitoring()!;
-    
+
     // Determine if test passed
     const currentPlatform = Platform.OS === 'ios' ? 'ios' : 'android';
-    const expectedBehavior = PLATFORM_CONFIGS[currentPlatform].expectedBehaviors[pattern.name];
-    const passed = this.evaluateTestResult(performanceMetrics, recognitionAccuracy, expectedBehavior);
-    
+    const expectedBehavior =
+      PLATFORM_CONFIGS[currentPlatform].expectedBehaviors[pattern.name];
+    const passed = this.evaluateTestResult(
+      performanceMetrics,
+      recognitionAccuracy,
+      expectedBehavior
+    );
+
     return {
       testName,
       platform: Platform.OS,
@@ -401,10 +427,10 @@ export class CrossPlatformGestureTester {
     touchSensitivity: TouchSensitivity
   ): Promise<CrossPlatformTestResult> {
     this.performanceMonitor.startMonitoring(testName, 1);
-    
+
     let recognitionAccuracy = 0.8; // Placeholder
     const issues: string[] = [];
-    
+
     try {
       switch (testName) {
         case 'edge_gestures':
@@ -425,9 +451,9 @@ export class CrossPlatformGestureTester {
     } catch (error) {
       issues.push(`Platform-specific test failed: ${error}`);
     }
-    
+
     const performanceMetrics = this.performanceMonitor.stopMonitoring()!;
-    
+
     return {
       testName,
       platform: Platform.OS,
@@ -451,32 +477,40 @@ export class CrossPlatformGestureTester {
     const results = [];
     const currentPlatform = Platform.OS === 'ios' ? 'ios' : 'android';
     const deviceSizes = PLATFORM_CONFIGS[currentPlatform].deviceSizes;
-    
+
     for (const deviceSize of deviceSizes) {
       let totalAccuracy = 0;
       let testCount = 0;
       const issues: string[] = [];
-      
+
       // Test basic gestures on this device size
-      for (const [patternName, pattern] of Object.entries(GESTURE_TEST_PATTERNS)) {
-        const accuracy = await this.calculateRecognitionAccuracy(pattern, deviceSize);
+      for (const [patternName, pattern] of Object.entries(
+        GESTURE_TEST_PATTERNS
+      )) {
+        const accuracy = await this.calculateRecognitionAccuracy(
+          pattern,
+          deviceSize
+        );
         totalAccuracy += accuracy;
         testCount++;
-        
+
         if (accuracy < 0.8) {
-          issues.push(`Low accuracy for ${patternName}: ${accuracy.toFixed(2)}`);
+          issues.push(
+            `Low accuracy for ${patternName}: ${accuracy.toFixed(2)}`
+          );
         }
       }
-      
+
       results.push({
         deviceSize: deviceSize.name,
         accuracy: totalAccuracy / testCount,
         issues,
       });
     }
-    
-    const overallCompatibility = results.reduce((sum, r) => sum + r.accuracy, 0) / results.length;
-    
+
+    const overallCompatibility =
+      results.reduce((sum, r) => sum + r.accuracy, 0) / results.length;
+
     return { results, overallCompatibility };
   }
 
@@ -485,12 +519,13 @@ export class CrossPlatformGestureTester {
    */
   private generateComparisonReport(): PlatformComparisonReport {
     const platformResults = this.groupResultsByPlatform();
-    const platformDifferences = this.calculatePlatformDifferences(platformResults);
-    
+    const platformDifferences =
+      this.calculatePlatformDifferences(platformResults);
+
     const totalTests = this.testResults.length;
     const passedTests = this.testResults.filter(r => r.passed).length;
     const failedTests = totalTests - passedTests;
-    
+
     return {
       testSuite: 'Cross-Platform Gesture Testing',
       platforms: Object.keys(platformResults),
@@ -504,14 +539,19 @@ export class CrossPlatformGestureTester {
   }
 
   // Private helper methods
-  
+
   private simulateDevice(deviceSize: DeviceSize): void {
     // Simulate device characteristics
     // In a real implementation, this would adjust viewport and touch handling
-    console.log(`Simulating device: ${deviceSize.name} (${deviceSize.width}x${deviceSize.height})`);
+    console.log(
+      `Simulating device: ${deviceSize.name} (${deviceSize.width}x${deviceSize.height})`
+    );
   }
 
-  private configureTouchGenerator(deviceSize: DeviceSize, touchSensitivity: TouchSensitivity): void {
+  private configureTouchGenerator(
+    deviceSize: DeviceSize,
+    touchSensitivity: TouchSensitivity
+  ): void {
     // Configure touch generator based on device characteristics
     // This would adjust touch areas, pressure sensitivity, etc.
   }
@@ -523,7 +563,7 @@ export class CrossPlatformGestureTester {
     // Simulate gesture recognition accuracy calculation
     // In reality, this would measure how well the gesture was recognized
     const baseAccuracy = 0.9;
-    
+
     // Adjust based on device size
     let sizeAdjustment = 0;
     if (deviceSize.category === 'tablet') {
@@ -531,10 +571,10 @@ export class CrossPlatformGestureTester {
     } else if (deviceSize.width < 350) {
       sizeAdjustment = -0.1; // Small screens are harder
     }
-    
+
     // Add some randomness to simulate real-world variation
     const variance = (Math.random() - 0.5) * 0.1;
-    
+
     return Math.max(0, Math.min(1, baseAccuracy + sizeAdjustment + variance));
   }
 
@@ -544,25 +584,27 @@ export class CrossPlatformGestureTester {
     touchSensitivity: TouchSensitivity
   ): string[] {
     const issues: string[] = [];
-    
+
     // iOS-specific checks
     if (Platform.OS === 'ios') {
       if (patternName === 'pan' && deviceSize.name.includes('iPhone')) {
-        if (Math.random() < 0.1) { // 10% chance of edge gesture conflict
+        if (Math.random() < 0.1) {
+          // 10% chance of edge gesture conflict
           issues.push('Pan gesture may conflict with iOS edge gestures');
         }
       }
     }
-    
+
     // Android-specific checks
     if (Platform.OS === 'android') {
       if (patternName === 'pan' && touchSensitivity.multiplier > 1.2) {
-        if (Math.random() < 0.15) { // 15% chance of navigation conflict
+        if (Math.random() < 0.15) {
+          // 15% chance of navigation conflict
           issues.push('High sensitivity pan may trigger navigation gestures');
         }
       }
     }
-    
+
     return issues;
   }
 
@@ -573,38 +615,56 @@ export class CrossPlatformGestureTester {
   ): boolean {
     if (!expectedBehavior) {
       // Use default criteria
-      return metrics.averageFrameRate >= 55 &&
-             metrics.responseTime <= 100 &&
-             accuracy >= 0.8;
+      return (
+        metrics.averageFrameRate >= 55 &&
+        metrics.responseTime <= 100 &&
+        accuracy >= 0.8
+      );
     }
-    
-    return accuracy >= expectedBehavior.accuracyThreshold &&
-           metrics.responseTime >= expectedBehavior.responseTimeRange.min &&
-           metrics.responseTime <= expectedBehavior.responseTimeRange.max &&
-           metrics.averageFrameRate >= 55;
+
+    return (
+      accuracy >= expectedBehavior.accuracyThreshold &&
+      metrics.responseTime >= expectedBehavior.responseTimeRange.min &&
+      metrics.responseTime <= expectedBehavior.responseTimeRange.max &&
+      metrics.averageFrameRate >= 55
+    );
   }
 
   private async testEdgeGestures(deviceSize: DeviceSize): Promise<void> {
     // Test edge gesture interactions (iOS specific)
     if (Platform.OS === 'ios') {
-      await this.touchGenerator.generatePan(0, deviceSize.height / 2, 50, deviceSize.height / 2);
+      await this.touchGenerator.generatePan(
+        0,
+        deviceSize.height / 2,
+        50,
+        deviceSize.height / 2
+      );
     }
   }
 
   private async testForceTouch(deviceSize: DeviceSize): Promise<void> {
     // Test force touch interactions (iOS specific)
     if (Platform.OS === 'ios') {
-      await this.touchGenerator.generateTap(deviceSize.width / 2, deviceSize.height / 2, {
-        force: 0.8,
-        duration: 200,
-      });
+      await this.touchGenerator.generateTap(
+        deviceSize.width / 2,
+        deviceSize.height / 2,
+        {
+          force: 0.8,
+          duration: 200,
+        }
+      );
     }
   }
 
   private async testBackGesture(deviceSize: DeviceSize): Promise<void> {
     // Test Android back gesture
     if (Platform.OS === 'android') {
-      await this.touchGenerator.generatePan(0, deviceSize.height / 2, deviceSize.width / 3, deviceSize.height / 2);
+      await this.touchGenerator.generatePan(
+        0,
+        deviceSize.height / 2,
+        deviceSize.width / 3,
+        deviceSize.height / 2
+      );
     }
   }
 
@@ -623,14 +683,14 @@ export class CrossPlatformGestureTester {
 
   private groupResultsByPlatform(): Record<string, CrossPlatformTestResult[]> {
     const grouped: Record<string, CrossPlatformTestResult[]> = {};
-    
+
     for (const result of this.testResults) {
       if (!grouped[result.platform]) {
         grouped[result.platform] = [];
       }
       grouped[result.platform].push(result);
     }
-    
+
     return grouped;
   }
 
@@ -638,13 +698,14 @@ export class CrossPlatformGestureTester {
     platformResults: Record<string, CrossPlatformTestResult[]>
   ): PlatformDifference[] {
     const differences: PlatformDifference[] = [];
-    
+
     // Compare metrics between platforms
     const metrics = ['averageFrameRate', 'responseTime', 'recognitionAccuracy'];
-    
+
     for (const metric of metrics) {
-      const platformStats: Record<string, { value: number; variance: number }> = {};
-      
+      const platformStats: Record<string, { value: number; variance: number }> =
+        {};
+
       for (const [platform, results] of Object.entries(platformResults)) {
         const values = results.map(r => {
           if (metric === 'recognitionAccuracy') {
@@ -652,21 +713,24 @@ export class CrossPlatformGestureTester {
           }
           return (r.performanceMetrics as any)[metric] || 0;
         });
-        
+
         const value = values.reduce((a, b) => a + b, 0) / values.length;
         const variance = this.calculateVariance(values);
-        
+
         platformStats[platform] = { value, variance };
       }
-      
+
       // Determine if there's a significant difference
       const platforms = Object.keys(platformStats);
       if (platforms.length >= 2) {
         const [platform1, platform2] = platforms;
-        const diff = Math.abs(platformStats[platform1].value - platformStats[platform2].value);
-        const avgValue = (platformStats[platform1].value + platformStats[platform2].value) / 2;
+        const diff = Math.abs(
+          platformStats[platform1].value - platformStats[platform2].value
+        );
+        const avgValue =
+          (platformStats[platform1].value + platformStats[platform2].value) / 2;
         const significantDifference = diff > avgValue * 0.1; // 10% difference threshold
-        
+
         differences.push({
           metric,
           [platform1 + 'Platform']: platformStats[platform1],
@@ -676,7 +740,7 @@ export class CrossPlatformGestureTester {
         });
       }
     }
-    
+
     return differences;
   }
 
@@ -686,21 +750,25 @@ export class CrossPlatformGestureTester {
     return squaredDiffs.reduce((a, b) => a + b, 0) / values.length;
   }
 
-  private determineImpact(metric: string, difference: number, avgValue: number): 'low' | 'medium' | 'high' {
+  private determineImpact(
+    metric: string,
+    difference: number,
+    avgValue: number
+  ): 'low' | 'medium' | 'high' {
     const percentDiff = (difference / avgValue) * 100;
-    
+
     if (metric === 'averageFrameRate') {
       if (percentDiff > 10) return 'high';
       if (percentDiff > 5) return 'medium';
       return 'low';
     }
-    
+
     if (metric === 'responseTime') {
       if (percentDiff > 25) return 'high';
       if (percentDiff > 15) return 'medium';
       return 'low';
     }
-    
+
     // Default impact assessment
     if (percentDiff > 20) return 'high';
     if (percentDiff > 10) return 'medium';
@@ -709,25 +777,33 @@ export class CrossPlatformGestureTester {
 
   private generateRecommendations(differences: PlatformDifference[]): string[] {
     const recommendations: string[] = [];
-    
+
     for (const diff of differences.filter(d => d.significantDifference)) {
       if (diff.metric === 'averageFrameRate' && diff.impact === 'high') {
-        recommendations.push(`Address frame rate differences between platforms for ${diff.metric}`);
+        recommendations.push(
+          `Address frame rate differences between platforms for ${diff.metric}`
+        );
       }
-      
+
       if (diff.metric === 'responseTime' && diff.impact !== 'low') {
-        recommendations.push(`Optimize response time consistency across platforms`);
+        recommendations.push(
+          `Optimize response time consistency across platforms`
+        );
       }
-      
+
       if (diff.metric === 'recognitionAccuracy' && diff.impact === 'high') {
-        recommendations.push(`Improve gesture recognition accuracy on lower-performing platform`);
+        recommendations.push(
+          `Improve gesture recognition accuracy on lower-performing platform`
+        );
       }
     }
-    
+
     if (recommendations.length === 0) {
-      recommendations.push('Cross-platform performance is consistent - no major issues detected');
+      recommendations.push(
+        'Cross-platform performance is consistent - no major issues detected'
+      );
     }
-    
+
     return recommendations;
   }
 }

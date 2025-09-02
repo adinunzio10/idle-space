@@ -105,7 +105,7 @@ export class QuadTreeNode {
    */
   query(queryBounds: Bounds): QuadTreeItem[] {
     const result: QuadTreeItem[] = [];
-    
+
     if (!this.intersects(queryBounds)) {
       return result;
     }
@@ -144,29 +144,36 @@ export class QuadTreeNode {
     return candidates.filter(item => {
       const dx = item.position.x - center.x;
       const dy = item.position.y - center.y;
-      return (dx * dx + dy * dy) <= radiusSquared;
+      return dx * dx + dy * dy <= radiusSquared;
     });
   }
 
   /**
    * Find k nearest neighbors
    */
-  queryKNearest(center: Point2D, k: number, maxRadius: number = Infinity): QuadTreeItem[] {
+  queryKNearest(
+    center: Point2D,
+    k: number,
+    maxRadius: number = Infinity
+  ): QuadTreeItem[] {
     interface DistanceItem {
       item: QuadTreeItem;
       distance: number;
     }
 
     const candidates: DistanceItem[] = [];
-    const searchRadius = Math.min(maxRadius, Math.max(this.bounds.width, this.bounds.height));
-    
+    const searchRadius = Math.min(
+      maxRadius,
+      Math.max(this.bounds.width, this.bounds.height)
+    );
+
     const items = this.queryRadius(center, searchRadius);
-    
+
     for (const item of items) {
       const dx = item.position.x - center.x;
       const dy = item.position.y - center.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       candidates.push({ item, distance });
     }
 
@@ -180,13 +187,13 @@ export class QuadTreeNode {
    */
   getAllItems(): QuadTreeItem[] {
     const result: QuadTreeItem[] = [...this.items];
-    
+
     if (this.children) {
       for (const child of this.children) {
         result.push(...child.getAllItems());
       }
     }
-    
+
     return result;
   }
 
@@ -255,7 +262,12 @@ export class QuadTreeNode {
       ),
       // Bottom-right
       new QuadTreeNode(
-        { x: x + halfWidth, y: y + halfHeight, width: halfWidth, height: halfHeight },
+        {
+          x: x + halfWidth,
+          y: y + halfHeight,
+          width: halfWidth,
+          height: halfHeight,
+        },
         this.maxItems,
         this.maxDepth,
         this.depth + 1
@@ -274,7 +286,7 @@ export class QuadTreeNode {
           break;
         }
       }
-      
+
       // If item couldn't be inserted into children, keep it here
       if (!inserted) {
         this.items.push(item);
@@ -405,7 +417,7 @@ export class QuadTreeSpatialIndex {
     const allItems = this.quadTree.getAllItems();
     this.bounds = newBounds;
     this.quadTree = new QuadTreeNode(newBounds);
-    
+
     for (const item of allItems) {
       this.quadTree.insert(item);
     }

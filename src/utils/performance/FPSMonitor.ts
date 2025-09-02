@@ -1,5 +1,8 @@
 import { InteractionManager } from 'react-native';
 
+// React import for the hook
+import * as React from 'react';
+
 /**
  * FPS monitoring specifically for React Native applications
  * Uses requestAnimationFrame and InteractionManager for accurate measurements
@@ -11,21 +14,21 @@ export class FPSMonitor {
   private frameTimes: number[] = [];
   private isRunning: boolean = false;
   private animationFrameId: number | null = null;
-  private callbacks: Array<(fps: number, frameTime: number) => void> = [];
+  private callbacks: ((fps: number, frameTime: number) => void)[] = [];
   private updateInterval: number = 1000; // Update every second
   private lastUpdateTime: number = 0;
-  
+
   // Performance thresholds
   private readonly TARGET_FPS = 60;
   private readonly ACCEPTABLE_FPS = 45;
   private readonly POOR_FPS = 30;
-  
+
   /**
    * Start FPS monitoring
    */
   start(): void {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     this.frameCount = 0;
     this.startTime = performance.now();
@@ -67,8 +70,10 @@ export class FPSMonitor {
    */
   getCurrentFPS(): number {
     if (this.frameTimes.length === 0) return 0;
-    
-    const avgFrameTime = this.frameTimes.reduce((sum, time) => sum + time, 0) / this.frameTimes.length;
+
+    const avgFrameTime =
+      this.frameTimes.reduce((sum, time) => sum + time, 0) /
+      this.frameTimes.length;
     return Math.min(this.TARGET_FPS, 1000 / avgFrameTime);
   }
 
@@ -77,7 +82,7 @@ export class FPSMonitor {
    */
   getPerformanceQuality(): 'excellent' | 'good' | 'poor' | 'critical' {
     const fps = this.getCurrentFPS();
-    
+
     if (fps >= this.TARGET_FPS - 5) return 'excellent';
     if (fps >= this.ACCEPTABLE_FPS) return 'good';
     if (fps >= this.POOR_FPS) return 'poor';
@@ -97,13 +102,15 @@ export class FPSMonitor {
   } {
     const now = performance.now();
     const uptime = now - this.startTime;
-    const avgFrameTime = this.frameTimes.length > 0 
-      ? this.frameTimes.reduce((sum, time) => sum + time, 0) / this.frameTimes.length 
-      : 0;
-    
+    const avgFrameTime =
+      this.frameTimes.length > 0
+        ? this.frameTimes.reduce((sum, time) => sum + time, 0) /
+          this.frameTimes.length
+        : 0;
+
     // Calculate frame drops (frames that took longer than 16.67ms)
     const frameDrops = this.frameTimes.filter(time => time > 16.67).length;
-    
+
     return {
       currentFPS: this.getCurrentFPS(),
       avgFrameTime,
@@ -133,7 +140,7 @@ export class FPSMonitor {
    */
   private scheduleFrame = (): void => {
     if (!this.isRunning) return;
-    
+
     this.animationFrameId = requestAnimationFrame(this.measureFrame);
   };
 
@@ -149,7 +156,7 @@ export class FPSMonitor {
 
     // Store frame time for averaging
     this.frameTimes.push(frameTime);
-    
+
     // Keep only the last 60 frames for moving average
     if (this.frameTimes.length > 60) {
       this.frameTimes.shift();
@@ -169,9 +176,11 @@ export class FPSMonitor {
    */
   private notifyCallbacks(): void {
     const fps = this.getCurrentFPS();
-    const avgFrameTime = this.frameTimes.length > 0 
-      ? this.frameTimes.reduce((sum, time) => sum + time, 0) / this.frameTimes.length 
-      : 0;
+    const avgFrameTime =
+      this.frameTimes.length > 0
+        ? this.frameTimes.reduce((sum, time) => sum + time, 0) /
+          this.frameTimes.length
+        : 0;
 
     this.callbacks.forEach(callback => {
       try {
@@ -213,9 +222,11 @@ export class ReactNativePerformanceMonitor extends FPSMonitor {
     memoryWarning: boolean;
   } {
     const baseMetrics = this.getMetrics();
-    const avgInteractionDelay = this.interactionDelays.length > 0
-      ? this.interactionDelays.reduce((sum, delay) => sum + delay, 0) / this.interactionDelays.length
-      : 0;
+    const avgInteractionDelay =
+      this.interactionDelays.length > 0
+        ? this.interactionDelays.reduce((sum, delay) => sum + delay, 0) /
+          this.interactionDelays.length
+        : 0;
 
     return {
       fps: baseMetrics.currentFPS,
@@ -243,7 +254,7 @@ export class ReactNativePerformanceMonitor extends FPSMonitor {
   private scheduleInteractionTest(): void {
     setTimeout(() => {
       if (!this.isActive()) return;
-      
+
       this.testInteractionDelay();
       this.scheduleInteractionTest();
     }, this.interactionTestInterval);
@@ -254,20 +265,20 @@ export class ReactNativePerformanceMonitor extends FPSMonitor {
    */
   private testInteractionDelay(): void {
     const startTime = performance.now();
-    
+
     InteractionManager.runAfterInteractions(() => {
       const delay = performance.now() - startTime;
-      
+
       this.interactionDelays.push(delay);
-      
+
       // Keep only last 10 measurements
       if (this.interactionDelays.length > 10) {
         this.interactionDelays.shift();
       }
-      
+
       // Consider JS thread blocked if delay > 100ms
       this.jsThreadBlocked = delay > 100;
-      
+
       this.lastInteractionTest = Date.now();
     });
   }
@@ -279,10 +290,12 @@ export class ReactNativePerformanceMonitor extends FPSMonitor {
     // In React Native, we don't have direct access to memory info
     // This is a simplified check based on performance degradation
     const fps = this.getCurrentFPS();
-    const avgInteractionDelay = this.interactionDelays.length > 0
-      ? this.interactionDelays.reduce((sum, delay) => sum + delay, 0) / this.interactionDelays.length
-      : 0;
-    
+    const avgInteractionDelay =
+      this.interactionDelays.length > 0
+        ? this.interactionDelays.reduce((sum, delay) => sum + delay, 0) /
+          this.interactionDelays.length
+        : 0;
+
     // Heuristic: low FPS + high interaction delays might indicate memory pressure
     return fps < 30 && avgInteractionDelay > 200;
   }
@@ -297,7 +310,9 @@ export const fpsMonitor = new ReactNativePerformanceMonitor();
  * React hook for FPS monitoring
  */
 export function useFPSMonitor() {
-  const [metrics, setMetrics] = React.useState(() => fpsMonitor.getExtendedMetrics());
+  const [metrics, setMetrics] = React.useState(() =>
+    fpsMonitor.getExtendedMetrics()
+  );
 
   React.useEffect(() => {
     const callback = () => {
@@ -314,6 +329,3 @@ export function useFPSMonitor() {
 
   return metrics;
 }
-
-// React import for the hook
-import * as React from 'react';

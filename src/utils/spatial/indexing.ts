@@ -44,7 +44,7 @@ export class SpatialIndex {
   addBeacon(beacon: Beacon): void {
     // Remove existing entry if it exists (for updates)
     this.removeBeacon(beacon);
-    
+
     const item = this.createRBushItem(beacon);
     this.tree.insert(item);
     this.beaconMap.set(beacon.id, item);
@@ -91,10 +91,10 @@ export class SpatialIndex {
   findNearest(point: Point2D, maxDistance: number = Infinity): Beacon | null {
     // Search in expanding circular areas around the point
     const searchSteps = [50, 100, 200, 500, 1000, maxDistance];
-    
+
     for (const radius of searchSteps) {
       if (radius > maxDistance) continue;
-      
+
       const searchBounds = {
         minX: point.x - radius,
         minY: point.y - radius,
@@ -103,7 +103,7 @@ export class SpatialIndex {
       };
 
       const candidates = this.tree.search(searchBounds);
-      
+
       let nearest: Beacon | null = null;
       let nearestDistance = maxDistance;
 
@@ -111,9 +111,9 @@ export class SpatialIndex {
         const beacon = item.beacon;
         const distance = Math.sqrt(
           Math.pow(beacon.position.x - point.x, 2) +
-          Math.pow(beacon.position.y - point.y, 2)
+            Math.pow(beacon.position.y - point.y, 2)
         );
-        
+
         if (distance < nearestDistance) {
           nearest = beacon;
           nearestDistance = distance;
@@ -142,7 +142,7 @@ export class SpatialIndex {
    */
   rebuild(beacons: Beacon[]): void {
     this.clear();
-    
+
     // Use bulk loading for better R-tree performance
     if (beacons.length > 0) {
       const items = beacons.map(beacon => {
@@ -150,7 +150,7 @@ export class SpatialIndex {
         this.beaconMap.set(beacon.id, item);
         return item;
       });
-      
+
       // Bulk load for O(n log n) construction instead of O(n²)
       this.tree.load(items);
     }
@@ -186,7 +186,7 @@ export class SpatialIndex {
       .filter(beacon => {
         const dx = beacon.position.x - center.x;
         const dy = beacon.position.y - center.y;
-        return (dx * dx + dy * dy) <= radiusSquared;
+        return dx * dx + dy * dy <= radiusSquared;
       });
   }
 
@@ -195,8 +195,10 @@ export class SpatialIndex {
    */
   rebalanceIfNeeded(): void {
     const stats = this.getStats();
-    const beacons = Array.from(this.beaconMap.values()).map(item => item.beacon);
-    
+    const beacons = Array.from(this.beaconMap.values()).map(
+      item => item.beacon
+    );
+
     // Rebalance if tree becomes too deep (indicates poor balance)
     if (stats.treeHeight > Math.log2(stats.totalBeacons) * 2) {
       this.rebuild(beacons);

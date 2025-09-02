@@ -100,9 +100,9 @@ export function generateStarsForLayer(
 ): Star[] {
   const rng = new SeededRandom(config.seed + layer.id * 1000);
   const stars: Star[] = [];
-  
+
   const adjustedStarCount = Math.floor(layer.starCount * config.densityFactor);
-  
+
   for (let i = 0; i < adjustedStarCount; i++) {
     const star: Star = {
       id: `star-${layer.id}-${i}`,
@@ -115,24 +115,26 @@ export function generateStarsForLayer(
       brightness: rng.range(0.3, 1.0),
       color: layer.color,
     };
-    
+
     stars.push(star);
   }
-  
+
   return stars;
 }
 
 /**
  * Generate all stars for the starfield
  */
-export function generateStarField(config: StarFieldConfig = DEFAULT_STARFIELD_CONFIG): Star[] {
+export function generateStarField(
+  config: StarFieldConfig = DEFAULT_STARFIELD_CONFIG
+): Star[] {
   const allStars: Star[] = [];
-  
+
   for (const layer of config.layers) {
     const layerStars = generateStarsForLayer(layer, config);
     allStars.push(...layerStars);
   }
-  
+
   return allStars;
 }
 
@@ -148,14 +150,14 @@ export function getVisibleStars(
 ): Star[] {
   return stars.filter(star => {
     if (star.layer !== layerId) return false;
-    
+
     // Adjust star position based on parallax
     const adjustedX = star.position.x + parallaxOffset.x;
     const adjustedY = star.position.y + parallaxOffset.y;
-    
+
     // Add padding to account for star size
     const padding = star.size * 2;
-    
+
     return (
       adjustedX >= viewportBounds.minX - padding &&
       adjustedX <= viewportBounds.maxX + padding &&
@@ -193,7 +195,7 @@ export function getOptimalDensityFactor(): number {
  */
 export const STAR_COLORS = {
   white: '#F8FAFC',
-  blue: '#DBEAFE', 
+  blue: '#DBEAFE',
   yellow: '#FEF3C7',
   orange: '#FED7AA',
   red: '#FECACA',

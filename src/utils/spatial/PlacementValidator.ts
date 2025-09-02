@@ -1,9 +1,9 @@
 import { Point2D } from '../../types/galaxy';
-import { 
-  BeaconType, 
-  BeaconValidationResult, 
+import {
+  BeaconType,
+  BeaconValidationResult,
   BeaconPlacementInfo,
-  BEACON_PLACEMENT_CONFIG 
+  BEACON_PLACEMENT_CONFIG,
 } from '../../types/beacon';
 import { Beacon } from '../../entities/Beacon';
 
@@ -34,7 +34,7 @@ export class PlacementValidator {
    */
   public updateBeacons(beacons: Record<string, Beacon> | Beacon[]): void {
     this.beacons.clear();
-    
+
     if (Array.isArray(beacons)) {
       beacons.forEach(beacon => {
         this.beacons.set(beacon.id, beacon);
@@ -64,8 +64,8 @@ export class PlacementValidator {
    * Validate if a position is valid for placing a beacon
    */
   public isValidPosition(
-    position: Point2D, 
-    beaconType: BeaconType, 
+    position: Point2D,
+    beaconType: BeaconType,
     excludeBeaconId?: string
   ): BeaconValidationResult {
     const reasons: string[] = [];
@@ -77,7 +77,11 @@ export class PlacementValidator {
     }
 
     // Check distance constraints
-    const distanceResult = this.checkMinimumDistance(position, beaconType, excludeBeaconId);
+    const distanceResult = this.checkMinimumDistance(
+      position,
+      beaconType,
+      excludeBeaconId
+    );
     if (!distanceResult.isValid) {
       reasons.push(...distanceResult.reasons);
     }
@@ -99,12 +103,16 @@ export class PlacementValidator {
     const outOfBounds = { x: false, y: false };
 
     if (position.x < bounds.minX || position.x > bounds.maxX) {
-      reasons.push(`X coordinate ${position.x} is outside bounds [${bounds.minX}, ${bounds.maxX}]`);
+      reasons.push(
+        `X coordinate ${position.x} is outside bounds [${bounds.minX}, ${bounds.maxX}]`
+      );
       outOfBounds.x = true;
     }
 
     if (position.y < bounds.minY || position.y > bounds.maxY) {
-      reasons.push(`Y coordinate ${position.y} is outside bounds [${bounds.minY}, ${bounds.maxY}]`);
+      reasons.push(
+        `Y coordinate ${position.y} is outside bounds [${bounds.minY}, ${bounds.maxY}]`
+      );
       outOfBounds.y = true;
     }
 
@@ -136,7 +144,7 @@ export class PlacementValidator {
       }
 
       const distance = this.calculateDistance(position, beacon.position);
-      
+
       if (!closestBeacon || distance < closestBeacon.distance) {
         closestBeacon = { beacon, distance };
       }
@@ -144,7 +152,9 @@ export class PlacementValidator {
       if (distance < minDistance) {
         return {
           isValid: false,
-          reasons: [`Too close to beacon ${beacon.id} (${distance.toFixed(1)} < ${minDistance})`],
+          reasons: [
+            `Too close to beacon ${beacon.id} (${distance.toFixed(1)} < ${minDistance})`,
+          ],
           minDistanceViolation: {
             nearestBeacon: beacon.id,
             distance,
@@ -185,7 +195,10 @@ export class PlacementValidator {
   /**
    * Find the nearest beacon to a position
    */
-  public findNearestBeacon(position: Point2D, excludeBeaconId?: string): {
+  public findNearestBeacon(
+    position: Point2D,
+    excludeBeaconId?: string
+  ): {
     beacon: Beacon;
     distance: number;
   } | null {
@@ -208,9 +221,15 @@ export class PlacementValidator {
   /**
    * Get placement info including potential connections
    */
-  public getPlacementInfo(position: Point2D, beaconType: BeaconType): BeaconPlacementInfo {
+  public getPlacementInfo(
+    position: Point2D,
+    beaconType: BeaconType
+  ): BeaconPlacementInfo {
     const validation = this.isValidPosition(position, beaconType);
-    const estimatedConnections = this.getEstimatedConnections(position, beaconType);
+    const estimatedConnections = this.getEstimatedConnections(
+      position,
+      beaconType
+    );
     const territoryRadius = this.calculateTerritoryRadius(position, beaconType);
 
     return {
@@ -226,10 +245,14 @@ export class PlacementValidator {
   /**
    * Get estimated connections for a beacon at position
    */
-  private getEstimatedConnections(position: Point2D, beaconType: BeaconType): string[] {
+  private getEstimatedConnections(
+    position: Point2D,
+    beaconType: BeaconType
+  ): string[] {
     const connections: string[] = [];
-    const connectionRange = BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType] * 2; // Rough estimate
-    
+    const connectionRange =
+      BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE[beaconType] * 2; // Rough estimate
+
     for (const beacon of this.beacons.values()) {
       const distance = this.calculateDistance(position, beacon.position);
       if (distance <= connectionRange) {
@@ -243,7 +266,10 @@ export class PlacementValidator {
   /**
    * Calculate territory radius for a beacon type
    */
-  private calculateTerritoryRadius(position: Point2D, beaconType: BeaconType): number {
+  private calculateTerritoryRadius(
+    position: Point2D,
+    beaconType: BeaconType
+  ): number {
     const minDistance = this.config.minimumDistances[beaconType];
     return minDistance * BEACON_PLACEMENT_CONFIG.TERRITORY_RADIUS_MULTIPLIER;
   }
@@ -260,7 +286,11 @@ export class PlacementValidator {
   /**
    * Check if a position is safe (far from boundaries and other beacons)
    */
-  public isSafePosition(position: Point2D, beaconType: BeaconType, safetyMargin: number = 20): boolean {
+  public isSafePosition(
+    position: Point2D,
+    beaconType: BeaconType,
+    safetyMargin: number = 20
+  ): boolean {
     const { bounds } = this.config;
     const minDistance = this.config.minimumDistances[beaconType];
 
@@ -298,9 +328,9 @@ export class PlacementValidator {
     let attempt = 0;
 
     while (positions.length < maxPositions && attempt < attempts) {
-      const angle = (Math.random() * 2 * Math.PI);
+      const angle = Math.random() * 2 * Math.PI;
       const distance = Math.random() * region.radius;
-      
+
       const position: Point2D = {
         x: region.center.x + distance * Math.cos(angle),
         y: region.center.y + distance * Math.sin(angle),
@@ -309,7 +339,7 @@ export class PlacementValidator {
       if (this.isSafePosition(position, beaconType)) {
         positions.push(position);
       }
-      
+
       attempt++;
     }
 
@@ -370,7 +400,7 @@ export class PlacementValidator {
         patternType,
         validation
       );
-      
+
       if (correction) {
         correctedPosition = correction.position;
         confidence = correction.confidence;
@@ -401,12 +431,14 @@ export class PlacementValidator {
     const minDistance = this.config.minimumDistances[beaconType];
     const maxCorrectionDistance = minDistance * 2; // Don't move too far from original
     const attempts = 24; // Try 24 directions around the original position
-    
+
     const reasons: string[] = [];
 
     // Try different correction strategies based on the validation failure
     if (validation.minDistanceViolation) {
-      const violatingBeacon = this.beacons.get(validation.minDistanceViolation.nearestBeacon);
+      const violatingBeacon = this.beacons.get(
+        validation.minDistanceViolation.nearestBeacon
+      );
       if (violatingBeacon) {
         const corrected = this.correctForMinDistanceViolation(
           originalPosition,
@@ -425,7 +457,10 @@ export class PlacementValidator {
     }
 
     if (validation.outOfBounds) {
-      const corrected = this.correctForBoundsViolation(originalPosition, beaconType);
+      const corrected = this.correctForBoundsViolation(
+        originalPosition,
+        beaconType
+      );
       if (corrected) {
         return {
           position: corrected,
@@ -438,22 +473,30 @@ export class PlacementValidator {
     // General spiral search for valid position
     for (let i = 0; i < attempts; i++) {
       const angle = (i / attempts) * 2 * Math.PI;
-      const radius = (minDistance * 0.5) + (i / attempts) * maxCorrectionDistance;
-      
+      const radius = minDistance * 0.5 + (i / attempts) * maxCorrectionDistance;
+
       const candidatePosition = {
         x: originalPosition.x + radius * Math.cos(angle),
         y: originalPosition.y + radius * Math.sin(angle),
       };
 
-      const candidateValidation = this.isValidPosition(candidatePosition, beaconType);
+      const candidateValidation = this.isValidPosition(
+        candidatePosition,
+        beaconType
+      );
       if (candidateValidation.isValid) {
-        const distance = this.calculateDistance(originalPosition, candidatePosition);
-        const confidence = Math.max(0.3, 1 - (distance / maxCorrectionDistance));
-        
+        const distance = this.calculateDistance(
+          originalPosition,
+          candidatePosition
+        );
+        const confidence = Math.max(0.3, 1 - distance / maxCorrectionDistance);
+
         return {
           position: candidatePosition,
           confidence,
-          reasons: [`Found valid position ${distance.toFixed(1)} units away from original`],
+          reasons: [
+            `Found valid position ${distance.toFixed(1)} units away from original`,
+          ],
         };
       }
     }
@@ -513,8 +556,14 @@ export class PlacementValidator {
     const margin = 10; // Safety margin from boundaries
 
     const correctedPosition = {
-      x: Math.max(bounds.minX + margin, Math.min(bounds.maxX - margin, position.x)),
-      y: Math.max(bounds.minY + margin, Math.min(bounds.maxY - margin, position.y)),
+      x: Math.max(
+        bounds.minX + margin,
+        Math.min(bounds.maxX - margin, position.x)
+      ),
+      y: Math.max(
+        bounds.minY + margin,
+        Math.min(bounds.maxY - margin, position.y)
+      ),
     };
 
     const validation = this.isValidPosition(correctedPosition, beaconType);
@@ -524,7 +573,9 @@ export class PlacementValidator {
   /**
    * Get pattern-preferred angle for positioning corrections
    */
-  private getPatternPreferredAngle(patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'): number {
+  private getPatternPreferredAngle(
+    patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'
+  ): number {
     switch (patternType) {
       case 'triangle':
         return Math.PI / 3; // 60 degrees
@@ -548,17 +599,29 @@ export class PlacementValidator {
     patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon'
   ): {
     validPositions: Point2D[];
-    correctedPositions: { original: Point2D; corrected: Point2D; confidence: number }[];
+    correctedPositions: {
+      original: Point2D;
+      corrected: Point2D;
+      confidence: number;
+    }[];
     invalidPositions: Point2D[];
     overallConfidence: number;
   } {
     const validPositions: Point2D[] = [];
-    const correctedPositions: { original: Point2D; corrected: Point2D; confidence: number }[] = [];
+    const correctedPositions: {
+      original: Point2D;
+      corrected: Point2D;
+      confidence: number;
+    }[] = [];
     const invalidPositions: Point2D[] = [];
 
     for (const position of positions) {
-      const validation = this.validatePatternPosition(position, beaconType, patternType);
-      
+      const validation = this.validatePatternPosition(
+        position,
+        beaconType,
+        patternType
+      );
+
       if (validation.isValid) {
         validPositions.push(position);
       } else if (validation.correctedPosition) {
@@ -576,13 +639,17 @@ export class PlacementValidator {
     const totalPositions = positions.length;
     const validCount = validPositions.length;
     const correctedCount = correctedPositions.length;
-    const averageCorrectionConfidence = correctedCount > 0 
-      ? correctedPositions.reduce((sum, c) => sum + c.confidence, 0) / correctedCount
-      : 0;
+    const averageCorrectionConfidence =
+      correctedCount > 0
+        ? correctedPositions.reduce((sum, c) => sum + c.confidence, 0) /
+          correctedCount
+        : 0;
 
-    const overallConfidence = totalPositions > 0
-      ? (validCount + correctedCount * averageCorrectionConfidence) / totalPositions
-      : 0;
+    const overallConfidence =
+      totalPositions > 0
+        ? (validCount + correctedCount * averageCorrectionConfidence) /
+          totalPositions
+        : 0;
 
     return {
       validPositions,
@@ -601,14 +668,22 @@ export class PlacementValidator {
     patternType: 'triangle' | 'square' | 'pentagon' | 'hexagon',
     maxAlternatives: number = 3
   ): { position: Point2D; score: number; reasoning: string }[] {
-    const alternatives: { position: Point2D; score: number; reasoning: string }[] = [];
+    const alternatives: {
+      position: Point2D;
+      score: number;
+      reasoning: string;
+    }[] = [];
     const searchRadius = this.config.minimumDistances[beaconType] * 3;
     const attempts = 50;
 
-    for (let i = 0; i < attempts && alternatives.length < maxAlternatives; i++) {
+    for (
+      let i = 0;
+      i < attempts && alternatives.length < maxAlternatives;
+      i++
+    ) {
       const angle = (i / attempts) * 2 * Math.PI;
-      const radius = (searchRadius * 0.3) + Math.random() * (searchRadius * 0.7);
-      
+      const radius = searchRadius * 0.3 + Math.random() * (searchRadius * 0.7);
+
       const candidate = {
         x: targetPosition.x + radius * Math.cos(angle),
         y: targetPosition.y + radius * Math.sin(angle),
@@ -617,15 +692,20 @@ export class PlacementValidator {
       const validation = this.isValidPosition(candidate, beaconType);
       if (validation.isValid) {
         const distance = this.calculateDistance(targetPosition, candidate);
-        const score = Math.max(0, 1 - (distance / searchRadius));
-        
+        const score = Math.max(0, 1 - distance / searchRadius);
+
         const nearestBeacon = this.findNearestBeacon(candidate);
-        const connectionPotential = nearestBeacon 
-          ? Math.max(0, 1 - (nearestBeacon.distance / (this.config.minimumDistances[beaconType] * 2)))
+        const connectionPotential = nearestBeacon
+          ? Math.max(
+              0,
+              1 -
+                nearestBeacon.distance /
+                  (this.config.minimumDistances[beaconType] * 2)
+            )
           : 0;
 
-        const finalScore = (score * 0.6) + (connectionPotential * 0.4);
-        
+        const finalScore = score * 0.6 + connectionPotential * 0.4;
+
         alternatives.push({
           position: candidate,
           score: finalScore,

@@ -40,7 +40,10 @@ export class CompressionUtils {
     }
   }
 
-  static calculateCompressionRatio(original: string, compressed: string): number {
+  static calculateCompressionRatio(
+    original: string,
+    compressed: string
+  ): number {
     if (original.length === 0) return 0;
     return (1 - compressed.length / original.length) * 100;
   }

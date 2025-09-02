@@ -17,16 +17,19 @@ export function calculateLODLevel(zoom: number): number {
 /**
  * Get render information for a given zoom level
  */
-export function getLODRenderInfo(zoom: number, bias: number = 0): LODRenderInfo {
+export function getLODRenderInfo(
+  zoom: number,
+  bias: number = 0
+): LODRenderInfo {
   // Apply bias to zoom - positive bias = higher quality, negative bias = lower quality
   const adjustedZoom = zoom * Math.pow(2, bias);
   const level = calculateLODLevel(adjustedZoom);
   const lodConfig = LOD_LEVELS[level];
-  
+
   let size: number;
   let showAnimations: boolean;
   let showEffects: boolean;
-  
+
   switch (lodConfig.renderMode) {
     case 'full':
       size = RENDERING_CONFIG.BEACON_SIZES.FULL;
@@ -53,7 +56,7 @@ export function getLODRenderInfo(zoom: number, bias: number = 0): LODRenderInfo 
       showAnimations = false;
       showEffects = false;
   }
-  
+
   return {
     level,
     renderMode: lodConfig.renderMode,
@@ -75,17 +78,18 @@ export function shouldEnableClustering(
   if (zoom <= RENDERING_CONFIG.LOD_LEVELS.CLUSTERING) {
     return true;
   }
-  
+
   // Cluster if we have too many visible beacons
   if (beacons.length > RENDERING_CONFIG.PERFORMANCE.MAX_VISIBLE_BEACONS) {
     return true;
   }
-  
+
   // Cluster if beacon density is too high
-  const viewportArea = (viewportState.bounds.maxX - viewportState.bounds.minX) * 
-                      (viewportState.bounds.maxY - viewportState.bounds.minY);
+  const viewportArea =
+    (viewportState.bounds.maxX - viewportState.bounds.minX) *
+    (viewportState.bounds.maxY - viewportState.bounds.minY);
   const density = beacons.length / viewportArea;
-  
+
   return density > RENDERING_CONFIG.PERFORMANCE.CLUSTERING_DENSITY_THRESHOLD;
 }
 
@@ -94,7 +98,7 @@ export function shouldEnableClustering(
  */
 export function calculateHitRadius(zoom: number): number {
   const baseRadius = RENDERING_CONFIG.INTERACTION.HIT_RADIUS_BASE;
-  
+
   // Use gesture configuration for dynamic hit radius calculation
   return gestureConfig.getHitRadius(baseRadius, zoom);
 }
@@ -110,7 +114,10 @@ export function getBeaconLevelScale(level: number): number {
 /**
  * Determine if a beacon should show level indicators
  */
-export function shouldShowLevelIndicators(zoom: number, level: number): boolean {
+export function shouldShowLevelIndicators(
+  zoom: number,
+  level: number
+): boolean {
   const renderInfo = getLODRenderInfo(zoom);
   return renderInfo.showEffects && level > 1;
 }
@@ -133,7 +140,7 @@ export function calculatePerformanceMetrics(
   lodLevel: number
 ): PerformanceMetrics {
   const renderMode = LOD_LEVELS[lodLevel]?.renderMode || 'unknown';
-  
+
   // Rough estimate of render time based on beacon count and LOD level
   let renderTimePerBeacon: number;
   switch (renderMode) {
@@ -152,11 +159,11 @@ export function calculatePerformanceMetrics(
     default:
       renderTimePerBeacon = 0.2;
   }
-  
+
   const effectiveBeacons = Math.max(0, visibleBeacons - clusteredBeacons);
   const clusterRenderTime = clusteredBeacons * 0.05; // Clusters are cheap to render
   const beaconRenderTime = effectiveBeacons * renderTimePerBeacon;
-  
+
   return {
     visibleBeacons,
     clusteredBeacons,

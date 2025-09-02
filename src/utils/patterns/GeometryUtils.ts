@@ -17,14 +17,14 @@ import {
 
 /**
  * Comprehensive computational geometry utility class for 2D operations.
- * 
+ *
  * This class provides a complete suite of 2D geometric operations including:
  * - Vector mathematics (dot product, cross product, normalization)
  * - Distance and angle calculations with configurable tolerance
  * - Polygon validation and analysis (convexity, area, centroid)
  * - Advanced algorithms (convex hull, line intersection, point-in-polygon)
  * - Performance-optimized operations for real-time pattern detection
- * 
+ *
  * @example
  * ```typescript
  * const geometry = new GeometryUtils();
@@ -38,7 +38,7 @@ export class GeometryUtils {
 
   /**
    * Initialize GeometryUtils with optional custom tolerance settings.
-   * 
+   *
    * @param tolerance - Custom tolerance values for geometric comparisons
    */
   constructor(tolerance: Partial<GeometricTolerance> = {}) {
@@ -51,11 +51,11 @@ export class GeometryUtils {
 
   /**
    * Create a vector from two points.
-   * 
+   *
    * @param from - Starting point
    * @param to - Ending point
    * @returns Vector pointing from 'from' to 'to'
-   * 
+   *
    * @example
    * ```typescript
    * const vector = geometry.createVector({x: 0, y: 0}, {x: 3, y: 4});
@@ -181,15 +181,15 @@ export class GeometryUtils {
   angleBetweenPoints(p1: Point2D, center: Point2D, p2: Point2D): number {
     const v1 = this.createVector(center, p1);
     const v2 = this.createVector(center, p2);
-    
+
     const dot = this.dotProduct(v1, v2);
     const mag1 = this.magnitude(v1);
     const mag2 = this.magnitude(v2);
-    
+
     if (mag1 < this.tolerance.distance || mag2 < this.tolerance.distance) {
       return 0;
     }
-    
+
     const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
     return Math.acos(cosAngle);
   }
@@ -201,11 +201,11 @@ export class GeometryUtils {
     const dot = this.dotProduct(v1, v2);
     const mag1 = this.magnitude(v1);
     const mag2 = this.magnitude(v2);
-    
+
     if (mag1 < this.tolerance.distance || mag2 < this.tolerance.distance) {
       return 0;
     }
-    
+
     const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
     return Math.acos(cosAngle);
   }
@@ -226,11 +226,11 @@ export class GeometryUtils {
    */
   orientation(p1: Point2D, p2: Point2D, p3: Point2D): Orientation {
     const val = (p2.y - p1.y) * (p3.x - p2.x) - (p2.x - p1.x) * (p3.y - p2.y);
-    
+
     if (Math.abs(val) < this.tolerance.position) {
       return 'collinear';
     }
-    
+
     return val > 0 ? 'clockwise' : 'counterclockwise';
   }
 
@@ -245,8 +245,10 @@ export class GeometryUtils {
    * Check if two points are approximately equal
    */
   pointsEqual(p1: Point2D, p2: Point2D): boolean {
-    return Math.abs(p1.x - p2.x) < this.tolerance.position &&
-           Math.abs(p1.y - p2.y) < this.tolerance.position;
+    return (
+      Math.abs(p1.x - p2.x) < this.tolerance.position &&
+      Math.abs(p1.y - p2.y) < this.tolerance.position
+    );
   }
 
   /**
@@ -254,7 +256,10 @@ export class GeometryUtils {
    */
   anglesEqual(a1: number, a2: number): boolean {
     const diff = Math.abs(a1 - a2);
-    return diff < this.tolerance.angle || Math.abs(diff - 2 * Math.PI) < this.tolerance.angle;
+    return (
+      diff < this.tolerance.angle ||
+      Math.abs(diff - 2 * Math.PI) < this.tolerance.angle
+    );
   }
 
   // ============================================================================
@@ -268,7 +273,7 @@ export class GeometryUtils {
     if (vertices.length === 0) {
       return { x: 0, y: 0 };
     }
-    
+
     const sum = vertices.reduce(
       (acc, vertex) => ({
         x: acc.x + vertex.x,
@@ -276,7 +281,7 @@ export class GeometryUtils {
       }),
       { x: 0, y: 0 }
     );
-    
+
     return {
       x: sum.x / vertices.length,
       y: sum.y / vertices.length,
@@ -288,16 +293,16 @@ export class GeometryUtils {
    */
   polygonArea(vertices: Point2D[]): number {
     if (vertices.length < 3) return 0;
-    
+
     let area = 0;
     const n = vertices.length;
-    
+
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
       area += vertices[i].x * vertices[j].y;
       area -= vertices[j].x * vertices[i].y;
     }
-    
+
     return Math.abs(area) / 2;
   }
 
@@ -306,27 +311,27 @@ export class GeometryUtils {
    */
   isConvexPolygon(vertices: Point2D[]): boolean {
     if (vertices.length < 3) return false;
-    
+
     let isPositive: boolean | null = null;
     const n = vertices.length;
-    
+
     for (let i = 0; i < n; i++) {
       const p1 = vertices[i];
       const p2 = vertices[(i + 1) % n];
       const p3 = vertices[(i + 2) % n];
-      
+
       const orientation = this.orientation(p1, p2, p3);
       if (orientation === 'collinear') continue;
-      
+
       const currentIsPositive = orientation === 'clockwise';
-      
+
       if (isPositive === null) {
         isPositive = currentIsPositive;
       } else if (isPositive !== currentIsPositive) {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -335,9 +340,9 @@ export class GeometryUtils {
    */
   sortPointsClockwise(points: Point2D[]): Point2D[] {
     if (points.length <= 2) return [...points];
-    
+
     const center = this.polygonCentroid(points);
-    
+
     return [...points].sort((a, b) => {
       const angleA = Math.atan2(a.y - center.y, a.x - center.x);
       const angleB = Math.atan2(b.y - center.y, b.x - center.x);
@@ -371,7 +376,10 @@ export class GeometryUtils {
       const yj = polygon[j].y;
 
       // Check if point is on edge
-      const edgeDistance = this.distanceToLineSegment(point, { start: polygon[j], end: polygon[i] });
+      const edgeDistance = this.distanceToLineSegment(point, {
+        start: polygon[j],
+        end: polygon[i],
+      });
       minDistance = Math.min(minDistance, edgeDistance);
 
       if (edgeDistance < this.tolerance.position) {
@@ -379,7 +387,7 @@ export class GeometryUtils {
       }
 
       // Ray casting algorithm
-      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
         inside = !inside;
       }
     }
@@ -430,7 +438,11 @@ export class GeometryUtils {
     const intersects = t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
 
     let point: Point2D | undefined;
-    if (intersects || Math.abs(t1) < this.tolerance.position || Math.abs(t1 - 1) < this.tolerance.position) {
+    if (
+      intersects ||
+      Math.abs(t1) < this.tolerance.position ||
+      Math.abs(t1 - 1) < this.tolerance.position
+    ) {
       point = {
         x: p1.x + t1 * d1.x,
         y: p1.y + t1 * d1.y,
@@ -448,7 +460,10 @@ export class GeometryUtils {
   /**
    * Compute convex hull of points using Graham scan algorithm
    */
-  convexHull(points: Point2D[], algorithm: ConvexHullAlgorithm = 'graham'): Point2D[] {
+  convexHull(
+    points: Point2D[],
+    algorithm: ConvexHullAlgorithm = 'graham'
+  ): Point2D[] {
     if (points.length <= 3) return [...points];
 
     switch (algorithm) {
@@ -468,8 +483,10 @@ export class GeometryUtils {
     // Find bottom-most point (or leftmost in case of tie)
     let bottom = 0;
     for (let i = 1; i < points.length; i++) {
-      if (points[i].y < points[bottom].y || 
-          (points[i].y === points[bottom].y && points[i].x < points[bottom].x)) {
+      if (
+        points[i].y < points[bottom].y ||
+        (points[i].y === points[bottom].y && points[i].x < points[bottom].x)
+      ) {
         bottom = i;
       }
     }
@@ -494,7 +511,7 @@ export class GeometryUtils {
 
     // Build convex hull
     const hull: Point2D[] = [bottomPoint];
-    
+
     for (const item of polarSorted) {
       // Remove points that create clockwise turn
       while (hull.length >= 2) {
@@ -543,22 +560,25 @@ export class GeometryUtils {
     const { start, end } = segment;
     const segmentVector = this.createVector(start, end);
     const pointVector = this.createVector(start, point);
-    
+
     const segmentLengthSq = this.magnitudeSquared(segmentVector);
-    
+
     // Degenerate segment (start == end)
     if (segmentLengthSq < this.tolerance.distance) {
       return this.distance(point, start);
     }
-    
+
     // Project point onto line segment
-    const t = Math.max(0, Math.min(1, this.dotProduct(pointVector, segmentVector) / segmentLengthSq));
-    
+    const t = Math.max(
+      0,
+      Math.min(1, this.dotProduct(pointVector, segmentVector) / segmentLengthSq)
+    );
+
     const projection: Point2D = {
       x: start.x + t * segmentVector.x,
       y: start.y + t * segmentVector.y,
     };
-    
+
     return this.distance(point, projection);
   }
 

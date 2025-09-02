@@ -1,6 +1,6 @@
 /**
  * COMPREHENSIVE GESTURE TESTING SUITE
- * 
+ *
  * Master testing coordinator that orchestrates all gesture testing components:
  * - Synthetic touch event generation
  * - Performance monitoring
@@ -8,12 +8,12 @@
  * - Regression detection
  * - Automated test execution
  * - Comprehensive reporting
- * 
+ *
  * This is the main entry point for all gesture testing operations.
  */
 
 import { Platform } from 'react-native';
-import { 
+import {
   SyntheticTouchEventGenerator,
   GESTURE_TEST_PATTERNS,
   syntheticTouchGenerator,
@@ -32,7 +32,10 @@ import {
   PlatformComparisonReport,
   crossPlatformTester,
 } from './crossPlatformTesting';
-import { GestureStateMachine, GestureStateType } from '../gestures/gestureStateMachine';
+import {
+  GestureStateMachine,
+  GestureStateType,
+} from '../gestures/gestureStateMachine';
 
 // Test suite configuration
 export interface TestSuiteConfig {
@@ -168,9 +171,9 @@ export class GestureTestingSuite {
    */
   async runComplete(): Promise<GestureTestSuiteResults> {
     const startTime = Date.now();
-    
+
     console.log('🚀 Starting comprehensive gesture testing suite...');
-    
+
     const results: GestureTestSuiteResults = {
       summary: {
         totalTests: 0,
@@ -195,7 +198,8 @@ export class GestureTestingSuite {
       // Run cross-platform tests
       if (this.config.enableCrossPlatformTesting) {
         console.log('🔄 Running cross-platform tests...');
-        results.crossPlatformResults = await this.crossPlatformTester.runFullTestSuite();
+        results.crossPlatformResults =
+          await this.crossPlatformTester.runFullTestSuite();
       }
 
       // Run regression tests
@@ -213,10 +217,11 @@ export class GestureTestingSuite {
       // Calculate summary
       results.summary = this.calculateSummary(results);
       results.recommendations = this.generateRecommendations(results);
-
     } catch (error) {
       console.error('Test suite execution failed:', error);
-      results.summary.criticalIssues.push(`Test suite execution failed: ${error}`);
+      results.summary.criticalIssues.push(
+        `Test suite execution failed: ${error}`
+      );
     }
 
     results.duration = Date.now() - startTime;
@@ -236,30 +241,37 @@ export class GestureTestingSuite {
     const performanceMetrics: GesturePerformanceMetrics[] = [];
 
     // Run each performance benchmark
-    for (const benchmarkName of Object.keys(PERFORMANCE_BENCHMARKS) as (keyof typeof PERFORMANCE_BENCHMARKS)[]) {
+    for (const benchmarkName of Object.keys(
+      PERFORMANCE_BENCHMARKS
+    ) as (keyof typeof PERFORMANCE_BENCHMARKS)[]) {
       console.log(`  Running ${benchmarkName} benchmark...`);
-      
+
       try {
-        const benchmark = await this.performanceMonitor.runBenchmark(benchmarkName, async () => {
-          await this.executeBenchmarkScenario(benchmarkName);
-        });
-        
+        const benchmark = await this.performanceMonitor.runBenchmark(
+          benchmarkName,
+          async () => {
+            await this.executeBenchmarkScenario(benchmarkName);
+          }
+        );
+
         benchmarks.push(benchmark);
         performanceMetrics.push(benchmark.metrics);
-        
       } catch (error) {
         console.error(`Benchmark ${benchmarkName} failed:`, error);
         benchmarks.push({
           benchmarkName,
           passed: false,
-          violations: [{ type: 'frameRate', expected: 60, actual: 0, severity: 'high' }],
+          violations: [
+            { type: 'frameRate', expected: 60, actual: 0, severity: 'high' },
+          ],
           testDuration: 0,
         } as any);
       }
     }
 
     // Generate overall performance report
-    const overallReport = this.performanceMonitor.generateReport(performanceMetrics);
+    const overallReport =
+      this.performanceMonitor.generateReport(performanceMetrics);
 
     // Check for regression
     const regressionDetected = this.detectPerformanceRegression(overallReport);
@@ -292,7 +304,10 @@ export class GestureTestingSuite {
 
     // Run current tests and compare with baseline
     const currentResults = await this.runPerformanceTests();
-    const comparison = this.compareWithBaseline(this.baselineData, currentResults.overallReport);
+    const comparison = this.compareWithBaseline(
+      this.baselineData,
+      currentResults.overallReport
+    );
 
     return {
       baselineComparison: comparison,
@@ -315,22 +330,23 @@ export class GestureTestingSuite {
 
     for (const scenario of STRESS_TEST_SCENARIOS) {
       console.log(`  Running stress test: ${scenario.name}...`);
-      
+
       const scenarioResult = await this.runStressTestScenario(scenario);
-      
+
       // Analyze results
       if (scenarioResult.memoryLeak) {
         results.memoryLeakDetected = true;
       }
-      if (scenarioResult.performanceDrop > 20) { // 20% drop threshold
+      if (scenarioResult.performanceDrop > 20) {
+        // 20% drop threshold
         results.performanceDegradation = true;
       }
-      
+
       results.maxConcurrentGestures = Math.max(
         results.maxConcurrentGestures,
         scenarioResult.maxConcurrentGestures
       );
-      
+
       results.batteryImpactScore = Math.max(
         results.batteryImpactScore,
         scenarioResult.batteryImpact
@@ -361,35 +377,56 @@ export class GestureTestingSuite {
 
   // Private methods
 
-  private async executeBenchmarkScenario(benchmarkName: keyof typeof PERFORMANCE_BENCHMARKS): Promise<void> {
+  private async executeBenchmarkScenario(
+    benchmarkName: keyof typeof PERFORMANCE_BENCHMARKS
+  ): Promise<void> {
     const iterations = this.config.iterations;
-    
+
     switch (benchmarkName) {
       case 'basicNavigation':
         for (let i = 0; i < iterations; i++) {
-          await this.touchGenerator.generatePan(100, 300, 500, 300, { duration: 1000 });
-          await this.touchGenerator.generatePinch(300, 300, 100, 200, { duration: 800 });
+          await this.touchGenerator.generatePan(100, 300, 500, 300, {
+            duration: 1000,
+          });
+          await this.touchGenerator.generatePinch(300, 300, 100, 200, {
+            duration: 800,
+          });
           await this.sleep(500);
         }
         break;
-        
+
       case 'complexRendering':
         // Simulate complex rendering scenario
         for (let i = 0; i < iterations; i++) {
-          await this.touchGenerator.generatePanPinch(300, 300, 200, 200, 100, 300, { duration: 1500 });
+          await this.touchGenerator.generatePanPinch(
+            300,
+            300,
+            200,
+            200,
+            100,
+            300,
+            { duration: 1500 }
+          );
           await this.sleep(200);
         }
         break;
-        
+
       case 'simultaneousGestures':
         // Execute multiple gestures simultaneously
         const promises = [];
         for (let i = 0; i < iterations; i++) {
-          promises.push(this.touchGenerator.generatePan(100 + i * 50, 200, 400 + i * 50, 200));
+          promises.push(
+            this.touchGenerator.generatePan(
+              100 + i * 50,
+              200,
+              400 + i * 50,
+              200
+            )
+          );
         }
         await Promise.all(promises);
         break;
-        
+
       case 'palmRejection':
         for (let i = 0; i < iterations; i++) {
           await this.touchGenerator.generatePalmTouch(300, 300);
@@ -413,24 +450,37 @@ export class GestureTestingSuite {
     current: PerformanceReport
   ): BaselineComparison {
     const performanceDeltas: Record<string, number> = {
-      frameRate: current.summary.averageFrameRate - baseline.summary.averageFrameRate,
-      responseTime: current.summary.averageResponseTime - baseline.summary.averageResponseTime,
-      memoryDelta: current.summary.averageMemoryDelta - baseline.summary.averageMemoryDelta,
-      accuracy: current.summary.averageAccuracy - baseline.summary.averageAccuracy,
-      smoothness: current.summary.averageSmoothness - baseline.summary.averageSmoothness,
+      frameRate:
+        current.summary.averageFrameRate - baseline.summary.averageFrameRate,
+      responseTime:
+        current.summary.averageResponseTime -
+        baseline.summary.averageResponseTime,
+      memoryDelta:
+        current.summary.averageMemoryDelta -
+        baseline.summary.averageMemoryDelta,
+      accuracy:
+        current.summary.averageAccuracy - baseline.summary.averageAccuracy,
+      smoothness:
+        current.summary.averageSmoothness - baseline.summary.averageSmoothness,
     };
 
     const significantChanges: string[] = [];
-    
+
     // Define significance thresholds
     if (Math.abs(performanceDeltas.frameRate) > 5) {
-      significantChanges.push(`Frame rate changed by ${performanceDeltas.frameRate.toFixed(1)} fps`);
+      significantChanges.push(
+        `Frame rate changed by ${performanceDeltas.frameRate.toFixed(1)} fps`
+      );
     }
     if (Math.abs(performanceDeltas.responseTime) > 20) {
-      significantChanges.push(`Response time changed by ${performanceDeltas.responseTime.toFixed(1)} ms`);
+      significantChanges.push(
+        `Response time changed by ${performanceDeltas.responseTime.toFixed(1)} ms`
+      );
     }
     if (Math.abs(performanceDeltas.accuracy) > 0.05) {
-      significantChanges.push(`Accuracy changed by ${(performanceDeltas.accuracy * 100).toFixed(1)}%`);
+      significantChanges.push(
+        `Accuracy changed by ${(performanceDeltas.accuracy * 100).toFixed(1)}%`
+      );
     }
 
     return {
@@ -444,35 +494,35 @@ export class GestureTestingSuite {
   private extractAffectedGestures(comparison: BaselineComparison): string[] {
     // Extract gesture types that show significant performance changes
     const affected: string[] = [];
-    
+
     if (Math.abs(comparison.performanceDeltas.frameRate) > 10) {
       affected.push('all_gestures_frame_rate');
     }
     if (Math.abs(comparison.performanceDeltas.responseTime) > 50) {
       affected.push('gesture_response');
     }
-    
+
     return affected;
   }
 
   private calculateRegressionSeverity(comparison: BaselineComparison): number {
     let severity = 0;
-    
+
     // Frame rate regression
     if (comparison.performanceDeltas.frameRate < -10) severity += 3;
     else if (comparison.performanceDeltas.frameRate < -5) severity += 2;
     else if (comparison.performanceDeltas.frameRate < -2) severity += 1;
-    
+
     // Response time regression
     if (comparison.performanceDeltas.responseTime > 50) severity += 3;
     else if (comparison.performanceDeltas.responseTime > 30) severity += 2;
     else if (comparison.performanceDeltas.responseTime > 15) severity += 1;
-    
+
     // Accuracy regression
     if (comparison.performanceDeltas.accuracy < -0.1) severity += 4;
     else if (comparison.performanceDeltas.accuracy < -0.05) severity += 2;
     else if (comparison.performanceDeltas.accuracy < -0.02) severity += 1;
-    
+
     return Math.min(10, severity);
   }
 
@@ -484,24 +534,24 @@ export class GestureTestingSuite {
   }> {
     const startMemory = this.getCurrentMemoryUsage();
     const startTime = Date.now();
-    
+
     // Run the stress scenario
     const gesturePromises: Promise<void>[] = [];
-    
+
     for (let i = 0; i < scenario.concurrentGestures; i++) {
       gesturePromises.push(this.executeStressGesture(scenario, i));
     }
-    
+
     await Promise.all(gesturePromises);
-    
+
     const endMemory = this.getCurrentMemoryUsage();
     const duration = Date.now() - startTime;
-    
+
     // Analyze results
-    const memoryLeak = (endMemory - startMemory) > 50 * 1024 * 1024; // 50MB threshold
+    const memoryLeak = endMemory - startMemory > 50 * 1024 * 1024; // 50MB threshold
     const performanceDrop = 0; // Simplified - would measure actual performance drop
     const batteryImpact = Math.min(10, duration / 1000); // Simplified battery impact score
-    
+
     return {
       memoryLeak,
       performanceDrop,
@@ -510,30 +560,38 @@ export class GestureTestingSuite {
     };
   }
 
-  private async executeStressGesture(scenario: StressTestScenario, index: number): Promise<void> {
+  private async executeStressGesture(
+    scenario: StressTestScenario,
+    index: number
+  ): Promise<void> {
     const gestureInterval = 1000 / scenario.gestureFrequency;
     const endTime = Date.now() + scenario.duration;
-    
+
     while (Date.now() < endTime) {
       // Execute a random gesture
       const gestures = ['tap', 'pan', 'pinch'];
       const gesture = gestures[Math.floor(Math.random() * gestures.length)];
-      
+
       const baseX = 200 + index * 100;
       const baseY = 200 + index * 50;
-      
+
       switch (gesture) {
         case 'tap':
           await this.touchGenerator.generateTap(baseX, baseY);
           break;
         case 'pan':
-          await this.touchGenerator.generatePan(baseX, baseY, baseX + 100, baseY + 50);
+          await this.touchGenerator.generatePan(
+            baseX,
+            baseY,
+            baseX + 100,
+            baseY + 50
+          );
           break;
         case 'pinch':
           await this.touchGenerator.generatePinch(baseX, baseY, 50, 150);
           break;
       }
-      
+
       await this.sleep(gestureInterval);
     }
   }
@@ -555,8 +613,12 @@ export class GestureTestingSuite {
     // Count performance test results
     if (results.performanceResults) {
       totalTests += results.performanceResults.benchmarks.length;
-      passedTests += results.performanceResults.benchmarks.filter(b => b.passed).length;
-      failedTests += results.performanceResults.benchmarks.filter(b => !b.passed).length;
+      passedTests += results.performanceResults.benchmarks.filter(
+        b => b.passed
+      ).length;
+      failedTests += results.performanceResults.benchmarks.filter(
+        b => !b.passed
+      ).length;
     }
 
     // Count cross-platform test results
@@ -577,7 +639,8 @@ export class GestureTestingSuite {
       criticalIssues.push('Memory leak detected in stress tests');
     }
 
-    const overallScore = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+    const overallScore =
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     return {
       totalTests,
@@ -593,23 +656,36 @@ export class GestureTestingSuite {
     const recommendations: string[] = [];
 
     if (results.summary.overallScore < 80) {
-      recommendations.push('Overall test score is below 80% - investigate failing tests');
+      recommendations.push(
+        'Overall test score is below 80% - investigate failing tests'
+      );
     }
 
     if (results.performanceResults?.regressionDetected) {
-      recommendations.push('Performance regression detected - optimize gesture handling');
+      recommendations.push(
+        'Performance regression detected - optimize gesture handling'
+      );
     }
 
     if (results.stressTestResults?.memoryLeakDetected) {
-      recommendations.push('Memory leaks detected - implement proper cleanup in gesture handlers');
+      recommendations.push(
+        'Memory leaks detected - implement proper cleanup in gesture handlers'
+      );
     }
 
     if (results.stressTestResults?.performanceDegradation) {
-      recommendations.push('Performance degrades under stress - consider implementing gesture throttling');
+      recommendations.push(
+        'Performance degrades under stress - consider implementing gesture throttling'
+      );
     }
 
-    if (results.summary.criticalIssues.length === 0 && results.summary.overallScore >= 95) {
-      recommendations.push('Excellent gesture system performance - no issues detected');
+    if (
+      results.summary.criticalIssues.length === 0 &&
+      results.summary.overallScore >= 95
+    ) {
+      recommendations.push(
+        'Excellent gesture system performance - no issues detected'
+      );
     }
 
     return recommendations;
@@ -625,17 +701,19 @@ export class GestureTestingSuite {
     console.log(`Passed: ${results.summary.passedTests}`);
     console.log(`Failed: ${results.summary.failedTests}`);
     console.log(`Duration: ${results.duration}ms`);
-    
+
     if (results.summary.criticalIssues.length > 0) {
       console.log('\n🚨 Critical Issues:');
-      results.summary.criticalIssues.forEach(issue => console.log(`  - ${issue}`));
+      results.summary.criticalIssues.forEach(issue =>
+        console.log(`  - ${issue}`)
+      );
     }
-    
+
     if (results.recommendations.length > 0) {
       console.log('\n💡 Recommendations:');
       results.recommendations.forEach(rec => console.log(`  - ${rec}`));
     }
-    
+
     console.log('\n================================\n');
   }
 

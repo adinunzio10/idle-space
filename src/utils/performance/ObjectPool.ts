@@ -76,7 +76,8 @@ export class ObjectPool<T> {
       poolSize: this.pool.length,
       maxSize: this.maxSize,
       totalCreated: this.created,
-      utilizationRate: this.created > 0 ? (this.created - this.pool.length) / this.created : 0,
+      utilizationRate:
+        this.created > 0 ? (this.created - this.pool.length) / this.created : 0,
     };
   }
 }
@@ -100,7 +101,9 @@ export interface PooledParticle {
 /**
  * Create a particle pool for effects
  */
-export function createParticlePool(maxSize: number = 200): ObjectPool<PooledParticle> {
+export function createParticlePool(
+  maxSize: number = 200
+): ObjectPool<PooledParticle> {
   return new ObjectPool<PooledParticle>(
     () => ({
       x: 0,
@@ -114,7 +117,7 @@ export function createParticlePool(maxSize: number = 200): ObjectPool<PooledPart
       opacity: 1,
       active: false,
     }),
-    (particle) => {
+    particle => {
       particle.x = 0;
       particle.y = 0;
       particle.vx = 0;
@@ -146,22 +149,24 @@ export interface PooledAnimationState {
 /**
  * Create an animation state pool
  */
-export function createAnimationPool(maxSize: number = 50): ObjectPool<PooledAnimationState> {
+export function createAnimationPool(
+  maxSize: number = 50
+): ObjectPool<PooledAnimationState> {
   return new ObjectPool<PooledAnimationState>(
     () => ({
       id: '',
       startTime: 0,
       duration: 1000,
       progress: 0,
-      easing: (t) => t,
+      easing: t => t,
       active: false,
     }),
-    (anim) => {
+    anim => {
       anim.id = '';
       anim.startTime = 0;
       anim.duration = 1000;
       anim.progress = 0;
-      anim.easing = (t) => t;
+      anim.easing = t => t;
       anim.active = false;
       anim.onComplete = undefined;
     },
@@ -188,7 +193,9 @@ export interface PooledBeaconRenderData {
 /**
  * Create a beacon render data pool
  */
-export function createBeaconRenderPool(maxSize: number = 1000): ObjectPool<PooledBeaconRenderData> {
+export function createBeaconRenderPool(
+  maxSize: number = 1000
+): ObjectPool<PooledBeaconRenderData> {
   return new ObjectPool<PooledBeaconRenderData>(
     () => ({
       id: '',
@@ -202,7 +209,7 @@ export function createBeaconRenderPool(maxSize: number = 1000): ObjectPool<Poole
       type: 'pioneer',
       active: false,
     }),
-    (beacon) => {
+    beacon => {
       beacon.id = '';
       beacon.x = 0;
       beacon.y = 0;

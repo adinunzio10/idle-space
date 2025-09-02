@@ -33,7 +33,12 @@ export interface VoronoiEdge {
 export class VoronoiGenerator {
   private bounds: { minX: number; maxX: number; minY: number; maxY: number };
 
-  constructor(bounds: { minX: number; maxX: number; minY: number; maxY: number }) {
+  constructor(bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  }) {
     this.bounds = bounds;
   }
 
@@ -52,7 +57,9 @@ export class VoronoiGenerator {
   /**
    * Generate Voronoi diagram from point sites
    */
-  private generateDiagram(sites: { point: Point2D; beaconId: string }[]): VoronoiDiagram {
+  private generateDiagram(
+    sites: { point: Point2D; beaconId: string }[]
+  ): VoronoiDiagram {
     if (sites.length === 0) {
       return {
         cells: [],
@@ -73,8 +80,12 @@ export class VoronoiGenerator {
       const currentSite = sites[i];
 
       // Sample points around the boundary and find cell vertices
-      const vertices = this.computeCellVertices(currentSite.point, sites, this.bounds);
-      
+      const vertices = this.computeCellVertices(
+        currentSite.point,
+        sites,
+        this.bounds
+      );
+
       if (vertices.length > 0) {
         const cell: VoronoiCell = {
           site: currentSite.point,
@@ -82,7 +93,7 @@ export class VoronoiGenerator {
           vertices: vertices,
           area: this.calculatePolygonArea(vertices),
         };
-        
+
         cells.push(cell);
       }
     }
@@ -92,7 +103,7 @@ export class VoronoiGenerator {
       for (let i = 0; i < cell.vertices.length; i++) {
         const start = cell.vertices[i];
         const end = cell.vertices[(i + 1) % cell.vertices.length];
-        
+
         edges.push({
           start,
           end,
@@ -112,15 +123,15 @@ export class VoronoiGenerator {
    * Compute vertices of a Voronoi cell for a given site
    */
   private computeCellVertices(
-    site: Point2D, 
-    allSites: { point: Point2D; beaconId: string }[], 
+    site: Point2D,
+    allSites: { point: Point2D; beaconId: string }[],
     bounds: { minX: number; maxX: number; minY: number; maxY: number }
   ): Point2D[] {
     const vertices: Point2D[] = [];
-    
+
     // Find potential vertices by checking perpendicular bisectors
     const otherSites = allSites.filter(s => s.point !== site);
-    
+
     // Simplified approach: sample boundary points and check if they belong to this cell
     const boundaryPoints = [
       ...this.sampleBoundary(bounds, 50),
@@ -128,7 +139,13 @@ export class VoronoiGenerator {
     ];
 
     for (const point of boundaryPoints) {
-      if (this.isPointInVoronoiCell(point, site, otherSites.map(s => s.point))) {
+      if (
+        this.isPointInVoronoiCell(
+          point,
+          site,
+          otherSites.map(s => s.point)
+        )
+      ) {
         vertices.push(point);
       }
     }
@@ -140,16 +157,20 @@ export class VoronoiGenerator {
   /**
    * Check if a point belongs to the Voronoi cell of a given site
    */
-  private isPointInVoronoiCell(point: Point2D, site: Point2D, otherSites: Point2D[]): boolean {
+  private isPointInVoronoiCell(
+    point: Point2D,
+    site: Point2D,
+    otherSites: Point2D[]
+  ): boolean {
     const distanceToSite = this.distance(point, site);
-    
+
     // Check if this site is the closest to the point
     for (const otherSite of otherSites) {
       if (this.distance(point, otherSite) <= distanceToSite) {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -157,7 +178,7 @@ export class VoronoiGenerator {
    * Sample points along the boundary
    */
   private sampleBoundary(
-    bounds: { minX: number; maxX: number; minY: number; maxY: number }, 
+    bounds: { minX: number; maxX: number; minY: number; maxY: number },
     samples: number
   ): Point2D[] {
     const points: Point2D[] = [];
@@ -165,25 +186,29 @@ export class VoronoiGenerator {
 
     // Top edge
     for (let i = 0; i < samplesPerSide; i++) {
-      const x = bounds.minX + (bounds.maxX - bounds.minX) * (i / samplesPerSide);
+      const x =
+        bounds.minX + (bounds.maxX - bounds.minX) * (i / samplesPerSide);
       points.push({ x, y: bounds.minY });
     }
 
     // Right edge
     for (let i = 0; i < samplesPerSide; i++) {
-      const y = bounds.minY + (bounds.maxY - bounds.minY) * (i / samplesPerSide);
+      const y =
+        bounds.minY + (bounds.maxY - bounds.minY) * (i / samplesPerSide);
       points.push({ x: bounds.maxX, y });
     }
 
     // Bottom edge
     for (let i = 0; i < samplesPerSide; i++) {
-      const x = bounds.maxX - (bounds.maxX - bounds.minX) * (i / samplesPerSide);
+      const x =
+        bounds.maxX - (bounds.maxX - bounds.minX) * (i / samplesPerSide);
       points.push({ x, y: bounds.maxY });
     }
 
     // Left edge
     for (let i = 0; i < samplesPerSide; i++) {
-      const y = bounds.maxY - (bounds.maxY - bounds.minY) * (i / samplesPerSide);
+      const y =
+        bounds.maxY - (bounds.maxY - bounds.minY) * (i / samplesPerSide);
       points.push({ x: bounds.minX, y });
     }
 
@@ -193,28 +218,39 @@ export class VoronoiGenerator {
   /**
    * Sample points in a radial pattern around a center point
    */
-  private sampleRadialPoints(center: Point2D, radius: number, count: number): Point2D[] {
+  private sampleRadialPoints(
+    center: Point2D,
+    radius: number,
+    count: number
+  ): Point2D[] {
     const points: Point2D[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       const angle = (2 * Math.PI * i) / count;
       const x = center.x + radius * Math.cos(angle);
       const y = center.y + radius * Math.sin(angle);
-      
+
       // Ensure point is within bounds
-      if (x >= this.bounds.minX && x <= this.bounds.maxX && 
-          y >= this.bounds.minY && y <= this.bounds.maxY) {
+      if (
+        x >= this.bounds.minX &&
+        x <= this.bounds.maxX &&
+        y >= this.bounds.minY &&
+        y <= this.bounds.maxY
+      ) {
         points.push({ x, y });
       }
     }
-    
+
     return points;
   }
 
   /**
    * Sort vertices in clockwise order around a center point
    */
-  private sortVerticesClockwise(vertices: Point2D[], center: Point2D): Point2D[] {
+  private sortVerticesClockwise(
+    vertices: Point2D[],
+    center: Point2D
+  ): Point2D[] {
     return vertices.sort((a, b) => {
       const angleA = Math.atan2(a.y - center.y, a.x - center.x);
       const angleB = Math.atan2(b.y - center.y, b.x - center.x);
@@ -236,7 +272,7 @@ export class VoronoiGenerator {
    */
   private calculatePolygonArea(vertices: Point2D[]): number {
     if (vertices.length < 3) return 0;
-    
+
     let area = 0;
     for (let i = 0; i < vertices.length; i++) {
       const j = (i + 1) % vertices.length;
@@ -249,7 +285,12 @@ export class VoronoiGenerator {
   /**
    * Update bounds for the Voronoi diagram
    */
-  public setBounds(bounds: { minX: number; maxX: number; minY: number; maxY: number }): void {
+  public setBounds(bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  }): void {
     this.bounds = bounds;
   }
 }
@@ -263,15 +304,15 @@ export class VoronoiVisualizer {
    */
   public static cellToSVGPath(cell: VoronoiCell): string {
     if (cell.vertices.length < 3) return '';
-    
+
     const firstVertex = cell.vertices[0];
     let path = `M ${firstVertex.x} ${firstVertex.y}`;
-    
+
     for (let i = 1; i < cell.vertices.length; i++) {
       const vertex = cell.vertices[i];
       path += ` L ${vertex.x} ${vertex.y}`;
     }
-    
+
     path += ' Z'; // Close the path
     return path;
   }
@@ -297,12 +338,12 @@ export class VoronoiVisualizer {
    * Get color for beacon based on type and specialization
    */
   private static getBeaconColor(
-    type: string, 
-    specialization: string = 'none', 
+    type: string,
+    specialization: string = 'none',
     opacity: number = 1
   ): string {
     let baseColor: string;
-    
+
     switch (type) {
       case 'pioneer':
         baseColor = '79, 70, 229'; // Indigo
@@ -332,23 +373,31 @@ export class VoronoiVisualizer {
   /**
    * Generate territory visualization for a beacon
    */
-  public static generateTerritoryVisualization(beacon: Beacon, alpha: number = 0.2): {
+  public static generateTerritoryVisualization(
+    beacon: Beacon,
+    alpha: number = 0.2
+  ): {
     path: string;
     fill: string;
     stroke: string;
   } {
     const territoryRadius = beacon.getTerritoryRadius();
     const center = beacon.position;
-    
+
     // Generate a circle path
-    const path = `M ${center.x - territoryRadius} ${center.y} ` +
-                `A ${territoryRadius} ${territoryRadius} 0 1 0 ${center.x + territoryRadius} ${center.y} ` +
-                `A ${territoryRadius} ${territoryRadius} 0 1 0 ${center.x - territoryRadius} ${center.y}`;
+    const path =
+      `M ${center.x - territoryRadius} ${center.y} ` +
+      `A ${territoryRadius} ${territoryRadius} 0 1 0 ${center.x + territoryRadius} ${center.y} ` +
+      `A ${territoryRadius} ${territoryRadius} 0 1 0 ${center.x - territoryRadius} ${center.y}`;
 
     return {
       path,
       fill: this.getBeaconColor(beacon.type, beacon.specialization, alpha),
-      stroke: this.getBeaconColor(beacon.type, beacon.specialization, alpha * 2),
+      stroke: this.getBeaconColor(
+        beacon.type,
+        beacon.specialization,
+        alpha * 2
+      ),
     };
   }
 }

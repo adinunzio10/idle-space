@@ -13,7 +13,6 @@ const DEFAULT_FORMATTING_SETTINGS = {
  * This formatter automatically applies scientific notation and accessibility settings
  */
 export class SettingsAwareFormatter {
-  
   /**
    * Format a number based on current user settings
    */
@@ -130,22 +129,30 @@ export type FormattingSettings = typeof DEFAULT_FORMATTING_SETTINGS;
 export const createSettingsFormatter = (settings: FormattingSettings) => ({
   format: (value: number | BigNumber, options?: NumberFormatOptions) =>
     SettingsAwareFormatter.format(value, settings, options),
-  
-  formatResource: (value: number | BigNumber, resourceName?: string, options?: NumberFormatOptions) =>
-    SettingsAwareFormatter.formatResource(value, resourceName, settings, options),
-  
+
+  formatResource: (
+    value: number | BigNumber,
+    resourceName?: string,
+    options?: NumberFormatOptions
+  ) =>
+    SettingsAwareFormatter.formatResource(
+      value,
+      resourceName,
+      settings,
+      options
+    ),
+
   formatPercentage: (value: number, options?: NumberFormatOptions) =>
     SettingsAwareFormatter.formatPercentage(value, settings, options),
-  
+
   formatDuration: (seconds: number) =>
     SettingsAwareFormatter.formatDuration(seconds, settings),
-  
+
   getAnimationDuration: (baseDuration: number) =>
     SettingsAwareFormatter.getAnimationDuration(baseDuration, settings),
-  
-  shouldAnimate: () =>
-    SettingsAwareFormatter.shouldAnimate(settings),
-  
+
+  shouldAnimate: () => SettingsAwareFormatter.shouldAnimate(settings),
+
   getAnimationConfig: (baseDuration?: number) =>
     SettingsAwareFormatter.getAnimationConfig(baseDuration, settings),
 });

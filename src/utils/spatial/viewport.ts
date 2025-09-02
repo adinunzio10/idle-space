@@ -1,4 +1,9 @@
-import { Point2D, ViewportBounds, ViewportState, GestureVelocity } from '../../types/galaxy';
+import {
+  Point2D,
+  ViewportBounds,
+  ViewportState,
+  GestureVelocity,
+} from '../../types/galaxy';
 
 /**
  * Convert screen coordinates to galaxy coordinates
@@ -108,7 +113,10 @@ export function constrainTranslation(
   const scaledContentHeight = contentHeight * scale;
 
   // Don't constrain if content is smaller than screen
-  if (scaledContentWidth <= screenWidth && scaledContentHeight <= screenHeight) {
+  if (
+    scaledContentWidth <= screenWidth &&
+    scaledContentHeight <= screenHeight
+  ) {
     return translation;
   }
 
@@ -140,7 +148,10 @@ export function constrainTranslationElastic(
   const scaledContentHeight = contentHeight * scale;
 
   // Don't constrain if content is smaller than screen
-  if (scaledContentWidth <= screenWidth && scaledContentHeight <= screenHeight) {
+  if (
+    scaledContentWidth <= screenWidth &&
+    scaledContentHeight <= screenHeight
+  ) {
     return translation;
   }
 
@@ -175,7 +186,10 @@ export function constrainTranslationElastic(
 /**
  * Calculate momentum decay factor
  */
-export function calculateMomentumDecay(velocity: number, decayRate: number = 0.95): number {
+export function calculateMomentumDecay(
+  velocity: number,
+  decayRate: number = 0.95
+): number {
   'worklet';
   return velocity * decayRate;
 }
@@ -194,12 +208,12 @@ export function applyMomentum(
   deltaTime: number
 ): { translation: Point2D; newVelocity: GestureVelocity } {
   'worklet';
-  
+
   // Get momentum configuration (note: gestureConfig access in worklet context)
   // For worklet safety, we'll use hardcoded optimized values based on research
   const decayRate = 0.95; // Research-based deceleration factor
   const boundaryDamping = 0.1; // Velocity reduction at boundaries
-  
+
   // Apply velocity to translation
   const newTranslation = {
     x: currentTranslation.x + velocity.x * deltaTime,
@@ -220,13 +234,15 @@ export function applyMomentum(
   let newVelocity = { ...velocity };
   const scaledContentWidth = contentWidth * scale;
   const scaledContentHeight = contentHeight * scale;
-  
+
   if (scaledContentWidth > screenWidth) {
     const minX = screenWidth - scaledContentWidth;
     const maxX = 0;
-    
-    if ((constrainedTranslation.x <= minX && velocity.x < 0) || 
-        (constrainedTranslation.x >= maxX && velocity.x > 0)) {
+
+    if (
+      (constrainedTranslation.x <= minX && velocity.x < 0) ||
+      (constrainedTranslation.x >= maxX && velocity.x > 0)
+    ) {
       newVelocity.x *= boundaryDamping; // Use configurable boundary damping
     }
   }
@@ -234,9 +250,11 @@ export function applyMomentum(
   if (scaledContentHeight > screenHeight) {
     const minY = screenHeight - scaledContentHeight;
     const maxY = 0;
-    
-    if ((constrainedTranslation.y <= minY && velocity.y < 0) || 
-        (constrainedTranslation.y >= maxY && velocity.y > 0)) {
+
+    if (
+      (constrainedTranslation.y <= minY && velocity.y < 0) ||
+      (constrainedTranslation.y >= maxY && velocity.y > 0)
+    ) {
       newVelocity.y *= boundaryDamping; // Use configurable boundary damping
     }
   }
@@ -262,21 +280,31 @@ export function calculateZoomFocalPoint(
 ): Point2D {
   'worklet';
   const scaleDiff = newScale - currentScale;
-  
+
   return {
-    x: currentTranslation.x - (focalPoint.x - currentTranslation.x) * (scaleDiff / currentScale),
-    y: currentTranslation.y - (focalPoint.y - currentTranslation.y) * (scaleDiff / currentScale),
+    x:
+      currentTranslation.x -
+      (focalPoint.x - currentTranslation.x) * (scaleDiff / currentScale),
+    y:
+      currentTranslation.y -
+      (focalPoint.y - currentTranslation.y) * (scaleDiff / currentScale),
   };
 }
 
 /**
  * Check if velocity is below threshold (momentum stopped) using configurable thresholds
  */
-export function isVelocityInsignificant(velocity: GestureVelocity, threshold: number = 0.1): boolean {
+export function isVelocityInsignificant(
+  velocity: GestureVelocity,
+  threshold: number = 0.1
+): boolean {
   'worklet';
   // Use research-based minimum velocity threshold if no threshold provided
   const actualThreshold = threshold || 0.1;
-  return Math.abs(velocity.x) < actualThreshold && Math.abs(velocity.y) < actualThreshold;
+  return (
+    Math.abs(velocity.x) < actualThreshold &&
+    Math.abs(velocity.y) < actualThreshold
+  );
 }
 
 /**
@@ -302,18 +330,21 @@ export function isPointInHitArea(
 /**
  * Get dynamic hit radius based on zoom level using gesture configuration
  */
-export function getConfiguredHitRadius(baseRadius: number, scale: number): number {
+export function getConfiguredHitRadius(
+  baseRadius: number,
+  scale: number
+): number {
   // This function should ideally access gestureConfig, but for worklet safety
   // we'll use the hardcoded research-based values
   const minRadius = 15;
   const maxRadius = 50;
   const scaleFactor = 0.8;
-  
+
   const scaleAdjustedRadius = Math.max(
     minRadius,
     Math.min(maxRadius, baseRadius / (scale * scaleFactor))
   );
-  
+
   return scaleAdjustedRadius;
 }
 
@@ -325,20 +356,20 @@ export function smoothVelocityWorklet(
   previousVelocity: GestureVelocity
 ): GestureVelocity {
   'worklet';
-  
+
   // Research-based EMA configuration (hardcoded for worklet safety)
   const alpha = 0.2;
   const spikeThreshold = 100;
-  
+
   // Detect velocity spikes (finger lift artifacts)
   const deltaX = Math.abs(currentVelocity.x - previousVelocity.x);
   const deltaY = Math.abs(currentVelocity.y - previousVelocity.y);
-  
+
   if (deltaX > spikeThreshold || deltaY > spikeThreshold) {
     // Use previous velocity if current seems like finger-lift artifact
     return previousVelocity;
   }
-  
+
   // Apply exponential moving average
   return {
     x: alpha * currentVelocity.x + (1 - alpha) * previousVelocity.x,
@@ -349,11 +380,15 @@ export function smoothVelocityWorklet(
 /**
  * Check if velocity is significant for momentum (worklet-safe)
  */
-export function isVelocitySignificantForMomentum(velocity: GestureVelocity): boolean {
+export function isVelocitySignificantForMomentum(
+  velocity: GestureVelocity
+): boolean {
   'worklet';
-  
+
   // Research-based velocity threshold (150px/s)
   const threshold = 150;
-  const magnitude = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+  const magnitude = Math.sqrt(
+    velocity.x * velocity.x + velocity.y * velocity.y
+  );
   return magnitude > threshold;
 }

@@ -35,11 +35,11 @@ export class NumberFormatter {
       useShortNotation = true,
       minimumFractionDigits = 0,
       maximumFractionDigits = precision,
-      forAccessibility = false
+      forAccessibility = false,
     } = options;
 
     const numericValue = value instanceof BigNumber ? value.toNumber() : value;
-    
+
     // Handle special cases
     if (numericValue === 0) return '0';
     if (!isFinite(numericValue)) return '∞';
@@ -51,13 +51,18 @@ export class NumberFormatter {
     }
 
     // Scientific notation for very large numbers
-    if (useScientific && (Math.abs(numericValue) >= 1e15 || Math.abs(numericValue) < 0.001)) {
+    if (
+      useScientific &&
+      (Math.abs(numericValue) >= 1e15 || Math.abs(numericValue) < 0.001)
+    ) {
       return numericValue.toExponential(precision);
     }
 
     // Short notation (K, M, B, T)
     if (useShortNotation && Math.abs(numericValue) >= 1000) {
-      return numeral(numericValue).format('0.00a').replace(/\.?0+([a-zA-Z])$/, '$1');
+      return numeral(numericValue)
+        .format('0.00a')
+        .replace(/\.?0+([a-zA-Z])$/, '$1');
     }
 
     // Standard number formatting
@@ -74,7 +79,7 @@ export class NumberFormatter {
    */
   static formatForAccessibility(value: number, precision: number = 2): string {
     const absValue = Math.abs(value);
-    
+
     if (absValue === 0) return 'zero';
     if (absValue < 1000) return Math.floor(value).toString();
 
@@ -82,12 +87,14 @@ export class NumberFormatter {
     for (const { value: threshold, name } of this.SUFFIXES) {
       if (absValue >= threshold) {
         const scaledValue = value / threshold;
-        const rounded = Math.round(scaledValue * Math.pow(10, precision)) / Math.pow(10, precision);
-        
+        const rounded =
+          Math.round(scaledValue * Math.pow(10, precision)) /
+          Math.pow(10, precision);
+
         if (rounded === 1) {
           return `one ${name}`;
         }
-        
+
         return `${rounded} ${name}`;
       }
     }
@@ -104,11 +111,11 @@ export class NumberFormatter {
     options: NumberFormatOptions = {}
   ): string {
     const formattedNumber = this.format(value, options);
-    
+
     if (resourceName) {
       return `${formattedNumber} ${resourceName}`;
     }
-    
+
     return formattedNumber;
   }
 
@@ -120,14 +127,14 @@ export class NumberFormatter {
     options: NumberFormatOptions = {}
   ): string {
     const { precision = 1, forAccessibility = false } = options;
-    
+
     const percentage = value * 100;
     const formatted = this.format(percentage, { ...options, precision });
-    
+
     if (forAccessibility) {
       return `${formatted} percent`;
     }
-    
+
     return `${formatted}%`;
   }
 
@@ -139,7 +146,7 @@ export class NumberFormatter {
     options: { forAccessibility?: boolean } = {}
   ): string {
     const { forAccessibility = false } = options;
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = Math.floor(seconds % 60);
@@ -147,11 +154,14 @@ export class NumberFormatter {
     if (forAccessibility) {
       const parts: string[] = [];
       if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
-      if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+      if (minutes > 0)
+        parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
       if (remainingSeconds > 0 || parts.length === 0) {
-        parts.push(`${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''}`);
+        parts.push(
+          `${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''}`
+        );
       }
-      
+
       return parts.join(', ');
     }
 
@@ -184,17 +194,17 @@ export class NumberFormatter {
     options: { includePercentage?: boolean; context?: string } = {}
   ): string {
     const { includePercentage = true, context = 'Progress' } = options;
-    
+
     const percentage = total > 0 ? (current / total) * 100 : 0;
     const currentFormatted = this.format(current, { forAccessibility: true });
     const totalFormatted = this.format(total, { forAccessibility: true });
-    
+
     let description = `${context}: ${currentFormatted} of ${totalFormatted}`;
-    
+
     if (includePercentage) {
       description += ` (${this.formatPercentage(percentage / 100, { forAccessibility: true })})`;
     }
-    
+
     return description;
   }
 }
@@ -219,6 +229,5 @@ export const formatResource = (
 /**
  * Convenience function for accessibility formatting
  */
-export const formatForScreenReader = (
-  value: number | BigNumber
-): string => NumberFormatter.format(value, { forAccessibility: true });
+export const formatForScreenReader = (value: number | BigNumber): string =>
+  NumberFormatter.format(value, { forAccessibility: true });

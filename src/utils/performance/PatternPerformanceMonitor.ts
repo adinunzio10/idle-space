@@ -35,7 +35,10 @@ export interface PerformanceReport {
  */
 export class PatternPerformanceMonitor {
   private metrics: PerformanceMetrics[] = [];
-  private activeOperations: Map<string, { startTime: number; startMemory: number }> = new Map();
+  private activeOperations: Map<
+    string,
+    { startTime: number; startMemory: number }
+  > = new Map();
   private thresholds: PerformanceThresholds;
   private maxStoredMetrics: number = 1000;
   private frameRateHistory: number[] = [];
@@ -128,11 +131,16 @@ export class PatternPerformanceMonitor {
   ): { result: T; metrics: PerformanceMetrics } {
     const operationId = `sync_${Date.now()}_${Math.random()}`;
     this.startOperation(operationId, operationType, beaconCount, patternType);
-    
+
     const result = operation();
-    
-    const metrics = this.endOperation(operationId, operationType, beaconCount, patternType);
-    
+
+    const metrics = this.endOperation(
+      operationId,
+      operationType,
+      beaconCount,
+      patternType
+    );
+
     return { result, metrics: metrics! };
   }
 
@@ -147,11 +155,16 @@ export class PatternPerformanceMonitor {
   ): Promise<{ result: T; metrics: PerformanceMetrics }> {
     const operationId = `async_${Date.now()}_${Math.random()}`;
     this.startOperation(operationId, operationType, beaconCount, patternType);
-    
+
     const result = await operation();
-    
-    const metrics = this.endOperation(operationId, operationType, beaconCount, patternType);
-    
+
+    const metrics = this.endOperation(
+      operationId,
+      operationType,
+      beaconCount,
+      patternType
+    );
+
     return { result, metrics: metrics! };
   }
 
@@ -159,7 +172,7 @@ export class PatternPerformanceMonitor {
    * Get performance report for recent operations
    */
   getPerformanceReport(lastNOperations?: number): PerformanceReport {
-    const relevantMetrics = lastNOperations 
+    const relevantMetrics = lastNOperations
       ? this.metrics.slice(-lastNOperations)
       : this.metrics;
 
@@ -178,20 +191,24 @@ export class PatternPerformanceMonitor {
 
     const durations = relevantMetrics.map(m => m.duration);
     const totalOperations = relevantMetrics.length;
-    const averageDuration = durations.reduce((sum, d) => sum + d, 0) / durations.length;
+    const averageDuration =
+      durations.reduce((sum, d) => sum + d, 0) / durations.length;
     const maxDuration = Math.max(...durations);
     const minDuration = Math.min(...durations);
 
-    const operationsOverThreshold = relevantMetrics.filter(m => 
-      m.duration > this.getThresholdForOperation(m.operationType)
+    const operationsOverThreshold = relevantMetrics.filter(
+      m => m.duration > this.getThresholdForOperation(m.operationType)
     ).length;
 
-    const frameRateViolations = relevantMetrics.filter(m => 
-      m.frameRate !== undefined && m.frameRate < this.thresholds.minFrameRate
+    const frameRateViolations = relevantMetrics.filter(
+      m =>
+        m.frameRate !== undefined && m.frameRate < this.thresholds.minFrameRate
     ).length;
 
-    const memoryLeaks = relevantMetrics.filter(m => 
-      m.memoryUsage !== undefined && m.memoryUsage > this.thresholds.maxMemoryDelta
+    const memoryLeaks = relevantMetrics.filter(
+      m =>
+        m.memoryUsage !== undefined &&
+        m.memoryUsage > this.thresholds.maxMemoryDelta
     ).length;
 
     const recommendations = this.generateRecommendations(relevantMetrics);
@@ -211,7 +228,10 @@ export class PatternPerformanceMonitor {
   /**
    * Get metrics for a specific operation type
    */
-  getMetricsForOperation(operationType: string, patternType?: PatternType): PerformanceMetrics[] {
+  getMetricsForOperation(
+    operationType: string,
+    patternType?: PatternType
+  ): PerformanceMetrics[] {
     return this.metrics.filter(m => {
       const matchesType = m.operationType === operationType;
       const matchesPattern = !patternType || m.patternType === patternType;
@@ -224,16 +244,16 @@ export class PatternPerformanceMonitor {
    */
   isPerformanceAcceptable(): boolean {
     const recentMetrics = this.metrics.slice(-10); // Check last 10 operations
-    
+
     if (recentMetrics.length === 0) return true;
 
     // Check if more than 30% of recent operations exceeded thresholds
-    const exceededCount = recentMetrics.filter(m => 
-      m.duration > this.getThresholdForOperation(m.operationType)
+    const exceededCount = recentMetrics.filter(
+      m => m.duration > this.getThresholdForOperation(m.operationType)
     ).length;
 
     const exceedanceRate = exceededCount / recentMetrics.length;
-    
+
     // Check frame rate
     const avgFrameRate = this.getCurrentFrameRate();
     const frameRateAcceptable = avgFrameRate >= this.thresholds.minFrameRate;
@@ -274,9 +294,10 @@ export class PatternPerformanceMonitor {
     if (this.lastFrameTime > 0) {
       const frameDuration = now - this.lastFrameTime;
       const frameRate = 1000 / frameDuration;
-      
+
       this.frameRateHistory.push(frameRate);
-      if (this.frameRateHistory.length > 60) { // Keep last 60 frames (1 second at 60fps)
+      if (this.frameRateHistory.length > 60) {
+        // Keep last 60 frames (1 second at 60fps)
         this.frameRateHistory.shift();
       }
     }
@@ -285,8 +306,11 @@ export class PatternPerformanceMonitor {
 
   private getCurrentFrameRate(): number {
     if (this.frameRateHistory.length === 0) return 60; // Assume good frame rate if no data
-    
-    return this.frameRateHistory.reduce((sum, rate) => sum + rate, 0) / this.frameRateHistory.length;
+
+    return (
+      this.frameRateHistory.reduce((sum, rate) => sum + rate, 0) /
+      this.frameRateHistory.length
+    );
   }
 
   private getThresholdForOperation(operationType: string): number {
@@ -304,63 +328,86 @@ export class PatternPerformanceMonitor {
 
   private checkPerformanceWarnings(metrics: PerformanceMetrics): void {
     const threshold = this.getThresholdForOperation(metrics.operationType);
-    
+
     if (metrics.duration > threshold) {
       console.warn(
         `Pattern operation '${metrics.operationType}' took ${metrics.duration.toFixed(2)}ms ` +
-        `(threshold: ${threshold}ms) with ${metrics.beaconCount} beacons`
+          `(threshold: ${threshold}ms) with ${metrics.beaconCount} beacons`
       );
     }
 
-    if (metrics.frameRate !== undefined && metrics.frameRate < this.thresholds.minFrameRate) {
+    if (
+      metrics.frameRate !== undefined &&
+      metrics.frameRate < this.thresholds.minFrameRate
+    ) {
       console.warn(
         `Frame rate dropped to ${metrics.frameRate.toFixed(1)}fps ` +
-        `(minimum: ${this.thresholds.minFrameRate}fps) during ${metrics.operationType}`
+          `(minimum: ${this.thresholds.minFrameRate}fps) during ${metrics.operationType}`
       );
     }
 
-    if (metrics.memoryUsage !== undefined && metrics.memoryUsage > this.thresholds.maxMemoryDelta) {
+    if (
+      metrics.memoryUsage !== undefined &&
+      metrics.memoryUsage > this.thresholds.maxMemoryDelta
+    ) {
       console.warn(
         `Memory usage increased by ${metrics.memoryUsage.toFixed(2)}MB ` +
-        `(threshold: ${this.thresholds.maxMemoryDelta}MB) during ${metrics.operationType}`
+          `(threshold: ${this.thresholds.maxMemoryDelta}MB) during ${metrics.operationType}`
       );
     }
   }
 
   private generateRecommendations(metrics: PerformanceMetrics[]): string[] {
     const recommendations: string[] = [];
-    
+
     if (metrics.length === 0) return recommendations;
 
     // Check average performance
-    const avgDuration = metrics.reduce((sum, m) => sum + m.duration, 0) / metrics.length;
+    const avgDuration =
+      metrics.reduce((sum, m) => sum + m.duration, 0) / metrics.length;
     if (avgDuration > 100) {
-      recommendations.push('Consider reducing pattern calculation frequency or beacon count limits');
+      recommendations.push(
+        'Consider reducing pattern calculation frequency or beacon count limits'
+      );
     }
 
     // Check for frame rate issues
     const frameRateMetrics = metrics.filter(m => m.frameRate !== undefined);
     if (frameRateMetrics.length > 0) {
-      const avgFrameRate = frameRateMetrics.reduce((sum, m) => sum + m.frameRate!, 0) / frameRateMetrics.length;
+      const avgFrameRate =
+        frameRateMetrics.reduce((sum, m) => sum + m.frameRate!, 0) /
+        frameRateMetrics.length;
       if (avgFrameRate < this.thresholds.minFrameRate) {
-        recommendations.push('Frame rate is below target - consider implementing pattern caching or debouncing');
+        recommendations.push(
+          'Frame rate is below target - consider implementing pattern caching or debouncing'
+        );
       }
     }
 
     // Check for memory issues
     const memoryMetrics = metrics.filter(m => m.memoryUsage !== undefined);
-    if (memoryMetrics.some(m => m.memoryUsage! > this.thresholds.maxMemoryDelta)) {
-      recommendations.push('Memory usage spikes detected - review object creation and cleanup');
+    if (
+      memoryMetrics.some(m => m.memoryUsage! > this.thresholds.maxMemoryDelta)
+    ) {
+      recommendations.push(
+        'Memory usage spikes detected - review object creation and cleanup'
+      );
     }
 
     // Pattern-specific recommendations
-    const patternTypes = [...new Set(metrics.map(m => m.patternType).filter(Boolean))];
+    const patternTypes = [
+      ...new Set(metrics.map(m => m.patternType).filter(Boolean)),
+    ];
     for (const patternType of patternTypes) {
       const patternMetrics = metrics.filter(m => m.patternType === patternType);
-      const avgPatternDuration = patternMetrics.reduce((sum, m) => sum + m.duration, 0) / patternMetrics.length;
-      
+      const avgPatternDuration =
+        patternMetrics.reduce((sum, m) => sum + m.duration, 0) /
+        patternMetrics.length;
+
       if (avgPatternDuration > 75) {
-        recommendations.push(`${patternType} pattern operations are slow - consider optimizing geometry calculations`);
+        recommendations.push(
+          `${patternType} pattern operations are slow - consider optimizing geometry calculations`
+        );
       }
     }
 

@@ -11,7 +11,10 @@ import {
 } from 'react-native-reanimated';
 
 import { PatternType } from '../../types/galaxy';
-import { PATTERN_VISUAL_CONFIG, PATTERN_COLORS } from '../../constants/patterns';
+import {
+  PATTERN_VISUAL_CONFIG,
+  PATTERN_COLORS,
+} from '../../constants/patterns';
 
 /**
  * Animation presets for different pattern formation scenarios
@@ -23,21 +26,21 @@ export const PATTERN_ANIMATION_PRESETS = {
     easing: Easing.bezier(0.4, 0.0, 0.2, 1),
     delay: 0,
   },
-  
+
   // Quick formation for patterns detected during rapid beacon placement
   quickFormation: {
     duration: PATTERN_VISUAL_CONFIG.ANIMATION.FORMATION_DURATION * 0.6,
     easing: Easing.out(Easing.quad),
     delay: 0,
   },
-  
+
   // Destruction when pattern is broken
   destruction: {
     duration: PATTERN_VISUAL_CONFIG.ANIMATION.DESTRUCTION_DURATION,
     easing: Easing.bezier(0.6, 0.0, 0.8, 1),
     delay: 0,
   },
-  
+
   // Bonus activation flash
   bonusActivation: {
     duration: PATTERN_VISUAL_CONFIG.ANIMATION.BONUS_FLASH_DURATION,
@@ -56,18 +59,22 @@ export const createFormationAnimation = (
   onComplete?: () => void
 ) => {
   const animationConfig = PATTERN_ANIMATION_PRESETS[preset];
-  
+
   progress.value = 0;
   progress.value = withDelay(
     animationConfig.delay,
-    withTiming(1, {
-      duration: animationConfig.duration,
-      easing: animationConfig.easing,
-    }, (finished) => {
-      if (finished && onComplete) {
-        runOnJS(onComplete)();
+    withTiming(
+      1,
+      {
+        duration: animationConfig.duration,
+        easing: animationConfig.easing,
+      },
+      finished => {
+        if (finished && onComplete) {
+          runOnJS(onComplete)();
+        }
       }
-    })
+    )
   );
 };
 
@@ -81,25 +88,29 @@ export const createDestructionAnimation = (
   onComplete?: () => void
 ) => {
   const config = PATTERN_ANIMATION_PRESETS.destruction;
-  
+
   progress.value = withTiming(0, {
     duration: config.duration,
     easing: config.easing,
   });
-  
+
   scale.value = withTiming(0.3, {
     duration: config.duration,
     easing: config.easing,
   });
-  
-  opacity.value = withTiming(0, {
-    duration: config.duration * 0.8, // Fade out slightly faster
-    easing: config.easing,
-  }, (finished) => {
-    if (finished && onComplete) {
-      runOnJS(onComplete)();
+
+  opacity.value = withTiming(
+    0,
+    {
+      duration: config.duration * 0.8, // Fade out slightly faster
+      easing: config.easing,
+    },
+    finished => {
+      if (finished && onComplete) {
+        runOnJS(onComplete)();
+      }
     }
-  });
+  );
 };
 
 /**
@@ -112,7 +123,7 @@ export const createPulseAnimation = (
 ) => {
   const config = PATTERN_VISUAL_CONFIG.EFFECTS[patternType];
   const adjustedIntensity = config.pulseIntensity * intensity;
-  
+
   pulseProgress.value = withRepeat(
     withSequence(
       withTiming(1, {
@@ -144,11 +155,11 @@ export const createGlowAnimation = (
     });
     return;
   }
-  
+
   const config = PATTERN_VISUAL_CONFIG.EFFECTS[patternType];
   const maxIntensity = config.glowIntensity;
   const minIntensity = maxIntensity * 0.3;
-  
+
   glowIntensity.value = withRepeat(
     withSequence(
       withTiming(maxIntensity, {
@@ -174,12 +185,12 @@ export const createShimmerAnimation = (
   enabled: boolean = true
 ) => {
   const config = PATTERN_VISUAL_CONFIG.EFFECTS[patternType];
-  
+
   if (!enabled || !config.hasShimmer) {
     shimmerProgress.value = 0;
     return;
   }
-  
+
   shimmerProgress.value = withRepeat(
     withTiming(1, {
       duration: PATTERN_VISUAL_CONFIG.ANIMATION.SHIMMER_DURATION,
@@ -207,14 +218,18 @@ export const createBonusFlashAnimation = (
       duration: PATTERN_VISUAL_CONFIG.ANIMATION.BONUS_FLASH_DURATION * 0.2,
       easing: Easing.inOut(Easing.quad),
     }),
-    withTiming(0, {
-      duration: PATTERN_VISUAL_CONFIG.ANIMATION.BONUS_FLASH_DURATION * 0.5,
-      easing: Easing.out(Easing.exp),
-    }, (finished) => {
-      if (finished && onComplete) {
-        runOnJS(onComplete)();
+    withTiming(
+      0,
+      {
+        duration: PATTERN_VISUAL_CONFIG.ANIMATION.BONUS_FLASH_DURATION * 0.5,
+        easing: Easing.out(Easing.exp),
+      },
+      finished => {
+        if (finished && onComplete) {
+          runOnJS(onComplete)();
+        }
       }
-    })
+    )
   );
 };
 
@@ -227,12 +242,12 @@ export const createParticleAnimation = (
   enabled: boolean = true
 ) => {
   const config = PATTERN_VISUAL_CONFIG.EFFECTS[patternType];
-  
+
   if (!enabled || !config.hasParticles) {
     particleProgress.value = 0;
     return;
   }
-  
+
   particleProgress.value = withRepeat(
     withSequence(
       withDelay(
@@ -266,19 +281,14 @@ export const createSequentialFormationAnimation = (
 ) => {
   let completedCount = 0;
   const totalPatterns = patterns.length;
-  
+
   patterns.forEach(({ progress, type, delay }, index) => {
-    createFormationAnimation(
-      progress,
-      type,
-      'formation',
-      () => {
-        completedCount++;
-        if (completedCount === totalPatterns && onComplete) {
-          onComplete();
-        }
+    createFormationAnimation(progress, type, 'formation', () => {
+      completedCount++;
+      if (completedCount === totalPatterns && onComplete) {
+        onComplete();
       }
-    );
+    });
   });
 };
 
@@ -287,53 +297,44 @@ export const createSequentialFormationAnimation = (
  */
 export const createInteractionFeedback = {
   // Touch down feedback
-  touchDown: (
-    scale: SharedValue<number>,
-    opacity: SharedValue<number>
-  ) => {
+  touchDown: (scale: SharedValue<number>, opacity: SharedValue<number>) => {
     scale.value = withSpring(1.05, {
       damping: 20,
       stiffness: 400,
     });
-    
+
     opacity.value = withTiming(0.8, {
       duration: 150,
       easing: Easing.out(Easing.quad),
     });
   },
-  
+
   // Touch up feedback
-  touchUp: (
-    scale: SharedValue<number>,
-    opacity: SharedValue<number>
-  ) => {
+  touchUp: (scale: SharedValue<number>, opacity: SharedValue<number>) => {
     scale.value = withSpring(1, {
       damping: 20,
       stiffness: 400,
     });
-    
+
     opacity.value = withTiming(1, {
       duration: 200,
       easing: Easing.out(Easing.quad),
     });
   },
-  
+
   // Hover effect (for future web support)
-  hover: (
-    scale: SharedValue<number>,
-    glowIntensity: SharedValue<number>
-  ) => {
+  hover: (scale: SharedValue<number>, glowIntensity: SharedValue<number>) => {
     scale.value = withSpring(1.03, {
       damping: 25,
       stiffness: 300,
     });
-    
+
     glowIntensity.value = withTiming(1.3, {
       duration: 200,
       easing: Easing.out(Easing.quad),
     });
   },
-  
+
   // Hover out
   hoverOut: (
     scale: SharedValue<number>,
@@ -343,7 +344,7 @@ export const createInteractionFeedback = {
       damping: 25,
       stiffness: 300,
     });
-    
+
     glowIntensity.value = withTiming(1, {
       duration: 200,
       easing: Easing.out(Easing.quad),
@@ -360,19 +361,15 @@ export const interpolatePatternScale = (
   patternType: PatternType,
   baseScale: number = 1
 ): number => {
-  const formationScale = interpolate(
-    progress,
-    [0, 0.3, 1],
-    [0.1, 0.8, 1]
-  );
-  
+  const formationScale = interpolate(progress, [0, 0.3, 1], [0.1, 0.8, 1]);
+
   const config = PATTERN_VISUAL_CONFIG.EFFECTS[patternType];
   const pulseScale = interpolate(
     pulseProgress,
     [0, 1],
     [1, 1 + config.pulseIntensity]
   );
-  
+
   return baseScale * formationScale * pulseScale;
 };
 
@@ -381,22 +378,14 @@ export const interpolatePatternOpacity = (
   glowIntensity: number,
   isActive: boolean = true
 ): number => {
-  const baseOpacity = interpolate(
-    progress,
-    [0, 0.3, 1],
-    [0, 0.5, 1]
-  );
-  
-  const targetOpacity = isActive 
+  const baseOpacity = interpolate(progress, [0, 0.3, 1], [0, 0.5, 1]);
+
+  const targetOpacity = isActive
     ? PATTERN_VISUAL_CONFIG.RENDERING.FILL_OPACITY_ACTIVE
     : PATTERN_VISUAL_CONFIG.RENDERING.FILL_OPACITY;
-  
-  const glowBoost = interpolate(
-    glowIntensity,
-    [0, 1],
-    [1, 1.2]
-  );
-  
+
+  const glowBoost = interpolate(glowIntensity, [0, 1], [1, 1.2]);
+
   return Math.min(1, baseOpacity * targetOpacity * glowBoost);
 };
 
@@ -406,27 +395,27 @@ export const interpolatePatternOpacity = (
 export class PatternAnimationController {
   private activeAnimations = new Set<string>();
   private maxConcurrentAnimations: number;
-  
+
   constructor(maxConcurrent: number = 10) {
     this.maxConcurrentAnimations = maxConcurrent;
   }
-  
+
   canStartAnimation(patternId: string): boolean {
     return this.activeAnimations.size < this.maxConcurrentAnimations;
   }
-  
+
   startAnimation(patternId: string): void {
     this.activeAnimations.add(patternId);
   }
-  
+
   endAnimation(patternId: string): void {
     this.activeAnimations.delete(patternId);
   }
-  
+
   getActiveAnimationCount(): number {
     return this.activeAnimations.size;
   }
-  
+
   clearAllAnimations(): void {
     this.activeAnimations.clear();
   }

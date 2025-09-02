@@ -23,8 +23,8 @@ import {
  */
 class MortonCodeUtil implements MortonCode {
   private static interleave(x: number): number {
-    x = (x | (x << 8)) & 0x00FF00FF;
-    x = (x | (x << 4)) & 0x0F0F0F0F;
+    x = (x | (x << 8)) & 0x00ff00ff;
+    x = (x | (x << 4)) & 0x0f0f0f0f;
     x = (x | (x << 2)) & 0x33333333;
     x = (x | (x << 1)) & 0x55555555;
     return x;
@@ -33,9 +33,9 @@ class MortonCodeUtil implements MortonCode {
   private static deinterleave(x: number): number {
     x = x & 0x55555555;
     x = (x | (x >> 1)) & 0x33333333;
-    x = (x | (x >> 2)) & 0x0F0F0F0F;
-    x = (x | (x >> 4)) & 0x00FF00FF;
-    x = (x | (x >> 8)) & 0x0000FFFF;
+    x = (x | (x >> 2)) & 0x0f0f0f0f;
+    x = (x | (x >> 4)) & 0x00ff00ff;
+    x = (x | (x >> 8)) & 0x0000ffff;
     return x;
   }
 
@@ -44,7 +44,7 @@ class MortonCodeUtil implements MortonCode {
     const maxVal = (1 << HASH_FUNCTION_CONFIG.MORTON_BITS) - 1;
     const ix = Math.max(0, Math.min(maxVal, Math.floor(x)));
     const iy = Math.max(0, Math.min(maxVal, Math.floor(y)));
-    
+
     return MortonCodeUtil.interleave(ix) | (MortonCodeUtil.interleave(iy) << 1);
   }
 
@@ -58,20 +58,20 @@ class MortonCodeUtil implements MortonCode {
   getNeighborCodes(code: number, radius: number): number[] {
     const center = this.decode(code);
     const neighbors: number[] = [];
-    
+
     for (let dx = -radius; dx <= radius; dx++) {
       for (let dy = -radius; dy <= radius; dy++) {
         if (dx === 0 && dy === 0) continue;
-        
+
         const nx = center.x + dx;
         const ny = center.y + dy;
-        
+
         if (nx >= 0 && ny >= 0) {
           neighbors.push(this.encode(nx, ny));
         }
       }
     }
-    
+
     return neighbors;
   }
 }
@@ -91,7 +91,7 @@ class SpatialHashFunctionImpl implements SpatialHashFunction {
   hash(x: number, y: number): string {
     const cellX = Math.floor(x / this.cellSize);
     const cellY = Math.floor(y / this.cellSize);
-    
+
     // Use Morton code for spatial locality
     const mortonCode = this.morton.encode(cellX, cellY);
     return mortonCode.toString(16);
@@ -100,7 +100,7 @@ class SpatialHashFunctionImpl implements SpatialHashFunction {
   unhash(key: string): { x: number; y: number } {
     const mortonCode = parseInt(key, 16);
     const cell = this.morton.decode(mortonCode);
-    
+
     return {
       x: cell.x * this.cellSize,
       y: cell.y * this.cellSize,
@@ -110,7 +110,7 @@ class SpatialHashFunctionImpl implements SpatialHashFunction {
   getAdjacentKeys(key: string, radius: number): string[] {
     const mortonCode = parseInt(key, 16);
     const neighborCodes = this.morton.getNeighborCodes(mortonCode, radius);
-    
+
     return neighborCodes.map(code => code.toString(16));
   }
 }
@@ -124,9 +124,15 @@ export class SpatialHashMap {
   private beaconToCell: Map<string, string>; // beacon ID -> cell key mapping
   private hashFunction: SpatialHashFunction;
   private metrics: SpatialHashMetrics;
-  private neighborCache: Map<string, { result: NeighborQueryResult[]; timestamp: number }>;
-  private queryCache: Map<string, { result: SpatialQueryResult; timestamp: number }>;
-  
+  private neighborCache: Map<
+    string,
+    { result: NeighborQueryResult[]; timestamp: number }
+  >;
+  private queryCache: Map<
+    string,
+    { result: SpatialQueryResult; timestamp: number }
+  >;
+
   constructor(config: Partial<SpatialHashConfig> = {}) {
     this.config = { ...DEFAULT_SPATIAL_HASH_CONFIG, ...config };
     this.cells = new Map();
@@ -134,7 +140,7 @@ export class SpatialHashMap {
     this.hashFunction = new SpatialHashFunctionImpl(this.config.cellSize);
     this.neighborCache = new Map();
     this.queryCache = new Map();
-    
+
     this.metrics = {
       totalCells: 0,
       occupiedCells: 0,
@@ -157,11 +163,14 @@ export class SpatialHashMap {
    * Add a beacon to the spatial hash map
    */
   addBeacon(beacon: Beacon): void {
-    const cellKey = this.hashFunction.hash(beacon.position.x, beacon.position.y);
-    
+    const cellKey = this.hashFunction.hash(
+      beacon.position.x,
+      beacon.position.y
+    );
+
     // Remove from old cell if it exists
     this.removeBeacon(beacon.id);
-    
+
     // Get or create cell
     let cell = this.cells.get(cellKey);
     if (!cell) {
@@ -179,17 +188,17 @@ export class SpatialHashMap {
       this.cells.set(cellKey, cell);
       this.metrics.totalCells++;
     }
-    
+
     cell.beacons.add(beacon.id);
     cell.lastUpdated = Date.now();
     this.beaconToCell.set(beacon.id, cellKey);
-    
+
     // Invalidate caches that might be affected
     this.invalidateCaches(cellKey);
-    
+
     // Update metrics
     this.updateMetrics();
-    
+
     // Check if rebalancing is needed
     if (this.shouldRebalance()) {
       this.rebalance();
@@ -202,25 +211,25 @@ export class SpatialHashMap {
   removeBeacon(beaconId: string): boolean {
     const cellKey = this.beaconToCell.get(beaconId);
     if (!cellKey) return false;
-    
+
     const cell = this.cells.get(cellKey);
     if (!cell) return false;
-    
+
     const removed = cell.beacons.delete(beaconId);
     if (removed) {
       this.beaconToCell.delete(beaconId);
       cell.lastUpdated = Date.now();
-      
+
       // Remove empty cells to save memory
       if (cell.beacons.size === 0) {
         this.cells.delete(cellKey);
         this.metrics.totalCells--;
       }
-      
+
       this.invalidateCaches(cellKey);
       this.updateMetrics();
     }
-    
+
     return removed;
   }
 
@@ -229,8 +238,11 @@ export class SpatialHashMap {
    */
   updateBeacon(beacon: Beacon, oldPosition: Point2D): void {
     const oldCellKey = this.hashFunction.hash(oldPosition.x, oldPosition.y);
-    const newCellKey = this.hashFunction.hash(beacon.position.x, beacon.position.y);
-    
+    const newCellKey = this.hashFunction.hash(
+      beacon.position.x,
+      beacon.position.y
+    );
+
     // If the cell hasn't changed, no need to update
     if (oldCellKey === newCellKey) {
       const cell = this.cells.get(newCellKey);
@@ -239,7 +251,7 @@ export class SpatialHashMap {
       }
       return;
     }
-    
+
     // Remove from old position and add to new position
     this.removeBeacon(beacon.id);
     this.addBeacon(beacon);
@@ -254,30 +266,36 @@ export class SpatialHashMap {
   ): NeighborQueryResult[] {
     const queryConfig = { ...NEIGHBOR_QUERY_CONFIG, ...config };
     const cacheKey = `${position.x},${position.y},${queryConfig.radius},${queryConfig.maxResults}`;
-    
+
     // Check cache first
     const cached = this.neighborCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < NEIGHBOR_QUERY_CONFIG.NEIGHBOR_CACHE_TTL) {
+    if (
+      cached &&
+      Date.now() - cached.timestamp < NEIGHBOR_QUERY_CONFIG.NEIGHBOR_CACHE_TTL
+    ) {
       this.metrics.queryPerformance.cacheHitRate++;
       return cached.result;
     }
-    
+
     const startTime = performance.now();
     const results: NeighborQueryResult[] = [];
-    
+
     // Calculate search radius in cells
     const radius = queryConfig.radius || this.config.cellSize;
     const cellRadius = Math.ceil(radius / this.config.cellSize);
     const centerCellKey = this.hashFunction.hash(position.x, position.y);
-    
+
     // Get adjacent cell keys
-    const searchCells = [centerCellKey, ...this.hashFunction.getAdjacentKeys(centerCellKey, cellRadius)];
-    
+    const searchCells = [
+      centerCellKey,
+      ...this.hashFunction.getAdjacentKeys(centerCellKey, cellRadius),
+    ];
+
     // Search all relevant cells
     for (const cellKey of searchCells) {
       const cell = this.cells.get(cellKey);
       if (!cell) continue;
-      
+
       for (const beaconId of cell.beacons) {
         // Note: We need beacon data to calculate distance
         // This would need to be injected or maintained in the hash map
@@ -288,28 +306,28 @@ export class SpatialHashMap {
           direction: 0, // Would calculate actual direction
           cellId: cellKey,
         });
-        
+
         const maxResults = queryConfig.maxResults || Number.MAX_SAFE_INTEGER;
         if (results.length >= maxResults) break;
       }
-      
+
       const maxResults = queryConfig.maxResults || Number.MAX_SAFE_INTEGER;
       if (results.length >= maxResults) break;
     }
-    
+
     const queryTime = performance.now() - startTime;
-    
+
     // Cache the result
     this.neighborCache.set(cacheKey, {
       result: results,
       timestamp: Date.now(),
     });
-    
+
     // Update metrics
     this.metrics.queryPerformance.queryCount++;
-    this.metrics.queryPerformance.averageQueryTime = 
+    this.metrics.queryPerformance.averageQueryTime =
       (this.metrics.queryPerformance.averageQueryTime + queryTime) / 2;
-    
+
     return results;
   }
 
@@ -323,25 +341,26 @@ export class SpatialHashMap {
     maxY: number;
   }): SpatialQueryResult {
     const cacheKey = `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}`;
-    
+
     // Check cache
     const cached = this.queryCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < 1000) { // 1 second cache
+    if (cached && Date.now() - cached.timestamp < 1000) {
+      // 1 second cache
       return cached.result;
     }
-    
+
     const startTime = performance.now();
     const beaconIds = new Set<string>();
     let cellsSearched = 0;
     let hitCount = 0;
     let missCount = 0;
-    
+
     // Calculate cell range
     const minCellX = Math.floor(bounds.minX / this.config.cellSize);
     const maxCellX = Math.floor(bounds.maxX / this.config.cellSize);
     const minCellY = Math.floor(bounds.minY / this.config.cellSize);
     const maxCellY = Math.floor(bounds.maxY / this.config.cellSize);
-    
+
     // Search cells within bounds
     for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
       for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
@@ -349,10 +368,10 @@ export class SpatialHashMap {
           cellX * this.config.cellSize,
           cellY * this.config.cellSize
         );
-        
+
         cellsSearched++;
         const cell = this.cells.get(cellKey);
-        
+
         if (cell) {
           hitCount++;
           for (const beaconId of cell.beacons) {
@@ -363,9 +382,9 @@ export class SpatialHashMap {
         }
       }
     }
-    
+
     const queryTime = performance.now() - startTime;
-    
+
     const result: SpatialQueryResult = {
       beacons: [], // Would need actual beacon objects
       cellsSearched,
@@ -373,13 +392,13 @@ export class SpatialHashMap {
       hitCount,
       missCount,
     };
-    
+
     // Cache result
     this.queryCache.set(cacheKey, {
       result,
       timestamp: Date.now(),
     });
-    
+
     return result;
   }
 
@@ -439,7 +458,7 @@ export class SpatialHashMap {
   /**
    * Private helper methods
    */
-  
+
   private invalidateCaches(affectedCellKey: string): void {
     // Clear neighbor cache entries that might be affected
     const keysToDelete: string[] = [];
@@ -447,40 +466,45 @@ export class SpatialHashMap {
       // Simple heuristic: invalidate if cache key might overlap with affected cell
       keysToDelete.push(cacheKey);
     }
-    
+
     // For performance, only clear old cache entries
     const now = Date.now();
     for (const key of keysToDelete) {
       const cached = this.neighborCache.get(key);
-      if (cached && (now - cached.timestamp) > NEIGHBOR_QUERY_CONFIG.NEIGHBOR_CACHE_TTL / 2) {
+      if (
+        cached &&
+        now - cached.timestamp > NEIGHBOR_QUERY_CONFIG.NEIGHBOR_CACHE_TTL / 2
+      ) {
         this.neighborCache.delete(key);
       }
     }
-    
+
     // Clear query cache
     this.queryCache.clear();
   }
 
   private updateMetrics(): void {
     this.metrics.occupiedCells = this.cells.size;
-    
+
     let totalBeacons = 0;
     let maxBeacons = 0;
-    
+
     for (const cell of this.cells.values()) {
       const beaconCount = cell.beacons.size;
       totalBeacons += beaconCount;
       maxBeacons = Math.max(maxBeacons, beaconCount);
     }
-    
-    this.metrics.averageBeaconsPerCell = this.metrics.occupiedCells > 0 
-      ? totalBeacons / this.metrics.occupiedCells 
-      : 0;
+
+    this.metrics.averageBeaconsPerCell =
+      this.metrics.occupiedCells > 0
+        ? totalBeacons / this.metrics.occupiedCells
+        : 0;
     this.metrics.maxBeaconsPerCell = maxBeacons;
-    this.metrics.loadFactor = totalBeacons / (this.config.initialCapacity * this.metrics.totalCells);
-    
+    this.metrics.loadFactor =
+      totalBeacons / (this.config.initialCapacity * this.metrics.totalCells);
+
     // Estimate memory usage
-    this.metrics.memoryUsageBytes = 
+    this.metrics.memoryUsageBytes =
       this.cells.size * 200 + // Approximate cell overhead
       this.beaconToCell.size * 50 + // Beacon mapping overhead
       this.neighborCache.size * 100 + // Cache overhead
@@ -490,15 +514,16 @@ export class SpatialHashMap {
   private shouldRebalance(): boolean {
     return (
       this.metrics.loadFactor > this.config.loadFactor ||
-      this.metrics.maxBeaconsPerCell > SPATIAL_PERFORMANCE_THRESHOLDS.HIGH_DENSITY_THRESHOLD / 10 ||
-      (Date.now() - this.metrics.lastRebalanceTime) > 60000 // 1 minute
+      this.metrics.maxBeaconsPerCell >
+        SPATIAL_PERFORMANCE_THRESHOLDS.HIGH_DENSITY_THRESHOLD / 10 ||
+      Date.now() - this.metrics.lastRebalanceTime > 60000 // 1 minute
     );
   }
 
   private rebalance(): void {
     // Simple rebalancing: adjust cell size based on beacon density
     const totalBeacons = this.beaconToCell.size;
-    
+
     if (totalBeacons > SPATIAL_PERFORMANCE_THRESHOLDS.HIGH_DENSITY_THRESHOLD) {
       // Use coarser cells for high density
       this.config.cellSize = MULTI_RESOLUTION_CELL_SIZES.COARSE;
@@ -506,11 +531,11 @@ export class SpatialHashMap {
       // Use finer cells for low density
       this.config.cellSize = MULTI_RESOLUTION_CELL_SIZES.FINE;
     }
-    
+
     this.hashFunction = new SpatialHashFunctionImpl(this.config.cellSize);
     this.metrics.rebalanceCount++;
     this.metrics.lastRebalanceTime = Date.now();
-    
+
     // Clear caches after rebalancing
     this.neighborCache.clear();
     this.queryCache.clear();

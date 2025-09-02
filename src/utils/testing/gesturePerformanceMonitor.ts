@@ -1,9 +1,9 @@
 /**
  * GESTURE PERFORMANCE MONITORING
- * 
+ *
  * Comprehensive performance monitoring system for gesture interactions
  * with detailed metrics, benchmarking, and optimization recommendations.
- * 
+ *
  * Features:
  * - Real-time performance tracking
  * - Frame rate monitoring during gestures
@@ -22,39 +22,39 @@ export interface GesturePerformanceMetrics {
   gestureEndTime: number;
   totalDuration: number;
   responseTime: number; // Time from touch to first response
-  
+
   // Frame rate metrics
   averageFrameRate: number;
   minFrameRate: number;
   droppedFrames: number;
   totalFrames: number;
-  
+
   // Memory metrics
   memoryUsageBefore: number;
   memoryUsageAfter: number;
   memoryDelta: number;
   peakMemoryUsage: number;
-  
+
   // CPU metrics
   cpuUsageAverage: number;
   cpuUsagePeak: number;
-  
+
   // Gesture-specific metrics
   gestureType: string;
   touchPoints: number;
   gestureDistance?: number;
   gestureVelocity?: number;
-  
+
   // Quality metrics
   accuracy: number; // How accurately the gesture was recognized
   smoothness: number; // How smooth the gesture execution was
   responsiveness: number; // How responsive the UI felt
-  
+
   // Device context
   platform: string;
   deviceModel?: string;
   screenDensity: number;
-  
+
   // Timestamps for detailed analysis
   milestones: { name: string; timestamp: number }[];
 }
@@ -78,7 +78,7 @@ export const PERFORMANCE_BENCHMARKS: Record<string, PerformanceBenchmark> = {
     minAccuracy: 0.95,
     minSmoothness: 0.9,
   },
-  
+
   complexRendering: {
     name: 'Complex Rendering (500+ beacons)',
     targetFrameRate: 55, // Allow 5fps drop for complex scenes
@@ -87,7 +87,7 @@ export const PERFORMANCE_BENCHMARKS: Record<string, PerformanceBenchmark> = {
     minAccuracy: 0.9,
     minSmoothness: 0.8,
   },
-  
+
   simultaneousGestures: {
     name: 'Simultaneous Pan+Pinch',
     targetFrameRate: 56,
@@ -96,7 +96,7 @@ export const PERFORMANCE_BENCHMARKS: Record<string, PerformanceBenchmark> = {
     minAccuracy: 0.85,
     minSmoothness: 0.85,
   },
-  
+
   palmRejection: {
     name: 'Palm Rejection',
     targetFrameRate: 60, // Should not impact performance
@@ -119,9 +119,11 @@ export class GesturePerformanceMonitor {
   private animationFrameId?: number;
   private startTimestamp = 0;
   private lastFrameTimestamp = 0;
-  
+
   // Callbacks for external monitoring
-  private onMetricsUpdate?: (metrics: Partial<GesturePerformanceMetrics>) => void;
+  private onMetricsUpdate?: (
+    metrics: Partial<GesturePerformanceMetrics>
+  ) => void;
   private onBenchmarkViolation?: (violation: BenchmarkViolation) => void;
 
   constructor() {
@@ -139,14 +141,16 @@ export class GesturePerformanceMonitor {
     this.reset();
     this.isMonitoring = true;
     this.startTimestamp = performance.now();
-    
+
     this.currentMetrics = {
       gestureType,
       touchPoints,
       gestureStartTime: this.startTimestamp,
       platform: Platform.OS,
       screenDensity: Platform.OS === 'ios' ? 2 : 1.5, // Approximate
-      milestones: [{ name: 'monitoring_started', timestamp: this.startTimestamp }],
+      milestones: [
+        { name: 'monitoring_started', timestamp: this.startTimestamp },
+      ],
       memoryUsageBefore: this.getCurrentMemoryUsage(),
       responseTime: 0,
     };
@@ -181,7 +185,9 @@ export class GesturePerformanceMonitor {
       droppedFrames: this.calculateDroppedFrames(),
       totalFrames: this.frameTimeHistory.length,
       memoryUsageAfter: this.getCurrentMemoryUsage(),
-      memoryDelta: this.getCurrentMemoryUsage() - (this.currentMetrics.memoryUsageBefore || 0),
+      memoryDelta:
+        this.getCurrentMemoryUsage() -
+        (this.currentMetrics.memoryUsageBefore || 0),
       peakMemoryUsage: Math.max(...this.memoryHistory),
       cpuUsageAverage: this.calculateAverageCPU(),
       cpuUsagePeak: Math.max(...this.cpuHistory),
@@ -191,7 +197,10 @@ export class GesturePerformanceMonitor {
     } as GesturePerformanceMetrics;
 
     // Add final milestone
-    finalMetrics.milestones!.push({ name: 'monitoring_stopped', timestamp: endTime });
+    finalMetrics.milestones!.push({
+      name: 'monitoring_stopped',
+      timestamp: endTime,
+    });
 
     return finalMetrics;
   }
@@ -252,16 +261,16 @@ export class GesturePerformanceMonitor {
     testFunction: () => Promise<void>
   ): Promise<BenchmarkResult> {
     const benchmark = PERFORMANCE_BENCHMARKS[benchmarkName];
-    
+
     // Warm up
     await this.warmUp();
-    
+
     // Clear previous data
     this.reset();
-    
+
     // Start monitoring
     this.startMonitoring(`benchmark_${benchmarkName}`, 1);
-    
+
     // Run test
     const testStartTime = performance.now();
     try {
@@ -270,17 +279,17 @@ export class GesturePerformanceMonitor {
       console.error('Benchmark test failed:', error);
     }
     const testEndTime = performance.now();
-    
+
     // Stop monitoring
     const metrics = this.stopMonitoring();
-    
+
     if (!metrics) {
       throw new Error('Failed to collect performance metrics');
     }
-    
+
     // Analyze results
     const violations = this.analyzeBenchmarkViolations(metrics, benchmark);
-    
+
     return {
       benchmarkName,
       metrics,
@@ -338,7 +347,7 @@ export class GesturePerformanceMonitor {
         const frameTime = timestamp - this.lastFrameTimestamp;
         this.frameTimeHistory.push(frameTime);
       }
-      
+
       this.lastFrameTimestamp = timestamp;
       this.animationFrameId = requestAnimationFrame(monitorFrame);
     };
@@ -349,7 +358,7 @@ export class GesturePerformanceMonitor {
   private startMemoryMonitoring(): void {
     const monitorMemory = () => {
       if (!this.isMonitoring) return;
-      
+
       this.memoryHistory.push(this.getCurrentMemoryUsage());
       setTimeout(monitorMemory, 100); // Check every 100ms
     };
@@ -362,7 +371,7 @@ export class GesturePerformanceMonitor {
     // This is a simplified implementation
     const monitorCPU = () => {
       if (!this.isMonitoring) return;
-      
+
       // Approximate CPU usage based on frame timing consistency
       const recentFrames = this.frameTimeHistory.slice(-10);
       if (recentFrames.length > 0) {
@@ -370,7 +379,7 @@ export class GesturePerformanceMonitor {
         const cpuEstimate = Math.min(100, variance / 5); // Rough estimation
         this.cpuHistory.push(cpuEstimate);
       }
-      
+
       setTimeout(monitorCPU, 200); // Check every 200ms
     };
 
@@ -387,14 +396,14 @@ export class GesturePerformanceMonitor {
 
   private calculateAverageFrameRate(): number {
     if (this.frameTimeHistory.length === 0) return 0;
-    
+
     const averageFrameTime = this.average(this.frameTimeHistory);
     return 1000 / averageFrameTime;
   }
 
   private calculateMinFrameRate(): number {
     if (this.frameTimeHistory.length === 0) return 0;
-    
+
     const maxFrameTime = Math.max(...this.frameTimeHistory);
     return 1000 / maxFrameTime;
   }
@@ -410,18 +419,18 @@ export class GesturePerformanceMonitor {
   private calculateAccuracy(): number {
     // Simplified accuracy calculation based on frame consistency
     if (this.frameTimeHistory.length === 0) return 1;
-    
-    const consistency = 1 - (this.calculateVariance(this.frameTimeHistory) / 400);
+
+    const consistency = 1 - this.calculateVariance(this.frameTimeHistory) / 400;
     return Math.max(0, Math.min(1, consistency));
   }
 
   private calculateSmoothness(): number {
     // Smoothness based on frame rate consistency
     if (this.frameTimeHistory.length === 0) return 1;
-    
+
     const frameRates = this.frameTimeHistory.map(ft => 1000 / ft);
     const variance = this.calculateVariance(frameRates);
-    const smoothness = 1 - (variance / 100);
+    const smoothness = 1 - variance / 100;
     return Math.max(0, Math.min(1, smoothness));
   }
 
@@ -429,20 +438,22 @@ export class GesturePerformanceMonitor {
     // Responsiveness based on response time and frame rate
     const responseTime = this.currentMetrics.responseTime || 0;
     const frameRate = this.calculateAverageFrameRate();
-    
-    const responseScore = Math.max(0, 1 - (responseTime / 200));
+
+    const responseScore = Math.max(0, 1 - responseTime / 200);
     const frameRateScore = Math.max(0, frameRate / 60);
-    
+
     return (responseScore + frameRateScore) / 2;
   }
 
   private average(numbers: number[]): number {
-    return numbers.length > 0 ? numbers.reduce((a, b) => a + b, 0) / numbers.length : 0;
+    return numbers.length > 0
+      ? numbers.reduce((a, b) => a + b, 0) / numbers.length
+      : 0;
   }
 
   private calculateVariance(numbers: number[]): number {
     if (numbers.length === 0) return 0;
-    
+
     const mean = this.average(numbers);
     const squaredDiffs = numbers.map(n => Math.pow(n - mean, 2));
     return this.average(squaredDiffs);
@@ -504,12 +515,16 @@ export class GesturePerformanceMonitor {
 
   private isMetricsWithinBounds(metrics: GesturePerformanceMetrics): boolean {
     // Check against basic performance requirements
-    return metrics.averageFrameRate >= 55 && 
-           metrics.responseTime <= 100 && 
-           metrics.accuracy >= 0.8;
+    return (
+      metrics.averageFrameRate >= 55 &&
+      metrics.responseTime <= 100 &&
+      metrics.accuracy >= 0.8
+    );
   }
 
-  private generateOptimizationRecommendations(metrics: GesturePerformanceMetrics[]): string[] {
+  private generateOptimizationRecommendations(
+    metrics: GesturePerformanceMetrics[]
+  ): string[] {
     const recommendations: string[] = [];
 
     const avgFrameRate = this.average(metrics.map(m => m.averageFrameRate));
@@ -517,20 +532,31 @@ export class GesturePerformanceMonitor {
     const avgMemoryDelta = this.average(metrics.map(m => m.memoryDelta));
 
     if (avgFrameRate < 55) {
-      recommendations.push('Consider reducing rendering complexity or implementing LOD (Level of Detail)');
+      recommendations.push(
+        'Consider reducing rendering complexity or implementing LOD (Level of Detail)'
+      );
     }
 
     if (avgResponseTime > 100) {
-      recommendations.push('Optimize gesture handling by using more worklets and reducing JavaScript thread calls');
+      recommendations.push(
+        'Optimize gesture handling by using more worklets and reducing JavaScript thread calls'
+      );
     }
 
     if (avgMemoryDelta > 20 * 1024 * 1024) {
-      recommendations.push('Implement memory pooling for frequently created objects');
+      recommendations.push(
+        'Implement memory pooling for frequently created objects'
+      );
     }
 
-    const droppedFramesTotal = metrics.reduce((sum, m) => sum + m.droppedFrames, 0);
+    const droppedFramesTotal = metrics.reduce(
+      (sum, m) => sum + m.droppedFrames,
+      0
+    );
     if (droppedFramesTotal > metrics.length * 5) {
-      recommendations.push('Reduce workload on UI thread by moving calculations to background');
+      recommendations.push(
+        'Reduce workload on UI thread by moving calculations to background'
+      );
     }
 
     return recommendations;
@@ -539,7 +565,8 @@ export class GesturePerformanceMonitor {
   private async warmUp(): Promise<void> {
     // Perform some operations to warm up the JavaScript engine
     for (let i = 0; i < 1000; i++) {
-      Math.random() * Math.PI;
+      // Intentionally ignoring the result to warm up the JS engine
+      void (Math.random() * Math.PI);
     }
     await new Promise(resolve => setTimeout(resolve, 100));
   }
@@ -547,7 +574,12 @@ export class GesturePerformanceMonitor {
 
 // Supporting interfaces
 export interface BenchmarkViolation {
-  type: 'frameRate' | 'responseTime' | 'memoryUsage' | 'accuracy' | 'smoothness';
+  type:
+    | 'frameRate'
+    | 'responseTime'
+    | 'memoryUsage'
+    | 'accuracy'
+    | 'smoothness';
   expected: number;
   actual: number;
   severity: 'low' | 'medium' | 'high';
