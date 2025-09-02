@@ -157,9 +157,9 @@ export const DEFAULT_BONUS_CONFIG: BonusCalculationConfig = {
  * Beacon type multipliers for bonus calculations
  */
 export const BEACON_TYPE_MULTIPLIERS = {
-  pioneer: 1.0, // Base multiplier
-  harvester: 1.2, // 20% bonus for resource generation
-  architect: 1.1, // 10% bonus for pattern efficiency
+  pioneer: 1.0, // Base multiplier - standard baseline
+  harvester: 1.0, // Same base - specialization handled by type-specific resource bonuses
+  architect: 1.2, // 20% bonus for pattern efficiency due to enhanced connection capabilities
 } as const;
 
 /**

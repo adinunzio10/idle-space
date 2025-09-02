@@ -1948,7 +1948,7 @@
         "description": "Ensure Pioneer, Harvester, and Architect beacon types have distinct characteristics with proper specializations including resource generation bonuses, connection range modifications, and pattern multipliers.",
         "details": "Comprehensive audit and implementation of beacon type differentiation system: 1) **Beacon Type Properties**: Define distinct characteristics for each beacon type beyond deployment time - Pioneer beacons maintain standard range and generation as baseline, Harvester beacons implement +50% Stellar Essence extraction multiplier, Architect beacons provide +100% connection range for enhanced pattern building capabilities. 2) **Specialization System**: Implement three specialization paths available to all beacon types - Efficiency specialization adds +25% to all resource generation, Range specialization increases connection radius by +50%, Stability specialization provides +100% pattern bonus multiplier for geometric formations. 3) **Property Integration**: Update BeaconManager and ResourceManager to apply type-specific bonuses during resource calculations. Modify connection range calculations in PatternDetector to account for Architect beacon extended range. Ensure specialization bonuses stack appropriately with base type bonuses. 4) **UI Integration**: Update beacon placement interface to display type characteristics and specialization options. Modify beacon info panels to show active bonuses and specialization effects. 5) **Data Persistence**: Ensure beacon type and specialization data persists correctly in save system and loads properly on app restart.",
         "testStrategy": "Systematically verify each beacon type implements correct bonuses: 1) Deploy Pioneer beacons and confirm baseline resource generation and standard connection range. 2) Place Harvester beacons near dying stars and verify +50% Stellar Essence extraction bonus is applied correctly. 3) Test Architect beacons can form connections at extended range (+100%) and validate pattern detection works with increased connection distances. 4) Test each specialization: Efficiency beacons generate +25% more resources, Range beacons connect at +50% extended radius, Stability beacons provide +100% pattern bonus multiplier. 5) Verify specialization bonuses stack correctly with base beacon type bonuses. 6) Test save/load functionality preserves beacon types and specializations correctly. 7) Confirm UI displays accurate information about beacon capabilities and active bonuses.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           4,
           6,
@@ -2420,7 +2420,6 @@
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
       "updated": "2025-09-03T01:28:30.328Z",
-      "description": "Tasks for master context"
     }
   }
 }

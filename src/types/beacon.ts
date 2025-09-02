@@ -70,22 +70,22 @@ export interface BeaconValidationResult {
 
 export const BEACON_TYPE_CONFIG: Record<BeaconType, BeaconStats> = {
   pioneer: {
-    baseGenerationRate: 1.0,
-    connectionRange: 150,
+    baseGenerationRate: 1.0, // Standard baseline
+    connectionRange: 150, // Standard range
     maxConnections: 3,
     upgradeCost: 50,
     level: 1,
   },
   harvester: {
-    baseGenerationRate: 1.5,
-    connectionRange: 120,
+    baseGenerationRate: 1.0, // Same base rate, but +50% Stellar Essence multiplier applied elsewhere
+    connectionRange: 150, // Standard range like pioneer
     maxConnections: 4,
     upgradeCost: 75,
     level: 1,
   },
   architect: {
-    baseGenerationRate: 0.8,
-    connectionRange: 200,
+    baseGenerationRate: 1.0, // Standard base rate
+    connectionRange: 300, // +100% connection range (150 * 2)
     maxConnections: 6,
     upgradeCost: 100,
     level: 1,
@@ -141,6 +141,32 @@ export const SPECIALIZATION_OPTIONS: BeaconUpgradeOption[] = [
     icon: '🔷',
   },
 ];
+
+export const BEACON_TYPE_BONUSES: Record<BeaconType, {
+  stellarEssenceMultiplier: number;
+  quantumDataMultiplier: number;
+  connectionRangeMultiplier: number;
+  description: string;
+}> = {
+  pioneer: {
+    stellarEssenceMultiplier: 1.0, // Standard baseline
+    quantumDataMultiplier: 1.0, // Standard baseline
+    connectionRangeMultiplier: 1.0, // Standard baseline
+    description: 'Balanced beacon maintaining standard range and generation as baseline',
+  },
+  harvester: {
+    stellarEssenceMultiplier: 1.5, // +50% Stellar Essence extraction
+    quantumDataMultiplier: 1.0, // Standard rate
+    connectionRangeMultiplier: 1.0, // Standard range
+    description: '+50% Stellar Essence extraction multiplier for enhanced resource gathering',
+  },
+  architect: {
+    stellarEssenceMultiplier: 1.0, // Standard rate
+    quantumDataMultiplier: 1.0, // Standard rate
+    connectionRangeMultiplier: 2.0, // +100% connection range
+    description: '+100% connection range for enhanced pattern building capabilities',
+  },
+};
 
 export const BEACON_PLACEMENT_CONFIG = {
   MINIMUM_DISTANCE: {

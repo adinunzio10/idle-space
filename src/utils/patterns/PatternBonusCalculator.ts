@@ -383,7 +383,7 @@ export class PatternBonusCalculator {
       return pattern ? PATTERN_BONUSES[pattern.type] : 1;
     });
 
-    // Apply beacon type bonus
+    // Apply beacon type bonus - Architect beacons get enhanced pattern efficiency due to their extended range capabilities
     const beaconTypeMultiplier = BEACON_TYPE_MULTIPLIERS[beacon.type] || 1;
 
     // Apply connection quality bonus

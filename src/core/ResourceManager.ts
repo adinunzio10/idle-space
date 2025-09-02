@@ -38,6 +38,7 @@ export class ResourceManager {
   private resources: ResourceState;
   private modifiers: Map<string, ResourceModifier> = new Map();
   private onResourceChange?: (resources: ResourceState) => void;
+  private beaconManager?: any; // Will be set by dependency injection
 
   private constructor() {
     this.resources = {
@@ -273,6 +274,77 @@ export class ResourceManager {
   ): boolean {
     const cost = this.calculateBeaconPlacementCost(beaconCount, specialization);
     return this.spendResources(cost);
+  }
+
+  /**
+   * Set the beacon manager for resource calculation integration
+   */
+  setBeaconManager(beaconManager: any): void {
+    this.beaconManager = beaconManager;
+  }
+
+  /**
+   * Calculate resource generation from beacons with type-specific bonuses
+   */
+  calculateBeaconResourceGeneration(): Partial<Record<ResourceType, BigNumber>> {
+    if (!this.beaconManager) {
+      return {};
+    }
+
+    const beacons = this.beaconManager.getAllBeacons();
+    const generation: Partial<Record<ResourceType, BigNumber>> = {
+      quantumData: new BigNumber(0),
+      stellarEssence: new BigNumber(0),
+      resonanceCrystals: new BigNumber(0),
+    };
+
+    for (const beacon of beacons) {
+      if (beacon.status !== 'active') continue;
+
+      // Base generation rate from beacon
+      const baseRate = beacon.calculateGenerationRate();
+
+      // Apply type-specific multipliers
+      const quantumMultiplier = beacon.getQuantumDataMultiplier();
+      const stellarMultiplier = beacon.getStellarEssenceMultiplier();
+
+      // Add to total generation
+      generation.quantumData = generation.quantumData!.plus(
+        new BigNumber(baseRate * quantumMultiplier)
+      );
+
+      generation.stellarEssence = generation.stellarEssence!.plus(
+        new BigNumber(baseRate * stellarMultiplier)
+      );
+
+      // Resonance crystals generated at a lower rate
+      generation.resonanceCrystals = generation.resonanceCrystals!.plus(
+        new BigNumber(baseRate * 0.1) // 10% of base rate
+      );
+    }
+
+    return generation;
+  }
+
+  /**
+   * Apply beacon-generated resources over time
+   */
+  applyBeaconGeneration(deltaTimeSeconds: number): void {
+    const generation = this.calculateBeaconResourceGeneration();
+
+    for (const [resourceType, rate] of Object.entries(generation)) {
+      if (rate && rate.isGreaterThan(0)) {
+        const generatedAmount = rate.multipliedBy(deltaTimeSeconds);
+        this.addResource(resourceType as ResourceType, generatedAmount);
+      }
+    }
+  }
+
+  /**
+   * Get current beacon-based generation rates per second
+   */
+  getBeaconGenerationRates(): Partial<Record<ResourceType, BigNumber>> {
+    return this.calculateBeaconResourceGeneration();
   }
 
   private notifyChange(): void {

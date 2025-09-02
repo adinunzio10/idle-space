@@ -6,6 +6,7 @@ import {
   BeaconStatus,
   BeaconValidationResult,
   BEACON_TYPE_CONFIG,
+  BEACON_TYPE_BONUSES,
   SPECIALIZATION_CONFIG,
   BEACON_PLACEMENT_CONFIG,
 } from '../types/beacon';
@@ -61,15 +62,16 @@ export class Beacon implements BeaconEntity {
   }
 
   /**
-   * Calculate the effective connection range based on level and specialization
+   * Calculate the effective connection range based on type, level and specialization
    */
   public calculateConnectionRange(): number {
     const baseRange = BEACON_TYPE_CONFIG[this.type].connectionRange;
     const levelBonus = this.level * 5; // 5 units per level
+    const typeMultiplier = BEACON_TYPE_BONUSES[this.type].connectionRangeMultiplier;
     const specializationBonus =
       SPECIALIZATION_CONFIG[this.specialization].range;
 
-    return (baseRange + levelBonus) * specializationBonus;
+    return (baseRange + levelBonus) * typeMultiplier * specializationBonus;
   }
 
   /**
@@ -282,5 +284,53 @@ export class Beacon implements BeaconEntity {
    */
   public addResourcesGenerated(amount: number): void {
     this.totalResourcesGenerated += amount;
+  }
+
+  /**
+   * Get stellar essence multiplier based on beacon type and specialization
+   */
+  public getStellarEssenceMultiplier(): number {
+    const typeMultiplier = BEACON_TYPE_BONUSES[this.type].stellarEssenceMultiplier;
+    const specializationMultiplier = this.getEfficiencyMultiplier();
+    return typeMultiplier * specializationMultiplier;
+  }
+
+  /**
+   * Get quantum data multiplier based on beacon type and specialization
+   */
+  public getQuantumDataMultiplier(): number {
+    const typeMultiplier = BEACON_TYPE_BONUSES[this.type].quantumDataMultiplier;
+    const specializationMultiplier = this.getEfficiencyMultiplier();
+    return typeMultiplier * specializationMultiplier;
+  }
+
+  /**
+   * Get connection range multiplier based on beacon type and specialization
+   */
+  public getConnectionRangeMultiplier(): number {
+    const typeMultiplier = BEACON_TYPE_BONUSES[this.type].connectionRangeMultiplier;
+    const specializationMultiplier = SPECIALIZATION_CONFIG[this.specialization].range;
+    return typeMultiplier * specializationMultiplier;
+  }
+
+  /**
+   * Get beacon type description and capabilities
+   */
+  public getTypeDescription(): string {
+    return BEACON_TYPE_BONUSES[this.type].description;
+  }
+
+  /**
+   * Get combined resource generation multiplier for a specific resource type
+   */
+  public getResourceMultiplier(resourceType: 'stellarEssence' | 'quantumData'): number {
+    switch (resourceType) {
+      case 'stellarEssence':
+        return this.getStellarEssenceMultiplier();
+      case 'quantumData':
+        return this.getQuantumDataMultiplier();
+      default:
+        return this.getEfficiencyMultiplier();
+    }
   }
 }
