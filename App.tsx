@@ -82,6 +82,7 @@ function GameApp() {
     let mounted = true;
     let removeProbeUpdateCallback: (() => void) | null = null;
     let removeProbeDeployedCallback: (() => void) | null = null;
+    let removeGameStateChangeCallback: (() => void) | null = null;
 
     const initializeGame = async () => {
       try {
@@ -90,6 +91,14 @@ function GameApp() {
         
         removeProbeUpdateCallback = probeManager.addProbeUpdateCallback(handleProbeUpdate);
         removeProbeDeployedCallback = probeManager.addProbeDeployedCallback(handleProbeDeployment);
+        
+        // Register for game state changes (like beacon resets)
+        removeGameStateChangeCallback = gameController.addGameStateChangeCallback(() => {
+          if (mounted) {
+            const freshState = gameController.getGameState();
+            setGameState(freshState);
+          }
+        });
         
         // Get initial probe state before starting processing
         const initialProbeStatus = probeManager.getQueueStatus();
@@ -124,6 +133,9 @@ function GameApp() {
       }
       if (removeProbeDeployedCallback) {
         removeProbeDeployedCallback();
+      }
+      if (removeGameStateChangeCallback) {
+        removeGameStateChangeCallback();
       }
       gameController.shutdown();
     };

@@ -58,7 +58,7 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
         y: Math.random() * 1800 + 100,
       };
       
-      const result = probeManager.queueProbe(type, targetPosition, 1, launchPosition);
+      const result = probeManager.queueProbe(type, targetPosition, 1, launchPosition, true);
       
       if (result.success) {
         console.log(`[GalaxyMapScreen] Successfully queued ${type} probe`);

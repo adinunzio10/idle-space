@@ -27,7 +27,6 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
     activeProbes: [],
     totalProbes: 0,
   });
-  const [accelerationCooldown, setAccelerationCooldown] = useState(false);
 
   useEffect(() => {
     // Set up probe updates
@@ -51,36 +50,6 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
     };
   }, [probeManager]);
 
-  const handleManualAcceleration = async () => {
-    if (accelerationCooldown) return;
-
-    try {
-      // Apply haptic feedback
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
-      const result = probeManager.accelerateNextLaunch();
-      
-      if (result.success) {
-        // Success feedback
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        // Set cooldown (2 seconds)
-        setAccelerationCooldown(true);
-        setTimeout(() => {
-          setAccelerationCooldown(false);
-        }, 2000);
-        
-        console.log('[ProbeManagerUI] Manual acceleration applied successfully');
-      } else {
-        // Error feedback
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        console.warn('[ProbeManagerUI] Manual acceleration failed:', result.error);
-      }
-    } catch (error) {
-      console.error('[ProbeManagerUI] Error during manual acceleration:', error);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-  };
 
   const launchDemoProbe = async (type: ProbeType) => {
     try {
@@ -97,7 +66,7 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
       };
 
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const result = probeManager.queueProbe(type, randomPosition, 1, startPosition);
+      const result = probeManager.queueProbe(type, randomPosition, 1, startPosition, true);
       
       if (result.success) {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -153,54 +122,11 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
       </View>
 
       <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
-        {/* Manual Acceleration Section */}
-        <View className="mb-6">
-          <Text className="text-text font-semibold text-base mb-3">Manual Acceleration</Text>
-          
-          <TouchableOpacity
-            onPress={handleManualAcceleration}
-            disabled={accelerationCooldown || queueStatus.queuedProbes.length === 0}
-            className={`p-4 rounded-xl border-2 ${
-              accelerationCooldown || queueStatus.queuedProbes.length === 0
-                ? 'bg-surface/50 border-text/10'
-                : 'bg-accent/20 border-accent/50'
-            }`}
-          >
-            <View className="items-center">
-              <Text className={`text-2xl mb-2 ${
-                accelerationCooldown || queueStatus.queuedProbes.length === 0
-                  ? 'opacity-50'
-                  : ''
-              }`}>
-                ⚡
-              </Text>
-              <Text className={`font-semibold text-base ${
-                accelerationCooldown || queueStatus.queuedProbes.length === 0
-                  ? 'text-text/40'
-                  : 'text-accent'
-              }`}>
-                {accelerationCooldown ? 'Cooling Down...' : 'Accelerate Next Launch'}
-              </Text>
-              <Text className={`text-sm mt-1 ${
-                accelerationCooldown || queueStatus.queuedProbes.length === 0
-                  ? 'text-text/30'
-                  : 'text-text/70'
-              }`}>
-                2x Speed Boost
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {queueStatus.queuedProbes.length === 0 && (
-            <Text className="text-text/50 text-sm text-center mt-2">
-              No probes in queue
-            </Text>
-          )}
-        </View>
 
         {/* Quick Launch Section */}
         <View className="mb-6">
           <Text className="text-text font-semibold text-base mb-3">Quick Launch</Text>
+          <Text className="text-accent text-sm mb-3">⚡ Manual launches get automatic 2x speed boost</Text>
           <View className="flex-row space-x-2">
             {Object.entries(PROBE_TYPE_CONFIG).map(([type, config]) => (
               <TouchableOpacity
@@ -213,7 +139,7 @@ export const ProbeManagerUI: React.FC<ProbeManagerUIProps> = ({
                   {type}
                 </Text>
                 <Text className="text-text/60 text-xs text-center mt-1">
-                  {config.deploymentTime}s
+                  {Math.ceil(config.deploymentTime / 2)}s (2x speed)
                 </Text>
               </TouchableOpacity>
             ))}

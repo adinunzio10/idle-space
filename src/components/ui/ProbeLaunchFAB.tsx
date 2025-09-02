@@ -227,7 +227,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
                     opacity: 0.8,
                     marginTop: 2
                   }}>
-                    Free • Time-gated only
+                    Free • 2x Speed
                   </Text>
                   <Text style={{ 
                     color: '#FFFFFF', 
@@ -235,7 +235,7 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
                     opacity: affordable ? 0.6 : 0.4,
                     marginTop: 1
                   }}>
-                    {config.deploymentTime}s deploy
+                    {Math.ceil(config.deploymentTime / 2)}s deploy
                   </Text>
                 </View>
                 <Text style={{ 

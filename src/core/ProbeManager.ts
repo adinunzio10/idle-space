@@ -62,7 +62,7 @@ export class ProbeManager {
   /**
    * Queue a probe for launch
    */
-  queueProbe(type: ProbeType, targetPosition: Point2D, priority: number = 1, startPosition: Point2D = { x: 0, y: 0 }): ProbeDeploymentResult {
+  queueProbe(type: ProbeType, targetPosition: Point2D, priority: number = 1, startPosition: Point2D = { x: 0, y: 0 }, isManual: boolean = false): ProbeDeploymentResult {
     const config = this.getProbeConfig(type);
 
     // No resource validation needed - probes are now free (time-gated only)
@@ -76,7 +76,7 @@ export class ProbeManager {
       targetPosition,
       createdAt: Date.now(),
       travelProgress: 0,
-      accelerationBonus: 1,
+      accelerationBonus: isManual ? 2.0 : 1,
     };
 
     // Add to queue
@@ -95,27 +95,6 @@ export class ProbeManager {
     return { success: true, probe };
   }
 
-  /**
-   * Launch next probe in queue with manual acceleration bonus
-   */
-  accelerateNextLaunch(): ProbeDeploymentResult {
-    if (this.probeQueue.length === 0) {
-      return { success: false, error: 'No probes in queue' };
-    }
-
-    const nextItem = this.probeQueue[0];
-    const probe = nextItem.probe;
-
-    if (probe.status !== 'queued') {
-      return { success: false, error: 'Probe is not in queue' };
-    }
-
-    // Apply 2x speed bonus for manual acceleration
-    probe.accelerationBonus = 2.0;
-
-    console.log(`[ProbeManager] Manual acceleration applied to probe ${probe.id} (2x speed)`);
-    return { success: true, probe };
-  }
 
   /**
    * Get current queue status

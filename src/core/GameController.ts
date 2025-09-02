@@ -5,6 +5,7 @@ import { ResourceGenerationEngine } from './ResourceGenerationEngine';
 import { BeaconPlacementManager } from './BeaconPlacementManager';
 import { BeaconConnectionManager } from './BeaconConnectionManager';
 import { ProbeManager } from './ProbeManager';
+import { UpgradeManager } from './UpgradeManager';
 import { GameState, DEFAULT_RESOURCES, DEFAULT_PLAYER_SETTINGS, DEFAULT_PLAYER_STATISTICS } from '../storage/schemas/GameState';
 import { BeaconType } from '../types/beacon';
 import { Point2D } from '../types/galaxy';
@@ -24,12 +25,14 @@ export class GameController {
   private beaconPlacementManager: BeaconPlacementManager;
   private beaconConnectionManager: BeaconConnectionManager;
   private probeManager: ProbeManager;
+  private upgradeManager: UpgradeManager;
   private gameState: GameState | null = null;
   private autoSaveTimer: NodeJS.Timeout | null = null;
   private gameTimer: NodeJS.Timeout | null = null;
   private lastActiveTime: number = Date.now();
   private isInitialized = false;
   private appStateSubscription: any = null;
+  private gameStateChangeCallbacks: Set<() => void> = new Set();
 
   private config: GameControllerConfig = {
     autoSaveInterval: 120,
@@ -49,6 +52,7 @@ export class GameController {
     });
     this.beaconConnectionManager = new BeaconConnectionManager();
     this.probeManager = ProbeManager.getInstance();
+    this.upgradeManager = UpgradeManager.getInstance();
   }
 
   static getInstance(): GameController {
@@ -76,6 +80,9 @@ export class GameController {
         
         // Load beacons into BeaconPlacementManager
         this.loadBeaconsIntoManager();
+        
+        // Load upgrade data into UpgradeManager
+        this.loadUpgradeData();
         
         // Calculate offline time and apply offline progression
         await this.handleOfflineProgression();
@@ -126,6 +133,9 @@ export class GameController {
       // Sync resources from ResourceManager to GameState
       this.gameState.resources = this.resourceManager.toGameStateFormat();
       
+      // Sync upgrade data from UpgradeManager to GameState
+      this.gameState.upgrades = this.upgradeManager.toSaveState();
+      
       await this.saveManager.saveGameState(this.gameState);
       console.log('[GameController] Game saved manually');
     } catch (error) {
@@ -164,6 +174,10 @@ export class GameController {
     return this.probeManager;
   }
 
+  getUpgradeManager(): UpgradeManager {
+    return this.upgradeManager;
+  }
+
   /**
    * Update auto-save interval and restart auto-save with new interval
    */
@@ -190,6 +204,27 @@ export class GameController {
    */
   getConfig(): Readonly<GameControllerConfig> {
     return { ...this.config };
+  }
+
+  /**
+   * Register a callback to be notified when game state changes significantly
+   */
+  addGameStateChangeCallback(callback: () => void): () => void {
+    this.gameStateChangeCallbacks.add(callback);
+    return () => this.gameStateChangeCallbacks.delete(callback);
+  }
+
+  /**
+   * Notify all registered callbacks about game state changes
+   */
+  private notifyGameStateChanged(): void {
+    this.gameStateChangeCallbacks.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('[GameController] Error in game state change callback:', error);
+      }
+    });
   }
 
   /**
@@ -243,6 +278,13 @@ export class GameController {
 
       // Update generation engine
       this.generationEngine.updateFromGameState(this.gameState);
+
+      // Update milestones based on new beacon count
+      const beaconCount = Object.keys(this.gameState.beacons).length;
+      this.upgradeManager.updateMilestones(beaconCount);
+
+      // Notify UI components about the new beacon
+      this.notifyGameStateChanged();
 
       console.log(`[GameController] Placed ${type} beacon at (${position.x}, ${position.y})`);
     }
@@ -305,6 +347,13 @@ export class GameController {
 
       // Update generation engine
       this.generationEngine.updateFromGameState(this.gameState);
+
+      // Update milestones based on new beacon count
+      const beaconCount = Object.keys(this.gameState.beacons).length;
+      this.upgradeManager.updateMilestones(beaconCount);
+
+      // Notify UI components about the new beacon
+      this.notifyGameStateChanged();
 
       const finalPos = result.finalPosition || result.beacon.position;
       const wasRelocated = finalPos.x !== targetPosition.x || finalPos.y !== targetPosition.y;
@@ -451,6 +500,9 @@ export class GameController {
     // Update generation engine to reflect cleared state
     this.generationEngine.updateFromGameState(this.gameState);
 
+    // Notify UI components about the state change
+    this.notifyGameStateChanged();
+
     console.log('[GameController] Cleared all beacons and reset quantum data for debugging');
   }
 
@@ -491,6 +543,24 @@ export class GameController {
     
     // Rebuild connections for loaded beacons
     this.updateBeaconConnections();
+  }
+
+  /**
+   * Load upgrade data from game state into the upgrade manager
+   */
+  private loadUpgradeData(): void {
+    if (!this.gameState) return;
+
+    if (this.gameState.upgrades) {
+      this.upgradeManager.loadFromState(this.gameState.upgrades);
+      console.log('[GameController] Loaded upgrade data from saved game');
+    } else {
+      console.log('[GameController] No upgrade data found, starting with fresh upgrade state');
+    }
+
+    // Update milestones based on current beacon count
+    const beaconCount = Object.keys(this.gameState.beacons).length;
+    this.upgradeManager.updateMilestones(beaconCount);
   }
 
   updateGameState(updates: Partial<GameState>): void {

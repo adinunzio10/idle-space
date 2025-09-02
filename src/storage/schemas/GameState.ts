@@ -117,12 +117,35 @@ export interface Star {
 export type StarStatus = 'dying' | 'stable' | 'reignited';
 export type StarType = 'red_dwarf' | 'yellow_dwarf' | 'blue_giant' | 'white_dwarf' | 'neutron';
 
+export interface UpgradeData {
+  playerUpgrades: Record<string, PlayerUpgrade>;
+  completedMilestones: Record<string, ConsciousnessExpansionMilestone>;
+  lastUpdated: number;
+}
+
+export interface PlayerUpgrade {
+  upgradeId: string;
+  level: number;
+  purchasedAt: number;
+  totalSpent: Record<string, number>; // Serialized as numbers for storage
+}
+
+export interface ConsciousnessExpansionMilestone {
+  id: string;
+  name: string;
+  description: string;
+  requiredBeacons: number;
+  completedAt?: number;
+  chosenOption?: string;
+}
+
 export interface GameState {
   version: number;
   player: Player;
   resources: Resources;
   beacons: Record<string, Beacon>;
   probes: Record<string, Probe>;
+  upgrades?: UpgradeData; // Optional for backward compatibility
   galaxy: Galaxy;
   gameTime: number; // Total game time in seconds
   lastSaved: number;
