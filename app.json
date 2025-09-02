@@ -35,9 +35,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-dev-client"
-    ],
+    "plugins": ["expo-dev-client", "expo-audio"],
     "extra": {
       "eas": {
         "projectId": "53b2e53d-9e1e-4a82-8b0a-32e37c0e6304"

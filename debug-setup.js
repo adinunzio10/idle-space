@@ -1,15 +1,15 @@
 // Debug Setup for JSI Crash Investigation
 // Run this file to enable detailed debugging for React Native Reanimated JSI crashes
 
-const { execSync } = require('child_process');
-
 console.log('🔍 Setting up debugging environment for JSI crash analysis...\n');
 
 // 1. Check current React Native and Reanimated versions
 console.log('📋 Current Environment:');
 const packageJson = require('./package.json');
 console.log(`  - React Native: ${packageJson.dependencies['react-native']}`);
-console.log(`  - Reanimated: ${packageJson.dependencies['react-native-reanimated']}`);
+console.log(
+  `  - Reanimated: ${packageJson.dependencies['react-native-reanimated']}`
+);
 console.log(`  - Expo: ${packageJson.dependencies['expo']}\n`);
 
 // 2. Instructions for Hermes debugger setup
@@ -28,7 +28,7 @@ console.log('     - Multiple simultaneous touches');
 console.log('     - Rapid zoom in/out cycles');
 console.log('  3. Watch Metro logs for JSI-related errors\n');
 
-// 4. Log analysis instructions  
+// 4. Log analysis instructions
 console.log('📊 What to look for in crash logs:');
 console.log('  - facebook::jsi::Function::getHostFunction errors');
 console.log('  - Worklet execution context violations');

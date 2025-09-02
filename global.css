@@ -1,3 +1,119 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Web-specific gesture handling optimizations */
+@media screen {
+  /* Base touch-action for the entire app */
+  #__next, [data-reactroot], body, html {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Galaxy map container - disable all default touch behaviors */
+  .galaxy-map-container {
+    touch-action: none !important;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    /* Prevent image dragging on web browsers */
+    -webkit-user-drag: none;
+    -moz-user-drag: none;
+    user-drag: none;
+    /* Prevent text selection during gestures */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* SVG elements within galaxy map */
+  .galaxy-map-container svg,
+  .galaxy-map-container svg * {
+    pointer-events: auto;
+    touch-action: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Interactive elements like buttons and inputs should allow normal touch behavior */
+  .interactive-element,
+  button,
+  input,
+  textarea,
+  select,
+  [role="button"],
+  [role="textbox"] {
+    touch-action: manipulation;
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+    pointer-events: auto;
+  }
+
+  /* Scrollable content areas */
+  .scrollable-content {
+    touch-action: pan-x pan-y;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Overlay content */
+  .overlay-content {
+    touch-action: manipulation;
+  }
+
+  /* Prevent zoom on input focus on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+
+  /* Performance optimizations for web gestures */
+  .galaxy-map-container * {
+    /* GPU acceleration for smooth animations */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    /* Optimize for gesture handling */
+    will-change: transform;
+  }
+
+  /* Disable context menus on gesture areas */
+  .galaxy-map-container,
+  .galaxy-map-container * {
+    -webkit-context-menu: none;
+    -moz-context-menu: none;
+    context-menu: none;
+  }
+
+  /* Hide scrollbars on gesture containers */
+  .galaxy-map-container::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .galaxy-map-container {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
