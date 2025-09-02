@@ -12,14 +12,16 @@ interface SettingsAwareDebugOverlayProps {
  * Wrapper component that shows debug overlays only when debug setting is enabled
  * Automatically hides debug information in production or when user disables debug mode
  */
-export const SettingsAwareDebugOverlay: React.FC<SettingsAwareDebugOverlayProps> = (props) => {
+export const SettingsAwareDebugOverlay: React.FC<
+  SettingsAwareDebugOverlayProps
+> = props => {
   const { settings } = useSettings();
-  
+
   // Only show debug overlay if:
   // 1. We're in development mode (__DEV__ is true)
   // 2. User has enabled debug info in settings
   const shouldShowDebug = __DEV__ && settings.debugInfoEnabled;
-  
+
   if (!shouldShowDebug) {
     return null;
   }
@@ -36,7 +38,7 @@ export const SettingsAwareDebugOverlay: React.FC<SettingsAwareDebugOverlayProps>
           compact={props.compact || false}
         />
       )}
-      
+
       {props.showGestureDebug && (
         <GestureDebugOverlay
           enabled={shouldShowDebug}
@@ -53,10 +55,10 @@ export const SettingsAwareDebugOverlay: React.FC<SettingsAwareDebugOverlayProps>
 export const withDebugOverlay = <P extends object>(
   Component: React.ComponentType<P>
 ) => {
-  return (props: P & { debugProps?: any }) => {
+  const WrappedComponent = (props: P & { debugProps?: any }) => {
     const { settings } = useSettings();
     const shouldShowDebug = __DEV__ && settings.debugInfoEnabled;
-    
+
     return (
       <>
         <Component {...props} />
@@ -66,4 +68,8 @@ export const withDebugOverlay = <P extends object>(
       </>
     );
   };
+
+  WrappedComponent.displayName = `withDebugOverlay(${Component.displayName || Component.name || 'Component'})`;
+
+  return WrappedComponent;
 };

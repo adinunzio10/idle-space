@@ -1,9 +1,9 @@
 /**
  * DEBUG OVERLAY
- * 
+ *
  * Visual debugging overlay for development and testing.
  * Provides real-time visualization of gesture states, selected beacon info, and performance metrics.
- * 
+ *
  * Features:
  * - Real-time gesture state visualization
  * - Selected beacon information display
@@ -20,7 +20,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  interpolateColor,
   useDerivedValue,
 } from 'react-native-reanimated';
 
@@ -67,17 +66,21 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
   compact = false,
 }) => {
   const [debugInfo, setDebugInfo] = useState<DebugOverlayInfo | null>(null);
-  
-  const [recentTransitions, setRecentTransitions] = useState<StateTransitionResult[]>([]);
-  const [touchPoints, setTouchPoints] = useState<TouchPoint[]>([]);
+
+  const [recentTransitions, setRecentTransitions] = useState<
+    StateTransitionResult[]
+  >([]);
+  const [touchPoints] = useState<TouchPoint[]>([]);
   const [conflicts, setConflicts] = useState<string[]>([]);
 
   // Animated values for visual feedback
   const stateIndicatorScale = useSharedValue(1);
   const conflictIndicatorOpacity = useSharedValue(0);
-  
+
   // Convert React state to shared value for worklet access
-  const currentStateShared = useDerivedValue(() => debugInfo?.currentState ?? GestureStateType.IDLE);
+  const currentStateShared = useDerivedValue(
+    () => debugInfo?.currentState ?? GestureStateType.IDLE
+  );
 
   // Update debug info periodically
   useEffect(() => {
@@ -96,26 +99,30 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
     if (!enabled) return;
 
     stateMachine.setDebugCallbacks({
-      onStateChange: (transition) => {
+      onStateChange: transition => {
         setRecentTransitions(prev => [...prev.slice(-4), transition]);
-        
+
         // Animate state indicator
         stateIndicatorScale.value = withTiming(1.2, { duration: 100 }, () => {
           stateIndicatorScale.value = withTiming(1, { duration: 200 });
         });
       },
-      
+
       onConflictResolution: (context, resolution) => {
         const conflictMsg = `${context.incomingGesture} -> ${resolution}`;
         setConflicts(prev => [...prev.slice(-2), conflictMsg]);
-        
+
         // Show conflict indicator
-        conflictIndicatorOpacity.value = withTiming(1, { duration: 100 }, () => {
-          conflictIndicatorOpacity.value = withTiming(0, { duration: 1000 });
-        });
+        conflictIndicatorOpacity.value = withTiming(
+          1,
+          { duration: 100 },
+          () => {
+            conflictIndicatorOpacity.value = withTiming(0, { duration: 1000 });
+          }
+        );
       },
-      
-      onPerformanceUpdate: (metrics) => {
+
+      onPerformanceUpdate: metrics => {
         // Performance updates handled in debugInfo
       },
     });
@@ -124,7 +131,7 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
   // Animated styles
   const stateIndicatorStyle = useAnimatedStyle(() => {
     const color = STATE_COLORS[currentStateShared.value];
-    
+
     return {
       transform: [{ scale: stateIndicatorScale.value }],
       backgroundColor: color,
@@ -153,7 +160,9 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
     return history.join(' → ');
   };
 
-  const formatPerformanceMetrics = (metrics: typeof debugInfo.performanceMetrics) => {
+  const formatPerformanceMetrics = (
+    metrics: typeof debugInfo.performanceMetrics
+  ) => {
     return {
       transition: `${metrics.stateTransitionTime.toFixed(1)}ms`,
       response: `${metrics.gestureResponseTime.toFixed(1)}ms`,
@@ -170,15 +179,18 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
             {debugInfo.currentState.replace('_', '').slice(0, 3)}
           </Text>
         </Animated.View>
-        
-        <Animated.View style={[styles.conflictIndicator, conflictIndicatorStyle]}>
+
+        <Animated.View
+          style={[styles.conflictIndicator, conflictIndicatorStyle]}
+        >
           <Text style={styles.conflictText}>!</Text>
         </Animated.View>
-        
+
         {selectedBeacon && (
           <View style={styles.beaconCompactInfo}>
             <Text style={styles.stateText}>
-              B:{selectedBeacon.position.x.toFixed(0)},{selectedBeacon.position.y.toFixed(0)}
+              B:{selectedBeacon.position.x.toFixed(0)},
+              {selectedBeacon.position.y.toFixed(0)}
             </Text>
           </View>
         )}
@@ -204,7 +216,8 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
           <>
             <Text style={styles.beaconText}>ID: {selectedBeacon.id}</Text>
             <Text style={styles.beaconText}>
-              Position: ({selectedBeacon.position.x.toFixed(1)}, {selectedBeacon.position.y.toFixed(1)})
+              Position: ({selectedBeacon.position.x.toFixed(1)},{' '}
+              {selectedBeacon.position.y.toFixed(1)})
             </Text>
             <Text style={styles.beaconText}>Level: {selectedBeacon.level}</Text>
             <Text style={styles.beaconText}>Type: {selectedBeacon.type}</Text>
@@ -237,7 +250,8 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
           {recentTransitions.slice(-2).map((transition, index) => (
             <Text key={index} style={styles.transitionText}>
               {transition.previousState} → {transition.newState}
-              {transition.conflictResolution && ` [${transition.conflictResolution}]`}
+              {transition.conflictResolution &&
+                ` [${transition.conflictResolution}]`}
             </Text>
           ))}
         </View>
@@ -245,7 +259,9 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
 
       {conflicts.length > 0 && (
         <Animated.View style={[styles.section, conflictIndicatorStyle]}>
-          <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>Conflicts</Text>
+          <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>
+            Conflicts
+          </Text>
           {conflicts.map((conflict, index) => (
             <Text key={index} style={styles.conflictText}>
               {conflict}
@@ -258,9 +274,10 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
       {touchPoints.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Touch Points</Text>
-          {touchPoints.map((point) => (
+          {touchPoints.map(point => (
             <Text key={point.id} style={styles.touchText}>
-              #{point.id}: ({point.x.toFixed(0)}, {point.y.toFixed(0)}) {point.phase}
+              #{point.id}: ({point.x.toFixed(0)}, {point.y.toFixed(0)}){' '}
+              {point.phase}
             </Text>
           ))}
         </View>
@@ -273,7 +290,8 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({
           Profile: {gestureConfig.getCurrentProfile().name}
         </Text>
         <Text style={styles.configText}>
-          Accessibility: {Object.entries(gestureConfig.getAccessibilitySettings())
+          Accessibility:{' '}
+          {Object.entries(gestureConfig.getAccessibilitySettings())
             .filter(([_, enabled]) => enabled)
             .map(([type]) => type)
             .join(', ') || 'None'}
@@ -293,7 +311,7 @@ const styles = StyleSheet.create({
     maxWidth: 280,
     zIndex: 9999,
   },
-  
+
   compactContainer: {
     position: 'absolute',
     flexDirection: 'row',

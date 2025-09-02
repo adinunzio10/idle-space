@@ -1,7 +1,17 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Text, View, TouchableOpacity, ScrollView, Dimensions, Share } from 'react-native';
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  Share,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,7 +22,10 @@ import { formatNumber } from '../utils/numberFormatting';
 import { BeaconType } from '../types/beacon';
 import * as Haptics from 'expo-haptics';
 
-type StatisticsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Statistics'>;
+type StatisticsScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Statistics'
+>;
 
 interface StatisticsScreenProps {
   gameState: GameState;
@@ -43,15 +56,15 @@ interface ResourceStats {
 }
 
 // Helper components
-const StatCard: React.FC<StatCard & { onPress?: () => void }> = ({ 
-  title, 
-  value, 
-  description, 
-  color = 'text-primary', 
-  icon, 
-  onPress 
+const StatCard: React.FC<StatCard & { onPress?: () => void }> = ({
+  title,
+  value,
+  description,
+  color = 'text-primary',
+  icon,
+  onPress,
 }) => (
-  <TouchableOpacity 
+  <TouchableOpacity
     onPress={onPress}
     className={`bg-surface border border-text/10 rounded-lg p-4 ${onPress ? 'active:bg-surface/80' : ''}`}
     disabled={!onPress}
@@ -61,27 +74,25 @@ const StatCard: React.FC<StatCard & { onPress?: () => void }> = ({
       {icon && <Text className="text-xl">{icon}</Text>}
     </View>
     <Text className={`${color} font-bold text-lg mb-1`}>
-      {typeof value === 'number' ? formatNumber(value, { useShortNotation: true }) : value}
+      {typeof value === 'number'
+        ? formatNumber(value, { useShortNotation: true })
+        : value}
     </Text>
-    {description && (
-      <Text className="text-text/60 text-sm">{description}</Text>
-    )}
+    {description && <Text className="text-text/60 text-sm">{description}</Text>}
   </TouchableOpacity>
 );
 
-const StatSection: React.FC<{ title: string; children: React.ReactNode; icon?: string }> = ({ 
-  title, 
-  children, 
-  icon 
-}) => (
+const StatSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  icon?: string;
+}> = ({ title, children, icon }) => (
   <View className="mb-6">
     <View className="flex-row items-center mb-4">
       {icon && <Text className="text-xl mr-2">{icon}</Text>}
       <Text className="text-text text-lg font-semibold">{title}</Text>
     </View>
-    <View className="space-y-3">
-      {children}
-    </View>
+    <View className="space-y-3">{children}</View>
   </View>
 );
 
@@ -92,16 +103,16 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
   const navigation = useNavigation<StatisticsScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const [refreshTime, setRefreshTime] = useState(Date.now());
-  
+
   // Auto-refresh statistics every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setRefreshTime(Date.now());
     }, 5000);
-    
+
     return () => clearInterval(interval);
   }, []);
-  
+
   // Calculate comprehensive statistics
   const beaconStats = useMemo((): BeaconStats => {
     const beacons = Object.values(gameState.beacons);
@@ -109,75 +120,79 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
     const byType: Record<BeaconType, number> = {
       pioneer: 0,
       harvester: 0,
-      architect: 0
+      architect: 0,
     };
-    
+
     let totalLevels = 0;
     let maxLevel = 0;
-    
+
     beacons.forEach(beacon => {
       byType[beacon.type]++;
       totalLevels += beacon.level;
       maxLevel = Math.max(maxLevel, beacon.level);
     });
-    
+
     return {
       total,
       byType,
       totalLevels,
       averageLevel: total > 0 ? totalLevels / total : 0,
-      maxLevel
+      maxLevel,
     };
   }, [gameState.beacons, refreshTime]);
-  
+
   const resourceStats = useMemo((): ResourceStats => {
     const resourceManager = gameController.getResourceManager();
     const resources = resourceManager.getResources();
-    
+
     return {
       total: {
         quantumData: resources.quantumData.toNumber(),
         stellarEssence: resources.stellarEssence.toNumber(),
         voidFragments: resources.voidFragments.toNumber(),
         resonanceCrystals: resources.resonanceCrystals.toNumber(),
-        chronosParticles: resources.chronosParticles.toNumber()
+        chronosParticles: resources.chronosParticles.toNumber(),
       },
       rates: {
         quantumData: 0, // TODO: Calculate from beacon network
         stellarEssence: 0,
-        voidFragments: 0
+        voidFragments: 0,
       },
       allTimeGenerated: {
         quantumData: resources.quantumData.toNumber(), // Simplified - would track separately in real app
         stellarEssence: resources.stellarEssence.toNumber(),
-        voidFragments: resources.voidFragments.toNumber()
-      }
+        voidFragments: resources.voidFragments.toNumber(),
+      },
     };
   }, [gameState, gameController, refreshTime]);
-  
+
   const gameStats = useMemo(() => {
     const playTimeHours = gameState.gameTime / 3600;
     const playTimeDays = playTimeHours / 24;
-    
+
     return {
       playTime: {
         total: gameState.gameTime,
         hours: playTimeHours,
         days: playTimeDays,
-        formatted: playTimeHours < 1 
-          ? `${Math.floor(gameState.gameTime / 60)}m` 
-          : playTimeHours < 24 
-            ? `${Math.floor(playTimeHours)}h ${Math.floor((playTimeHours % 1) * 60)}m`
-            : `${Math.floor(playTimeDays)}d ${Math.floor((playTimeDays % 1) * 24)}h`
+        formatted:
+          playTimeHours < 1
+            ? `${Math.floor(gameState.gameTime / 60)}m`
+            : playTimeHours < 24
+              ? `${Math.floor(playTimeHours)}h ${Math.floor((playTimeHours % 1) * 60)}m`
+              : `${Math.floor(playTimeDays)}d ${Math.floor((playTimeDays % 1) * 24)}h`,
       },
       saves: gameState.saveCount,
-      efficiency: beaconStats.total > 0 ? resourceStats.total.quantumData / beaconStats.total : 0
+      efficiency:
+        beaconStats.total > 0
+          ? resourceStats.total.quantumData / beaconStats.total
+          : 0,
     };
   }, [gameState, beaconStats, resourceStats]);
-  
+
   const handleExportStats = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     const statsData = {
       exportDate: new Date().toISOString(),
       playerName: gameState.player.name,
@@ -185,10 +200,11 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
       saveCount: gameStats.saves,
       beacons: beaconStats,
       resources: resourceStats.total,
-      efficiency: gameStats.efficiency
+      efficiency: gameStats.efficiency,
     };
-    
-    const statsText = `📊 Signal Garden Statistics\n\n` +
+
+    const statsText =
+      `📊 Signal Garden Statistics\n\n` +
       `👤 Player: ${gameState.player.name}\n` +
       `⏰ Play Time: ${gameStats.playTime.formatted}\n` +
       `💾 Saves: ${gameStats.saves}\n\n` +
@@ -202,11 +218,11 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
       `🌌 Void Fragments: ${formatNumber(resourceStats.total.voidFragments)}\n\n` +
       `⚡ Efficiency: ${gameStats.efficiency.toFixed(2)} QD/beacon\n\n` +
       `Exported from Signal Garden v1.0.0`;
-    
+
     try {
       await Share.share({
         message: statsText,
-        title: 'Signal Garden Statistics'
+        title: 'Signal Garden Statistics',
       });
     } catch (error) {
       console.error('Failed to share statistics:', error);
@@ -217,8 +233,11 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-background">
-          <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
-          
+          <GameHUD
+            resourceManager={gameController.getResourceManager()}
+            showDetailed={false}
+          />
+
           <View className="bg-surface px-4 py-3">
             <View className="flex-row justify-between items-center">
               <TouchableOpacity
@@ -227,22 +246,28 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
               >
                 <Text className="text-white font-semibold">← Back</Text>
               </TouchableOpacity>
-              <Text className="text-text text-lg font-semibold">Statistics</Text>
+              <Text className="text-text text-lg font-semibold">
+                Statistics
+              </Text>
               <View style={{ width: 60 }} />
             </View>
           </View>
-          
+
           <ScrollView className="flex-1 p-4">
             <View className="flex-row items-center justify-between mb-6">
-              <Text className="text-text text-xl font-semibold">📊 Statistics</Text>
+              <Text className="text-text text-xl font-semibold">
+                📊 Statistics
+              </Text>
               <TouchableOpacity
                 onPress={handleExportStats}
                 className="bg-primary/10 border border-primary/30 px-3 py-2 rounded-lg"
               >
-                <Text className="text-primary text-sm font-semibold">Export</Text>
+                <Text className="text-primary text-sm font-semibold">
+                  Export
+                </Text>
               </TouchableOpacity>
             </View>
-            
+
             {/* Overview Cards */}
             <StatSection title="Overview" icon="🎯">
               <View className="flex-row space-x-3">
@@ -266,7 +291,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                 </View>
               </View>
             </StatSection>
-            
+
             {/* Resource Statistics */}
             <StatSection title="Resources" icon="💎">
               <View className="grid grid-cols-2 gap-3">
@@ -295,7 +320,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                   color="text-blue-400"
                 />
               </View>
-              
+
               {resourceStats.total.chronosParticles > 0 && (
                 <StatCard
                   title="Chronos Particles"
@@ -306,7 +331,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                 />
               )}
             </StatSection>
-            
+
             {/* Beacon Network */}
             <StatSection title="Beacon Network" icon="📡">
               <View className="flex-row space-x-3 mb-3">
@@ -327,7 +352,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                   />
                 </View>
               </View>
-              
+
               <View className="grid grid-cols-3 gap-2">
                 <StatCard
                   title="Pioneer"
@@ -352,7 +377,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                 />
               </View>
             </StatSection>
-            
+
             {/* Performance Metrics */}
             <StatSection title="Performance" icon="📈">
               <StatCard
@@ -362,7 +387,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                 color="text-green-400"
                 icon="⚡"
               />
-              
+
               <StatCard
                 title="Session Statistics"
                 value="Coming Soon"
@@ -371,7 +396,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                 icon="📊"
               />
             </StatSection>
-            
+
             {/* Achievements Preview */}
             <StatSection title="Achievements" icon="🏆">
               <StatCard
@@ -382,22 +407,30 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                 icon="🎖️"
               />
             </StatSection>
-            
+
             {/* Debug Information */}
             {__DEV__ && (
               <StatSection title="Debug Info" icon="🔧">
                 <View className="bg-surface border border-text/10 rounded-lg p-4">
-                  <Text className="text-text/80 font-semibold mb-2">Development Statistics</Text>
-                  <Text className="text-text/60 text-sm mb-1">Last refresh: {new Date(refreshTime).toLocaleTimeString()}</Text>
-                  <Text className="text-text/60 text-sm mb-1">Save version: {gameState.saveCount}</Text>
-                  <Text className="text-text/60 text-sm">Game time: {gameState.gameTime}s</Text>
+                  <Text className="text-text/80 font-semibold mb-2">
+                    Development Statistics
+                  </Text>
+                  <Text className="text-text/60 text-sm mb-1">
+                    Last refresh: {new Date(refreshTime).toLocaleTimeString()}
+                  </Text>
+                  <Text className="text-text/60 text-sm mb-1">
+                    Save version: {gameState.saveCount}
+                  </Text>
+                  <Text className="text-text/60 text-sm">
+                    Game time: {gameState.gameTime}s
+                  </Text>
                 </View>
               </StatSection>
             )}
-            
+
             <View className="mb-8" />
           </ScrollView>
-          
+
           <StatusBar style="light" />
         </View>
       </GestureHandlerRootView>

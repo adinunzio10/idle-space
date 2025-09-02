@@ -1,9 +1,9 @@
 /**
  * GESTURE DEBUG OVERLAY
- * 
+ *
  * Visual debugging overlay for gesture system development and testing.
  * Provides real-time visualization of gesture states, conflicts, and performance metrics.
- * 
+ *
  * Features:
  * - Real-time state visualization
  * - Conflict resolution monitoring
@@ -19,7 +19,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  interpolateColor,
   useDerivedValue,
 } from 'react-native-reanimated';
 
@@ -63,16 +62,20 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
   compact = false,
 }) => {
   const [debugInfo, setDebugInfo] = useState<DebugOverlayInfo | null>(null);
-  const [recentTransitions, setRecentTransitions] = useState<StateTransitionResult[]>([]);
-  const [touchPoints, setTouchPoints] = useState<TouchPoint[]>([]);
+  const [recentTransitions, setRecentTransitions] = useState<
+    StateTransitionResult[]
+  >([]);
+  const [touchPoints] = useState<TouchPoint[]>([]);
   const [conflicts, setConflicts] = useState<string[]>([]);
 
   // Animated values for visual feedback
   const stateIndicatorScale = useSharedValue(1);
   const conflictIndicatorOpacity = useSharedValue(0);
-  
+
   // Convert React state to shared value for worklet access
-  const currentStateShared = useDerivedValue(() => debugInfo?.currentState ?? GestureStateType.IDLE);
+  const currentStateShared = useDerivedValue(
+    () => debugInfo?.currentState ?? GestureStateType.IDLE
+  );
 
   // Update debug info periodically
   useEffect(() => {
@@ -91,26 +94,30 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
     if (!enabled) return;
 
     stateMachine.setDebugCallbacks({
-      onStateChange: (transition) => {
+      onStateChange: transition => {
         setRecentTransitions(prev => [...prev.slice(-4), transition]);
-        
+
         // Animate state indicator
         stateIndicatorScale.value = withTiming(1.2, { duration: 100 }, () => {
           stateIndicatorScale.value = withTiming(1, { duration: 200 });
         });
       },
-      
+
       onConflictResolution: (context, resolution) => {
         const conflictMsg = `${context.incomingGesture} -> ${resolution}`;
         setConflicts(prev => [...prev.slice(-2), conflictMsg]);
-        
+
         // Show conflict indicator
-        conflictIndicatorOpacity.value = withTiming(1, { duration: 100 }, () => {
-          conflictIndicatorOpacity.value = withTiming(0, { duration: 1000 });
-        });
+        conflictIndicatorOpacity.value = withTiming(
+          1,
+          { duration: 100 },
+          () => {
+            conflictIndicatorOpacity.value = withTiming(0, { duration: 1000 });
+          }
+        );
       },
-      
-      onPerformanceUpdate: (metrics) => {
+
+      onPerformanceUpdate: metrics => {
         // Performance updates handled in debugInfo
       },
     });
@@ -119,7 +126,7 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
   // Animated styles
   const stateIndicatorStyle = useAnimatedStyle(() => {
     const color = STATE_COLORS[currentStateShared.value];
-    
+
     return {
       transform: [{ scale: stateIndicatorScale.value }],
       backgroundColor: color,
@@ -148,7 +155,9 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
     return history.join(' → ');
   };
 
-  const formatPerformanceMetrics = (metrics: typeof debugInfo.performanceMetrics) => {
+  const formatPerformanceMetrics = (
+    metrics: typeof debugInfo.performanceMetrics
+  ) => {
     return {
       transition: `${metrics.stateTransitionTime.toFixed(1)}ms`,
       response: `${metrics.gestureResponseTime.toFixed(1)}ms`,
@@ -165,8 +174,10 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
             {debugInfo.currentState.replace('_', '').slice(0, 3)}
           </Text>
         </Animated.View>
-        
-        <Animated.View style={[styles.conflictIndicator, conflictIndicatorStyle]}>
+
+        <Animated.View
+          style={[styles.conflictIndicator, conflictIndicatorStyle]}
+        >
           <Text style={styles.conflictText}>!</Text>
         </Animated.View>
       </View>
@@ -207,7 +218,8 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
           {recentTransitions.slice(-2).map((transition, index) => (
             <Text key={index} style={styles.transitionText}>
               {transition.previousState} → {transition.newState}
-              {transition.conflictResolution && ` [${transition.conflictResolution}]`}
+              {transition.conflictResolution &&
+                ` [${transition.conflictResolution}]`}
             </Text>
           ))}
         </View>
@@ -215,7 +227,9 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
 
       {conflicts.length > 0 && (
         <Animated.View style={[styles.section, conflictIndicatorStyle]}>
-          <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>Conflicts</Text>
+          <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>
+            Conflicts
+          </Text>
           {conflicts.map((conflict, index) => (
             <Text key={index} style={styles.conflictText}>
               {conflict}
@@ -228,9 +242,10 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
       {touchPoints.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Touch Points</Text>
-          {touchPoints.map((point) => (
+          {touchPoints.map(point => (
             <Text key={point.id} style={styles.touchText}>
-              #{point.id}: ({point.x.toFixed(0)}, {point.y.toFixed(0)}) {point.phase}
+              #{point.id}: ({point.x.toFixed(0)}, {point.y.toFixed(0)}){' '}
+              {point.phase}
             </Text>
           ))}
         </View>
@@ -243,7 +258,8 @@ export const GestureDebugOverlay: React.FC<GestureDebugOverlayProps> = ({
           Profile: {gestureConfig.getCurrentProfile().name}
         </Text>
         <Text style={styles.configText}>
-          Accessibility: {Object.entries(gestureConfig.getAccessibilitySettings())
+          Accessibility:{' '}
+          {Object.entries(gestureConfig.getAccessibilitySettings())
             .filter(([_, enabled]) => enabled)
             .map(([type]) => type)
             .join(', ') || 'None'}
@@ -263,7 +279,7 @@ const styles = StyleSheet.create({
     maxWidth: 280,
     zIndex: 9999,
   },
-  
+
   compactContainer: {
     position: 'absolute',
     flexDirection: 'row',

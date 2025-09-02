@@ -6,16 +6,21 @@ import * as Haptics from 'expo-haptics';
 import { useUpgrades } from '../contexts/UpgradeContext';
 import { useResources } from '../core/ResourceContext';
 import { UpgradePreview } from '../components/ui/UpgradePreview';
-import { MilestoneChoiceModal } from '../components/ui/MilestoneChoiceModal';
-// Simple category definitions for the UI
-const UPGRADE_CATEGORIES = ['beaconEfficiency', 'probeSystems', 'offlineProcessing', 'consciousness'] as const;
-type UpgradeCategory = typeof UPGRADE_CATEGORIES[number];
+import { MilestoneChoiceOverlay } from '../components/ui/MilestoneChoiceOverlay';
 import { formatNumber } from '../utils/numberFormatting';
+// Simple category definitions for the UI
+const UPGRADE_CATEGORIES = [
+  'beaconEfficiency',
+  'probeSystems',
+  'offlineProcessing',
+  'consciousness',
+] as const;
+type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
 export const UpgradeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { 
+  const {
     upgradeManager,
     milestoneProgress,
     availableMilestone,
@@ -24,17 +29,19 @@ export const UpgradeScreen: React.FC = () => {
     getUpgradePreview,
     dismissMilestone,
     loading,
-    error 
+    error,
   } = useUpgrades();
   const { resources } = useResources();
-  
-  const [selectedCategory, setSelectedCategory] = useState<UpgradeCategory | null>(null);
-  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
-  const [purchasingCategory, setPurchasingCategory] = useState<UpgradeCategory | null>(null);
+
+  const [selectedCategory, setSelectedCategory] =
+    useState<UpgradeCategory | null>(null);
+  const [showMilestoneOverlay, setShowMilestoneOverlay] = useState(false);
+  const [purchasingCategory, setPurchasingCategory] =
+    useState<UpgradeCategory | null>(null);
 
   React.useEffect(() => {
     if (availableMilestone) {
-      setShowMilestoneModal(true);
+      setShowMilestoneOverlay(true);
     }
   }, [availableMilestone]);
 
@@ -58,13 +65,19 @@ export const UpgradeScreen: React.FC = () => {
 
     try {
       const success = await purchaseUpgrade(category);
-      
+
       if (success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Upgrade Complete!', `${category} has been upgraded successfully.`);
+        Alert.alert(
+          'Upgrade Complete!',
+          `${category} has been upgraded successfully.`
+        );
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('Upgrade Failed', 'Unable to complete the upgrade. Please try again.');
+        Alert.alert(
+          'Upgrade Failed',
+          'Unable to complete the upgrade. Please try again.'
+        );
       }
     } catch (err) {
       console.error('Purchase error:', err);
@@ -77,18 +90,24 @@ export const UpgradeScreen: React.FC = () => {
 
   const handleMilestoneChoice = async (milestone: any, choice: string) => {
     const success = await makeMilestoneChoice(milestone, choice);
-    
+
     if (success) {
-      setShowMilestoneModal(false);
-      Alert.alert('Consciousness Expanded!', 'Your choice has been applied to your network.');
+      setShowMilestoneOverlay(false);
+      Alert.alert(
+        'Consciousness Expanded!',
+        'Your choice has been applied to your network.'
+      );
     } else {
-      Alert.alert('Error', 'Failed to apply milestone choice. Please try again.');
+      Alert.alert(
+        'Error',
+        'Failed to apply milestone choice. Please try again.'
+      );
     }
   };
 
   const handleDismissMilestone = () => {
     dismissMilestone();
-    setShowMilestoneModal(false);
+    setShowMilestoneOverlay(false);
   };
 
   if (loading) {
@@ -137,32 +156,33 @@ export const UpgradeScreen: React.FC = () => {
             <Text className="text-text font-semibold text-base mb-3">
               🧠 Consciousness Expansion Progress
             </Text>
-            
+
             <View className="bg-surface rounded-xl p-4 border border-purple-500/20">
               <View className="flex-row justify-between items-center mb-3">
                 <Text className="text-text/80 text-sm">
-                  {milestoneProgress.currentBeacons} / {milestoneProgress.nextMilestone.beaconThreshold} Beacons
+                  {milestoneProgress.currentBeacons} /{' '}
+                  {milestoneProgress.nextMilestone.beaconThreshold} Beacons
                 </Text>
                 <Text className="text-purple-400 font-semibold text-sm">
                   {Math.round(milestoneProgress.progress * 100)}%
                 </Text>
               </View>
-              
+
               {/* Progress Bar */}
               <View className="bg-background rounded-full h-3 overflow-hidden mb-3">
-                <View 
+                <View
                   className="bg-purple-400 h-full rounded-full"
                   style={{ width: `${milestoneProgress.progress * 100}%` }}
                 />
               </View>
-              
+
               <Text className="text-text/70 text-sm text-center">
                 Next: {milestoneProgress.nextMilestone.name}
               </Text>
-              
+
               {availableMilestone && (
                 <TouchableOpacity
-                  onPress={() => setShowMilestoneModal(true)}
+                  onPress={() => setShowMilestoneOverlay(true)}
                   className="bg-purple-500 px-4 py-2 rounded-lg mt-3"
                 >
                   <Text className="text-white font-semibold text-center">
@@ -176,14 +196,19 @@ export const UpgradeScreen: React.FC = () => {
 
         {/* Upgrade Categories */}
         <View className="space-y-4">
-          <Text className="text-text font-semibold text-lg">Upgrade Categories</Text>
-          
-          {UPGRADE_CATEGORIES.map((category) => {
+          <Text className="text-text font-semibold text-lg">
+            Upgrade Categories
+          </Text>
+
+          {UPGRADE_CATEGORIES.map(category => {
             const preview = getUpgradePreview(category);
             const currentLevel = 0; // upgradeManager?.getUpgradeLevel(category) || 0;
-            const canAfford = preview && typeof preview.cost === 'number' && resources.quantumData >= preview.cost;
+            const canAfford =
+              preview &&
+              typeof preview.cost === 'number' &&
+              resources.quantumData >= preview.cost;
             const isPurchasing = purchasingCategory === category;
-            
+
             if (!preview) return null;
 
             return (
@@ -195,8 +220,10 @@ export const UpgradeScreen: React.FC = () => {
                   canAfford={!!canAfford}
                   isPurchasing={isPurchasing}
                   onPurchase={() => handlePurchaseUpgrade(category)}
-                  onTogglePreview={() => 
-                    setSelectedCategory(selectedCategory === category ? null : category)
+                  onTogglePreview={() =>
+                    setSelectedCategory(
+                      selectedCategory === category ? null : category
+                    )
                   }
                   isExpanded={selectedCategory === category}
                 />
@@ -207,16 +234,18 @@ export const UpgradeScreen: React.FC = () => {
 
         {/* Current Resources */}
         <View className="mt-6 bg-background/50 rounded-lg p-4">
-          <Text className="text-text font-semibold text-base mb-2">Available Resources</Text>
+          <Text className="text-text font-semibold text-base mb-2">
+            Available Resources
+          </Text>
           <Text className="text-primary text-xl font-bold">
             {formatNumber(resources.quantumData)} Quantum Data
           </Text>
         </View>
       </ScrollView>
 
-      {/* Milestone Choice Modal */}
-      <MilestoneChoiceModal
-        isVisible={showMilestoneModal}
+      {/* Milestone Choice Overlay */}
+      <MilestoneChoiceOverlay
+        isVisible={showMilestoneOverlay}
         milestone={availableMilestone}
         onChoice={handleMilestoneChoice}
         onDismiss={handleDismissMilestone}
@@ -249,11 +278,19 @@ const UpgradeCategoryCard: React.FC<UpgradeCategoryCardProps> = ({
   const getCategoryInfo = (category: UpgradeCategory) => {
     switch (category) {
       case 'beaconEfficiency':
-        return { icon: '📡', name: 'Beacon Efficiency', color: 'text-amber-400' };
+        return {
+          icon: '📡',
+          name: 'Beacon Efficiency',
+          color: 'text-amber-400',
+        };
       case 'probeSystems':
         return { icon: '🚀', name: 'Probe Systems', color: 'text-blue-400' };
       case 'offlineProcessing':
-        return { icon: '⏰', name: 'Offline Processing', color: 'text-purple-400' };
+        return {
+          icon: '⏰',
+          name: 'Offline Processing',
+          color: 'text-purple-400',
+        };
       case 'consciousness':
         return { icon: '🧠', name: 'Consciousness', color: 'text-pink-400' };
     }
@@ -281,19 +318,19 @@ const UpgradeCategoryCard: React.FC<UpgradeCategoryCardProps> = ({
               </Text>
             </View>
           </View>
-          
+
           <TouchableOpacity
             onPress={onPurchase}
             disabled={!canAfford || isPurchasing}
             className={`px-4 py-2 rounded-lg ${
-              canAfford && !isPurchasing
-                ? 'bg-primary'
-                : 'bg-text/20'
+              canAfford && !isPurchasing ? 'bg-primary' : 'bg-text/20'
             }`}
           >
-            <Text className={`font-semibold text-center ${
-              canAfford && !isPurchasing ? 'text-white' : 'text-text/40'
-            }`}>
+            <Text
+              className={`font-semibold text-center ${
+                canAfford && !isPurchasing ? 'text-white' : 'text-text/40'
+              }`}
+            >
               {isPurchasing ? 'Upgrading...' : 'Upgrade'}
             </Text>
           </TouchableOpacity>
@@ -303,10 +340,7 @@ const UpgradeCategoryCard: React.FC<UpgradeCategoryCardProps> = ({
       {/* Expanded Preview */}
       {isExpanded && (
         <View className="px-4 pb-4 border-t border-text/10">
-          <UpgradePreview
-            category={category}
-            preview={preview}
-          />
+          <UpgradePreview category={category} preview={preview} />
         </View>
       )}
     </View>

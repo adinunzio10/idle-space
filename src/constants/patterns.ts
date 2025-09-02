@@ -87,12 +87,15 @@ export const PATTERN_VISUAL_CONFIG = {
       pulseIntensity: 0.15,
       glowIntensity: 0.8,
     },
-  } as Record<PatternType, {
-    hasParticles: boolean;
-    hasShimmer: boolean;
-    pulseIntensity: number;
-    glowIntensity: number;
-  }>,
+  } as Record<
+    PatternType,
+    {
+      hasParticles: boolean;
+      hasShimmer: boolean;
+      pulseIntensity: number;
+      glowIntensity: number;
+    }
+  >,
 } as const;
 
 /**
@@ -139,16 +142,19 @@ export const PATTERN_COLORS = {
     bonus: '#92400E',
     shadow: '#B45309',
   },
-} as Record<PatternType, {
-  fill: string;
-  fillActive: string;
-  stroke: string;
-  strokeActive: string;
-  glow: string;
-  glowActive: string;
-  bonus: string;
-  shadow: string;
-}>;
+} as Record<
+  PatternType,
+  {
+    fill: string;
+    fillActive: string;
+    stroke: string;
+    strokeActive: string;
+    glow: string;
+    glowActive: string;
+    bonus: string;
+    shadow: string;
+  }
+>;
 
 /**
  * Bonus multiplier display configuration
@@ -202,16 +208,16 @@ export const PATTERN_LAYERS = {
 export const PATTERN_PERFORMANCE = {
   // Maximum patterns to animate simultaneously
   MAX_ANIMATED_PATTERNS: 20,
-  
+
   // Maximum patterns to show particles for
   MAX_PARTICLE_PATTERNS: 5,
-  
+
   // Culling margin around viewport
   CULLING_MARGIN: 100,
-  
+
   // Minimum pattern size to render (screen pixels)
   MIN_RENDER_SIZE: 20,
-  
+
   // Pattern complexity for LOD decisions
   COMPLEXITY: {
     triangle: 1,
@@ -227,17 +233,17 @@ export const PATTERN_PERFORMANCE = {
 export const PATTERN_INTERACTION = {
   // Touch target expansion around pattern
   TOUCH_MARGIN: 20,
-  
+
   // Minimum touch duration for pattern details
   MIN_PRESS_DURATION: 200,
-  
+
   // Visual feedback on touch
   TOUCH_FEEDBACK: {
     scaleIncrease: 0.05,
     opacityIncrease: 0.2,
     duration: 150,
   },
-  
+
   // Hover effect settings (for future web support)
   HOVER: {
     scaleIncrease: 0.03,
@@ -252,7 +258,7 @@ export const PATTERN_INTERACTION = {
 export const PATTERN_OVERLAP = {
   // Opacity reduction for overlapping patterns
   OVERLAP_OPACITY_REDUCTION: 0.3,
-  
+
   // Z-index priority by pattern type (higher = on top)
   Z_INDEX_PRIORITY: {
     triangle: 1,
@@ -260,7 +266,7 @@ export const PATTERN_OVERLAP = {
     pentagon: 3,
     hexagon: 4,
   } as Record<PatternType, number>,
-  
+
   // Blend modes for overlapping patterns
   BLEND_MODES: {
     normal: 'normal',

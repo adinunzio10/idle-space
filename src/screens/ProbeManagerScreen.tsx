@@ -10,7 +10,10 @@ import { ProbeManagerUI } from '../components/ui/ProbeManagerUI';
 import { GameState } from '../storage/schemas/GameState';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
-type ProbeManagerScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProbeManager'>;
+type ProbeManagerScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'ProbeManager'
+>;
 
 interface ProbeManagerScreenProps {
   gameState: GameState;
@@ -27,7 +30,10 @@ export const ProbeManagerScreen: React.FC<ProbeManagerScreenProps> = ({
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-background">
-          <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
+          <GameHUD
+            resourceManager={gameController.getResourceManager()}
+            showDetailed={false}
+          />
           <ProbeManagerUI
             probeManager={gameController.getProbeManager()}
             onClose={() => navigation.goBack()}

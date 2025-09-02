@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { fpsMonitor, useFPSMonitor } from '../../utils/performance/FPSMonitor';
+import { useFPSMonitor } from '../../utils/performance/FPSMonitor';
 import { performanceMonitor } from '../../utils/performance/monitor';
 import { poolManager } from '../../utils/performance/ObjectPool';
 import { useBatteryOptimizationWithSettings } from '../../hooks/useBatteryOptimization';
@@ -19,10 +19,10 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
   onToggle,
 }) => {
   const fpsMetrics = useFPSMonitor();
-  const { state: batteryState, metrics: batteryMetrics } = useBatteryOptimizationWithSettings();
+  const { state: batteryState, metrics: batteryMetrics } =
+    useBatteryOptimizationWithSettings();
   const [expanded, setExpanded] = useState(false);
   const [poolStats, setPoolStats] = useState<any>({});
-  const [performanceHistory, setPerformanceHistory] = useState<any[]>([]);
 
   useEffect(() => {
     if (!visible) return;
@@ -30,13 +30,6 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
     const interval = setInterval(() => {
       // Update pool statistics
       setPoolStats(poolManager.getStats());
-      
-      // Update performance history
-      const currentMetrics = performanceMonitor.getCurrentMetrics();
-      setPerformanceHistory(prev => {
-        const newHistory = [...prev, currentMetrics].slice(-60); // Keep last 60 seconds
-        return newHistory;
-      });
     }, 1000);
 
     return () => clearInterval(interval);
@@ -79,10 +72,7 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
         positionStyles[position],
       ]}
     >
-      <TouchableOpacity
-        onPress={() => setExpanded(!expanded)}
-        className="mb-1"
-      >
+      <TouchableOpacity onPress={() => setExpanded(!expanded)} className="mb-1">
         <Text className="text-white font-bold text-sm">
           Performance {expanded ? '▼' : '▶'}
         </Text>
@@ -111,7 +101,9 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
         <View className="space-y-2">
           {/* FPS Section */}
           <View>
-            <Text className="text-white text-xs font-semibold mb-1">Frame Rate</Text>
+            <Text className="text-white text-xs font-semibold mb-1">
+              Frame Rate
+            </Text>
             <Text
               className="text-sm font-mono"
               style={{ color: getColorForFPS(fpsMetrics.fps) }}
@@ -125,18 +117,29 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
               Avg: {fpsMetrics.avgFrameTime.toFixed(1)}ms
             </Text>
             <Text className="text-xs font-mono text-gray-400">
-              Drops: {fpsMetrics.frameDrops} ({Math.round((fpsMetrics.frameDrops / Math.max(fpsMetrics.totalFrames, 1)) * 100)}%)
+              Drops: {fpsMetrics.frameDrops} (
+              {Math.round(
+                (fpsMetrics.frameDrops / Math.max(fpsMetrics.totalFrames, 1)) *
+                  100
+              )}
+              %)
             </Text>
           </View>
 
           {/* Performance Quality */}
           <View>
-            <Text className="text-white text-xs font-semibold mb-1">Quality</Text>
-            <Text 
+            <Text className="text-white text-xs font-semibold mb-1">
+              Quality
+            </Text>
+            <Text
               className="text-xs font-mono"
-              style={{ 
-                color: performanceMonitor.getCurrentQuality() === 'high' ? '#10B981' : 
-                      performanceMonitor.getCurrentQuality() === 'medium' ? '#F59E0B' : '#EF4444'
+              style={{
+                color:
+                  performanceMonitor.getCurrentQuality() === 'high'
+                    ? '#10B981'
+                    : performanceMonitor.getCurrentQuality() === 'medium'
+                      ? '#F59E0B'
+                      : '#EF4444',
               }}
             >
               {performanceMonitor.getCurrentQuality().toUpperCase()}
@@ -145,10 +148,14 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
 
           {/* JS Thread */}
           <View>
-            <Text className="text-white text-xs font-semibold mb-1">JS Thread</Text>
+            <Text className="text-white text-xs font-semibold mb-1">
+              JS Thread
+            </Text>
             <Text
               className="text-xs font-mono"
-              style={{ color: fpsMetrics.jsThreadBlocked ? '#EF4444' : '#10B981' }}
+              style={{
+                color: fpsMetrics.jsThreadBlocked ? '#EF4444' : '#10B981',
+              }}
             >
               {fpsMetrics.jsThreadBlocked ? 'BLOCKED' : 'RESPONSIVE'}
             </Text>
@@ -159,10 +166,14 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
 
           {/* Memory */}
           <View>
-            <Text className="text-white text-xs font-semibold mb-1">Memory</Text>
+            <Text className="text-white text-xs font-semibold mb-1">
+              Memory
+            </Text>
             <Text
               className="text-xs font-mono"
-              style={{ color: fpsMetrics.memoryWarning ? '#EF4444' : '#10B981' }}
+              style={{
+                color: fpsMetrics.memoryWarning ? '#EF4444' : '#10B981',
+              }}
             >
               {fpsMetrics.memoryWarning ? 'PRESSURE' : 'NORMAL'}
             </Text>
@@ -170,16 +181,23 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
 
           {/* Battery Optimization */}
           <View>
-            <Text className="text-white text-xs font-semibold mb-1">Battery</Text>
+            <Text className="text-white text-xs font-semibold mb-1">
+              Battery
+            </Text>
             <Text className="text-xs font-mono text-gray-300">
               Level: {Math.round(batteryMetrics.batteryLevel * 100)}%
             </Text>
             <Text
               className="text-xs font-mono"
-              style={{ 
-                color: batteryState.currentOptimizationLevel === 'high' ? '#EF4444' : 
-                      batteryState.currentOptimizationLevel === 'medium' ? '#F59E0B' : 
-                      batteryState.currentOptimizationLevel === 'low' ? '#3B82F6' : '#10B981'
+              style={{
+                color:
+                  batteryState.currentOptimizationLevel === 'high'
+                    ? '#EF4444'
+                    : batteryState.currentOptimizationLevel === 'medium'
+                      ? '#F59E0B'
+                      : batteryState.currentOptimizationLevel === 'low'
+                        ? '#3B82F6'
+                        : '#10B981',
               }}
             >
               Opt: {batteryState.currentOptimizationLevel.toUpperCase()}
@@ -194,22 +212,32 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
 
           {/* Object Pools */}
           <View>
-            <Text className="text-white text-xs font-semibold mb-1">Object Pools</Text>
-            {Object.entries(poolStats).map(([poolName, stats]: [string, any]) => (
-              <Text key={poolName} className="text-xs font-mono text-gray-300">
-                {poolName}: {stats.poolSize}/{stats.maxSize}
-                {stats.utilizationRate && (
-                  <Text className="text-gray-400">
-                    {' '}({Math.round(stats.utilizationRate * 100)}%)
-                  </Text>
-                )}
-              </Text>
-            ))}
+            <Text className="text-white text-xs font-semibold mb-1">
+              Object Pools
+            </Text>
+            {Object.entries(poolStats).map(
+              ([poolName, stats]: [string, any]) => (
+                <Text
+                  key={poolName}
+                  className="text-xs font-mono text-gray-300"
+                >
+                  {poolName}: {stats.poolSize}/{stats.maxSize}
+                  {stats.utilizationRate && (
+                    <Text className="text-gray-400">
+                      {' '}
+                      ({Math.round(stats.utilizationRate * 100)}%)
+                    </Text>
+                  )}
+                </Text>
+              )
+            )}
           </View>
 
           {/* Runtime */}
           <View>
-            <Text className="text-white text-xs font-semibold mb-1">Runtime</Text>
+            <Text className="text-white text-xs font-semibold mb-1">
+              Runtime
+            </Text>
             <Text className="text-xs font-mono text-gray-300">
               {Math.round(fpsMetrics.uptime / 1000)}s
             </Text>
@@ -240,7 +268,9 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
  */
 export function usePerformanceOverlay() {
   const [visible, setVisible] = useState(__DEV__); // Only visible in development by default
-  const [position, setPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>('top-right');
+  const [position, setPosition] = useState<
+    'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  >('top-right');
   const [compact, setCompact] = useState(false);
 
   const toggle = () => setVisible(!visible);

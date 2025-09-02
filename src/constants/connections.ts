@@ -10,7 +10,7 @@ export const CONNECTION_CONFIG = {
     PATTERN_OPACITY: 0.9 as const,
     GLOW_RADIUS: 3,
   },
-  
+
   // Performance thresholds
   PERFORMANCE: {
     MAX_CONNECTIONS_PER_FRAME: 200,
@@ -18,7 +18,7 @@ export const CONNECTION_CONFIG = {
     MIN_CONNECTION_LENGTH: 10, // Don't render very short connections at low LOD
     MAX_RENDER_DISTANCE: 2000, // Max distance to render connections
   },
-  
+
   // LOD-based rendering settings
   LOD_SETTINGS: {
     FULL_DETAIL: {
@@ -50,7 +50,7 @@ export const CONNECTION_CONFIG = {
       animationSpeed: 0,
     },
   },
-  
+
   // Connection strength visualization
   STRENGTH_MAPPING: {
     1: { width: 1, glow: 0 },
@@ -59,7 +59,7 @@ export const CONNECTION_CONFIG = {
     4: { width: 3, glow: 2 },
     5: { width: 4, glow: 3 },
   },
-  
+
   // Animation settings
   ANIMATION: {
     FLOW_SPEED: 2000, // ms for particle to travel connection length
@@ -79,7 +79,7 @@ export const CONNECTION_COLORS = {
     flow: '#6366F1',
     glow: '#818CF8',
   },
-  
+
   // Strong connection colors
   STRONG: {
     start: '#3730A3',
@@ -87,7 +87,7 @@ export const CONNECTION_COLORS = {
     flow: '#4F46E5',
     glow: '#6366F1',
   },
-  
+
   // Pattern-specific colors
   PATTERNS: {
     triangle: {
@@ -114,8 +114,11 @@ export const CONNECTION_COLORS = {
       flow: '#FBBF24',
       glow: '#FCD34D',
     },
-  } as Record<PatternType, { start: string; end: string; flow: string; glow: string }>,
-  
+  } as Record<
+    PatternType,
+    { start: string; end: string; flow: string; glow: string }
+  >,
+
   // Special states
   INACTIVE: {
     start: '#6B7280',
@@ -137,13 +140,13 @@ export const PATTERN_BONUSES = {
 export const CURVE_CONFIG = {
   // Bezier curve control point offset (as percentage of distance)
   CONTROL_POINT_OFFSET: 0.3,
-  
+
   // Maximum curve deviation for aesthetic appeal
   MAX_CURVE_DEVIATION: 50,
-  
+
   // Minimum curve for very short connections
   MIN_CURVE_OFFSET: 10,
-  
+
   // Curve direction variation (adds visual interest)
   CURVE_VARIATION: 0.1,
 } as const;

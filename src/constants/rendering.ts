@@ -1,12 +1,12 @@
 export const RENDERING_CONFIG = {
   // LOD (Level of Detail) thresholds
   LOD_LEVELS: {
-    FULL_DETAIL: 2.0,     // zoom > 2.0 - full animations and effects
-    STANDARD: 0.5,        // zoom 0.5-2.0 - static icons
-    SIMPLIFIED: 0.1,      // zoom 0.1-0.5 - simple shapes
-    CLUSTERING: 0.1,      // zoom < 0.1 - cluster beacons
+    FULL_DETAIL: 2.0, // zoom > 2.0 - full animations and effects
+    STANDARD: 0.5, // zoom 0.5-2.0 - static icons
+    SIMPLIFIED: 0.1, // zoom 0.1-0.5 - simple shapes
+    CLUSTERING: 0.1, // zoom < 0.1 - cluster beacons
   },
-  
+
   // Performance thresholds
   PERFORMANCE: {
     MAX_VISIBLE_BEACONS: 500,
@@ -14,7 +14,7 @@ export const RENDERING_CONFIG = {
     CLUSTER_MIN_SIZE: 3,
     CLUSTER_MAX_DISTANCE: 100,
   },
-  
+
   // Visual settings
   BEACON_SIZES: {
     FULL: 24,
@@ -22,7 +22,7 @@ export const RENDERING_CONFIG = {
     SIMPLIFIED: 8,
     CLUSTER: 32,
   },
-  
+
   // Colors for different beacon types
   BEACON_COLORS: {
     pioneer: {
@@ -41,7 +41,7 @@ export const RENDERING_CONFIG = {
       secondary: '#A78BFA',
     },
   },
-  
+
   // Animation settings
   ANIMATIONS: {
     PULSE_DURATION: 2000,
@@ -49,7 +49,7 @@ export const RENDERING_CONFIG = {
     TRANSITION_DURATION: 300,
     LEVEL_UP_SCALE: 1.5,
   },
-  
+
   // Touch interaction
   INTERACTION: {
     HIT_RADIUS_BASE: 20,

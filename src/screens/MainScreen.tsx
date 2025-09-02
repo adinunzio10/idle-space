@@ -10,7 +10,10 @@ import { GameState } from '../storage/schemas/GameState';
 import { ProbeInstance } from '../types/probe';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
-type MainScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
+type MainScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Main'
+>;
 
 interface MainScreenProps {
   gameState: GameState | null;
@@ -45,15 +48,15 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const handleResetGameData = () => {
     // Clear all beacons
     gameController.clearAllBeacons();
-    
+
     // Clear all probes
     const probeManager = gameController.getProbeManager();
     probeManager.clear();
-    
+
     // Reset quantum data to a small amount for testing
     const resourceManager = gameController.getResourceManager();
     resourceManager.setResource('quantumData', 500);
-    
+
     console.log('Reset all game data for debugging');
   };
 
@@ -62,7 +65,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <View className="flex-1 bg-background items-center justify-center p-4">
-            <Text className="text-red-500 text-xl font-semibold mb-4">Error</Text>
+            <Text className="text-red-500 text-xl font-semibold mb-4">
+              Error
+            </Text>
             <Text className="text-text/80 text-base text-center">{error}</Text>
             <StatusBar style="light" />
           </View>
@@ -76,7 +81,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <View className="flex-1 bg-background items-center justify-center">
-            <Text className="text-text text-xl font-semibold">Signal Garden</Text>
+            <Text className="text-text text-xl font-semibold">
+              Signal Garden
+            </Text>
             <Text className="text-text/80 text-base mt-2">
               Initializing save system...
             </Text>
@@ -91,20 +98,26 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-background">
-          <GameHUD resourceManager={gameController.getResourceManager()} showDetailed={false} />
-          
+          <GameHUD
+            resourceManager={gameController.getResourceManager()}
+            showDetailed={false}
+          />
+
           <View className="flex-1 items-center justify-center p-4">
-            <Text className="text-text text-2xl font-bold mb-6">Signal Garden</Text>
-            
+            <Text className="text-text text-2xl font-bold mb-6">
+              Signal Garden
+            </Text>
+
             {gameState && (
               <View className="items-center space-y-4">
                 <Text className="text-text/80 text-lg">
                   {gameState.player.name}
                 </Text>
                 <Text className="text-text/60 text-sm">
-                  Save #{gameState.saveCount} • Play time: {Math.floor(gameState.gameTime / 60)}m
+                  Save #{gameState.saveCount} • Play time:{' '}
+                  {Math.floor(gameState.gameTime / 60)}m
                 </Text>
-                
+
                 <View className="mt-8 space-y-4">
                   <TouchableOpacity
                     onPress={handleAddResources}
@@ -114,7 +127,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                       Generate +100 Quantum Data
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => navigation.navigate('Upgrades')}
                     className="bg-primary px-6 py-3 rounded-lg border border-primary/50"
@@ -123,7 +136,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                       ⬆️ Upgrades
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => navigation.navigate('GalaxyMap')}
                     className="bg-accent px-6 py-3 rounded-lg"
@@ -132,7 +145,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                       Open Galaxy Map
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => navigation.navigate('PatternGallery')}
                     className="bg-secondary px-6 py-3 rounded-lg border border-secondary/50"
@@ -150,7 +163,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                       🚀 Probe Manager
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => navigation.navigate('Statistics')}
                     className="bg-primary px-6 py-3 rounded-lg border border-primary/50"
@@ -159,7 +172,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                       📊 Statistics
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => navigation.navigate('Settings')}
                     className="bg-secondary px-6 py-3 rounded-lg"
@@ -169,13 +182,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({
                     </Text>
                   </TouchableOpacity>
                 </View>
-                
+
                 <Text className="text-text/40 text-xs mt-6 text-center">
                   Save system active • Auto-save every 2 minutes
                 </Text>
               </View>
             )}
-            
+
             <StatusBar style="light" />
           </View>
         </View>

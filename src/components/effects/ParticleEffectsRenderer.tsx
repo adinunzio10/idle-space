@@ -4,16 +4,13 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withRepeat,
   withSequence,
   Easing,
-  interpolate,
   runOnJS,
 } from 'react-native-reanimated';
-import { 
-  ParticleSystem, 
-  ParticleEmitterType, 
-  particleManager 
+import {
+  ParticleEmitterType,
+  particleManager,
 } from '../../utils/effects/ParticleSystem';
 import { ViewportState } from '../../types/galaxy';
 
@@ -149,10 +146,7 @@ const FloatingNumber: React.FC<{
     position: 'absolute',
     left: startX,
     top: startY,
-    transform: [
-      { translateY: translateY.value },
-      { scale: scale.value }
-    ],
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
     opacity: opacity.value,
   }));
 
@@ -175,111 +169,110 @@ const FloatingNumber: React.FC<{
 /**
  * Main particle effects renderer component
  */
-export const ParticleEffectsRenderer: React.FC<ParticleEffectsRendererProps> = memo(({
-  viewportState,
-  width,
-  height,
-  effects,
-  enableAnimations,
-}) => {
-  const [activeEffects, setActiveEffects] = React.useState<Map<string, any>>(new Map());
+export const ParticleEffectsRenderer: React.FC<ParticleEffectsRendererProps> =
+  memo(({ viewportState, width, height, effects, enableAnimations }) => {
+    const [activeEffects, setActiveEffects] = React.useState<Map<string, any>>(
+      new Map()
+    );
 
-  // Create and manage particle systems
-  useEffect(() => {
-    if (!enableAnimations) return;
+    // Create and manage particle systems
+    useEffect(() => {
+      if (!enableAnimations) return;
 
-    effects.forEach(effect => {
-      if (effect.isActive && !activeEffects.has(effect.id)) {
-        const system = particleManager.createSystem(
-          effect.id,
-          effect.type,
-          {
+      effects.forEach(effect => {
+        if (effect.isActive && !activeEffects.has(effect.id)) {
+          const system = particleManager.createSystem(effect.id, effect.type, {
             maxParticles: Math.min(50, (effect.intensity || 1) * 20),
             particleLifetime: effect.duration || 2000,
-          }
-        );
-        
-        system.setPosition(effect.position.x, effect.position.y);
-        system.start();
+          });
 
-        setActiveEffects(prev => new Map(prev).set(effect.id, system));
-      } else if (!effect.isActive && activeEffects.has(effect.id)) {
-        particleManager.removeSystem(effect.id);
-        setActiveEffects(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(effect.id);
-          return newMap;
-        });
-      }
-    });
+          system.setPosition(effect.position.x, effect.position.y);
+          system.start();
 
-    // Cleanup removed effects
-    activeEffects.forEach((system, id) => {
-      if (!effects.find(e => e.id === id)) {
-        particleManager.removeSystem(id);
-        setActiveEffects(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(id);
-          return newMap;
-        });
-      }
-    });
-  }, [effects, activeEffects, enableAnimations]);
-
-  // Convert particle positions to screen coordinates
-  const screenParticles = useMemo(() => {
-    if (!enableAnimations) return [];
-
-    const particles: any[] = [];
-    activeEffects.forEach(system => {
-      const systemParticles = system.getParticles();
-      systemParticles.forEach(particle => {
-        // Convert galaxy coordinates to screen coordinates
-        const screenX = (particle.x - viewportState.translateX) * viewportState.scale;
-        const screenY = (particle.y - viewportState.translateY) * viewportState.scale;
-        
-        // Only render particles within screen bounds (with margin)
-        if (screenX >= -50 && screenX <= width + 50 && 
-            screenY >= -50 && screenY <= height + 50) {
-          particles.push({
-            ...particle,
-            x: screenX,
-            y: screenY,
+          setActiveEffects(prev => new Map(prev).set(effect.id, system));
+        } else if (!effect.isActive && activeEffects.has(effect.id)) {
+          particleManager.removeSystem(effect.id);
+          setActiveEffects(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(effect.id);
+            return newMap;
           });
         }
       });
-    });
 
-    return particles;
-  }, [activeEffects, viewportState, width, height, enableAnimations]);
+      // Cleanup removed effects
+      activeEffects.forEach((system, id) => {
+        if (!effects.find(e => e.id === id)) {
+          particleManager.removeSystem(id);
+          setActiveEffects(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(id);
+            return newMap;
+          });
+        }
+      });
+    }, [effects, activeEffects, enableAnimations]);
 
-  if (!enableAnimations) return null;
+    // Convert particle positions to screen coordinates
+    const screenParticles = useMemo(() => {
+      if (!enableAnimations) return [];
 
-  return (
-    <View 
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width,
-        height,
-        pointerEvents: 'none',
-      }}
-    >
-      {/* Render individual particles */}
-      {screenParticles.map((particle, index) => (
-        <ParticleComponent
-          key={`${particle.id}-${index}`}
-          x={particle.x}
-          y={particle.y}
-          size={particle.size}
-          color={particle.color}
-          opacity={particle.opacity}
-        />
-      ))}
-    </View>
-  );
-});
+      const particles: any[] = [];
+      activeEffects.forEach(system => {
+        const systemParticles = system.getParticles();
+        systemParticles.forEach(particle => {
+          // Convert galaxy coordinates to screen coordinates
+          const screenX =
+            (particle.x - viewportState.translateX) * viewportState.scale;
+          const screenY =
+            (particle.y - viewportState.translateY) * viewportState.scale;
+
+          // Only render particles within screen bounds (with margin)
+          if (
+            screenX >= -50 &&
+            screenX <= width + 50 &&
+            screenY >= -50 &&
+            screenY <= height + 50
+          ) {
+            particles.push({
+              ...particle,
+              x: screenX,
+              y: screenY,
+            });
+          }
+        });
+      });
+
+      return particles;
+    }, [activeEffects, viewportState, width, height, enableAnimations]);
+
+    if (!enableAnimations) return null;
+
+    return (
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width,
+          height,
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Render individual particles */}
+        {screenParticles.map((particle, index) => (
+          <ParticleComponent
+            key={`${particle.id}-${index}`}
+            x={particle.x}
+            y={particle.y}
+            size={particle.size}
+            color={particle.color}
+            opacity={particle.opacity}
+          />
+        ))}
+      </View>
+    );
+  });
 
 /**
  * Hook for managing particle effects
@@ -287,29 +280,32 @@ export const ParticleEffectsRenderer: React.FC<ParticleEffectsRendererProps> = m
 export function useParticleEffects() {
   const [effects, setEffects] = React.useState<EffectInstance[]>([]);
 
-  const addEffect = React.useCallback((
-    id: string,
-    type: ParticleEmitterType,
-    position: { x: number; y: number },
-    options?: { intensity?: number; duration?: number }
-  ) => {
-    setEffects(prev => [
-      ...prev.filter(e => e.id !== id), // Remove existing effect with same ID
-      {
-        id,
-        type,
-        position,
-        isActive: true,
-        intensity: options?.intensity,
-        duration: options?.duration,
-      }
-    ]);
-  }, []);
+  const addEffect = React.useCallback(
+    (
+      id: string,
+      type: ParticleEmitterType,
+      position: { x: number; y: number },
+      options?: { intensity?: number; duration?: number }
+    ) => {
+      setEffects(prev => [
+        ...prev.filter(e => e.id !== id), // Remove existing effect with same ID
+        {
+          id,
+          type,
+          position,
+          isActive: true,
+          intensity: options?.intensity,
+          duration: options?.duration,
+        },
+      ]);
+    },
+    []
+  );
 
   const removeEffect = React.useCallback((id: string) => {
-    setEffects(prev => prev.map(e => 
-      e.id === id ? { ...e, isActive: false } : e
-    ));
+    setEffects(prev =>
+      prev.map(e => (e.id === id ? { ...e, isActive: false } : e))
+    );
 
     // Remove from list after animation completes
     setTimeout(() => {

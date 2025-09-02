@@ -1,5 +1,9 @@
 import React from 'react';
-import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  Theme,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainScreen } from '../screens/MainScreen';
 import { GalaxyMapScreen } from '../screens/GalaxyMapScreen';
@@ -85,6 +89,7 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
           headerShown: false,
           contentStyle: { backgroundColor: '#111827' },
           animation: 'slide_from_right',
+          freezeOnBlur: false,
         }}
       >
         <Stack.Screen name="Main">
@@ -98,9 +103,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
             />
           )}
         </Stack.Screen>
-        
+
         <Stack.Screen name="GalaxyMap">
-          {() => 
+          {() =>
             gameState ? (
               <GalaxyMapScreen
                 gameState={gameState}
@@ -110,9 +115,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
             ) : null
           }
         </Stack.Screen>
-        
+
         <Stack.Screen name="Settings">
-          {() => 
+          {() =>
             gameState ? (
               <SettingsScreen
                 gameState={gameState}
@@ -121,9 +126,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
             ) : null
           }
         </Stack.Screen>
-        
+
         <Stack.Screen name="Statistics">
-          {() => 
+          {() =>
             gameState ? (
               <StatisticsScreen
                 gameState={gameState}
@@ -132,9 +137,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
             ) : null
           }
         </Stack.Screen>
-        
+
         <Stack.Screen name="PatternGallery">
-          {() => 
+          {() =>
             gameState ? (
               <PatternGalleryScreen
                 gameState={gameState}
@@ -143,9 +148,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
             ) : null
           }
         </Stack.Screen>
-        
+
         <Stack.Screen name="ProbeManager">
-          {() => 
+          {() =>
             gameState ? (
               <ProbeManagerScreen
                 gameState={gameState}
@@ -154,13 +159,9 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
             ) : null
           }
         </Stack.Screen>
-        
+
         <Stack.Screen name="Upgrades">
-          {() => 
-            gameState ? (
-              <UpgradeScreen />
-            ) : null
-          }
+          {() => (gameState ? <UpgradeScreen /> : null)}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
