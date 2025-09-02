@@ -1,5 +1,9 @@
 import * as SQLite from 'expo-sqlite';
-import { SQLStorageAdapter, SQLTransaction, StorageError } from './StorageAdapter';
+import {
+  SQLStorageAdapter,
+  SQLTransaction,
+  StorageError,
+} from './StorageAdapter';
 
 interface SQLiteTransaction {
   executeSql<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -15,7 +19,7 @@ class SQLiteTransactionWrapper implements SQLTransaction {
       throw new StorageError(
         `SQL execution failed: ${sql}`,
         'SQLITE_EXECUTION_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -28,16 +32,16 @@ export class SQLiteAdapter implements SQLStorageAdapter {
   async initialize(): Promise<void> {
     try {
       this.db = await SQLite.openDatabaseAsync('signal_garden.db');
-      
+
       await this.createKeyValueTable();
       await this.createVersionTable();
-      
+
       this.isInitialized = true;
     } catch (error) {
       throw new StorageError(
         'Failed to initialize SQLite database',
         'SQLITE_INIT_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -62,7 +66,7 @@ export class SQLiteAdapter implements SQLStorageAdapter {
       )
     `;
     await this.executeSql(sql);
-    
+
     try {
       await this.executeSql('INSERT INTO schema_version (version) VALUES (1)');
     } catch {
@@ -75,14 +79,14 @@ export class SQLiteAdapter implements SQLStorageAdapter {
     try {
       const results = await this.executeSql<{ value: string }>(
         'SELECT value FROM key_value_store WHERE key = ?',
-        [key],
+        [key]
       );
       return results.length > 0 ? JSON.parse(results[0].value) : null;
     } catch (error) {
       throw new StorageError(
         `Failed to get item: ${key}`,
         'SQLITE_GET_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -93,13 +97,13 @@ export class SQLiteAdapter implements SQLStorageAdapter {
       await this.executeSql(
         `INSERT OR REPLACE INTO key_value_store (key, value, updated_at) 
          VALUES (?, ?, strftime('%s', 'now'))`,
-        [key, JSON.stringify(value)],
+        [key, JSON.stringify(value)]
       );
     } catch (error) {
       throw new StorageError(
         `Failed to set item: ${key}`,
         'SQLITE_SET_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -112,7 +116,7 @@ export class SQLiteAdapter implements SQLStorageAdapter {
       throw new StorageError(
         `Failed to remove item: ${key}`,
         'SQLITE_REMOVE_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -125,7 +129,7 @@ export class SQLiteAdapter implements SQLStorageAdapter {
       throw new StorageError(
         'Failed to clear SQLite storage',
         'SQLITE_CLEAR_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -134,14 +138,14 @@ export class SQLiteAdapter implements SQLStorageAdapter {
     this.ensureInitialized();
     try {
       const results = await this.executeSql<{ key: string }>(
-        'SELECT key FROM key_value_store',
+        'SELECT key FROM key_value_store'
       );
-      return results.map((row) => row.key);
+      return results.map(row => row.key);
     } catch (error) {
       throw new StorageError(
         'Failed to get all keys',
         'SQLITE_KEYS_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -151,9 +155,11 @@ export class SQLiteAdapter implements SQLStorageAdapter {
     return this.executeSql<T>(sql, params);
   }
 
-  async transaction<T>(callback: (tx: SQLTransaction) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    callback: (tx: SQLTransaction) => Promise<T>
+  ): Promise<T> {
     this.ensureInitialized();
-    
+
     // For now, simulate transaction with regular queries
     // This is a simplified implementation - in production you'd use proper transactions
     try {
@@ -165,23 +171,30 @@ export class SQLiteAdapter implements SQLStorageAdapter {
       throw new StorageError(
         'Transaction failed',
         'SQLITE_TRANSACTION_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
-  private async executeSql<T = unknown>(sql: string, params?: unknown[]): Promise<T[]> {
+  private async executeSql<T = unknown>(
+    sql: string,
+    params?: unknown[]
+  ): Promise<T[]> {
     if (!this.db) {
       throw new StorageError(
         'Database not initialized',
-        'SQLITE_NOT_INITIALIZED',
+        'SQLITE_NOT_INITIALIZED'
       );
     }
 
     try {
       const bindParams = (params || []).map(param => {
         if (param === null || param === undefined) return null;
-        if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean') {
+        if (
+          typeof param === 'string' ||
+          typeof param === 'number' ||
+          typeof param === 'boolean'
+        ) {
           return param;
         }
         return String(param);
@@ -189,7 +202,7 @@ export class SQLiteAdapter implements SQLStorageAdapter {
 
       // For SELECT queries, we need to use getAllAsync
       if (sql.trim().toLowerCase().startsWith('select')) {
-        return await this.db.getAllAsync(sql, bindParams) as T[];
+        return (await this.db.getAllAsync(sql, bindParams)) as T[];
       }
       // For other queries, run the query and return empty array
       await this.db.runAsync(sql, bindParams);
@@ -198,7 +211,7 @@ export class SQLiteAdapter implements SQLStorageAdapter {
       throw new StorageError(
         `SQL execution failed: ${sql}`,
         'SQLITE_EXECUTION_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -207,7 +220,7 @@ export class SQLiteAdapter implements SQLStorageAdapter {
     if (!this.isInitialized) {
       throw new StorageError(
         'SQLiteAdapter not initialized',
-        'SQLITE_NOT_INITIALIZED',
+        'SQLITE_NOT_INITIALIZED'
       );
     }
   }
@@ -216,14 +229,14 @@ export class SQLiteAdapter implements SQLStorageAdapter {
     this.ensureInitialized();
     try {
       const results = await this.executeSql<{ version: number }>(
-        'SELECT version FROM schema_version ORDER BY version DESC LIMIT 1',
+        'SELECT version FROM schema_version ORDER BY version DESC LIMIT 1'
       );
       return results.length > 0 ? results[0].version : 0;
     } catch (error) {
       throw new StorageError(
         'Failed to get schema version',
         'SQLITE_VERSION_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -231,15 +244,14 @@ export class SQLiteAdapter implements SQLStorageAdapter {
   async setSchemaVersion(version: number): Promise<void> {
     this.ensureInitialized();
     try {
-      await this.executeSql(
-        'INSERT INTO schema_version (version) VALUES (?)',
-        [version],
-      );
+      await this.executeSql('INSERT INTO schema_version (version) VALUES (?)', [
+        version,
+      ]);
     } catch (error) {
       throw new StorageError(
         `Failed to set schema version: ${version}`,
         'SQLITE_VERSION_SET_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }

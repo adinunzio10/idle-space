@@ -18,51 +18,57 @@ export function useBackgroundPatternDetection() {
     return patternDetectorRef.current;
   }, []);
 
-  const detectPatternsAsync = useCallback((beacons: Beacon[], connections: Connection[]) => {
-    // Clear any pending debounce
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Debounce pattern detection to avoid excessive calculations
-    debounceTimeoutRef.current = setTimeout(() => {
-      // Cancel any pending request
-      if (pendingRequestRef.current) {
-        return; // Skip if already processing
+  const detectPatternsAsync = useCallback(
+    (beacons: Beacon[], connections: Connection[]) => {
+      // Clear any pending debounce
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
 
-      const requestId = `pattern-${Date.now()}-${Math.random()}`;
-      pendingRequestRef.current = requestId;
-      setIsProcessing(true);
+      // Debounce pattern detection to avoid excessive calculations
+      debounceTimeoutRef.current = setTimeout(() => {
+        // Cancel any pending request
+        if (pendingRequestRef.current) {
+          return; // Skip if already processing
+        }
 
-      // Use InteractionManager to defer heavy computation until after interactions
-      InteractionManager.runAfterInteractions(() => {
-        // Further defer to next frame to avoid blocking
-        requestAnimationFrame(() => {
-          try {
-            const detector = getPatternDetector();
-            const detectedPatterns = detector.detectPatternsOptimized(beacons, connections);
-            
-            // Only update if this request is still current
-            if (pendingRequestRef.current === requestId) {
-              setPatterns(detectedPatterns);
+        const requestId = `pattern-${Date.now()}-${Math.random()}`;
+        pendingRequestRef.current = requestId;
+        setIsProcessing(true);
+
+        // Use InteractionManager to defer heavy computation until after interactions
+        InteractionManager.runAfterInteractions(() => {
+          // Further defer to next frame to avoid blocking
+          requestAnimationFrame(() => {
+            try {
+              const detector = getPatternDetector();
+              const detectedPatterns = detector.detectPatternsOptimized(
+                beacons,
+                connections
+              );
+
+              // Only update if this request is still current
+              if (pendingRequestRef.current === requestId) {
+                setPatterns(detectedPatterns);
+                setIsProcessing(false);
+                pendingRequestRef.current = null;
+              }
+            } catch (error) {
+              console.warn('Pattern detection error:', error);
               setIsProcessing(false);
               pendingRequestRef.current = null;
             }
-          } catch (error) {
-            console.warn('Pattern detection error:', error);
-            setIsProcessing(false);
-            pendingRequestRef.current = null;
-          }
+          });
         });
-      });
-    }, 100); // 100ms debounce
-  }, [getPatternDetector]);
+      }, 100); // 100ms debounce
+    },
+    [getPatternDetector]
+  );
 
   return {
     patterns,
     isProcessing,
     detectPatternsAsync,
-    isWorkerAvailable: true // Always available with this approach
+    isWorkerAvailable: true, // Always available with this approach
   };
 }

@@ -21,9 +21,12 @@ export const useAudio = () => {
   }, [audioManager, settings.soundEnabled, settings.musicEnabled]);
 
   // Convenience function to play sounds
-  const playSound = useCallback((type: SoundType) => {
-    audioManager.playSound(type);
-  }, [audioManager]);
+  const playSound = useCallback(
+    (type: SoundType) => {
+      audioManager.playSound(type);
+    },
+    [audioManager]
+  );
 
   return {
     playSound,

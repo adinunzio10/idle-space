@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { AccessibilityManager, AccessibilityState } from '../utils/AccessibilityManager';
+import {
+  AccessibilityManager,
+  AccessibilityState,
+} from '../utils/AccessibilityManager';
 
 /**
  * Hook that integrates accessibility manager with settings
@@ -8,13 +11,14 @@ import { AccessibilityManager, AccessibilityState } from '../utils/Accessibility
  */
 export const useAccessibility = () => {
   const { settings } = useSettings();
-  const [accessibilityState, setAccessibilityState] = useState<AccessibilityState>({
-    isScreenReaderEnabled: false,
-    fontScale: 1,
-    isHighContrastEnabled: false,
-    isReduceAnimationsEnabled: false,
-    isLargeTextEnabled: false,
-  });
+  const [accessibilityState, setAccessibilityState] =
+    useState<AccessibilityState>({
+      isScreenReaderEnabled: false,
+      fontScale: 1,
+      isHighContrastEnabled: false,
+      isReduceAnimationsEnabled: false,
+      isLargeTextEnabled: false,
+    });
 
   const accessibilityManager = AccessibilityManager.getInstance();
 
@@ -35,10 +39,10 @@ export const useAccessibility = () => {
   // Subscribe to accessibility state changes
   useEffect(() => {
     const unsubscribe = accessibilityManager.addListener(setAccessibilityState);
-    
+
     // Get initial state
     setAccessibilityState(accessibilityManager.getState());
-    
+
     return unsubscribe;
   }, [accessibilityManager]);
 
@@ -52,7 +56,11 @@ export const useAccessibility = () => {
     getTextSizeMultiplier: () => accessibilityManager.getTextSizeMultiplier(),
     shouldReduceAnimations: () => accessibilityManager.shouldReduceAnimations(),
     getMinTouchTargetSize: () => accessibilityManager.getMinTouchTargetSize(),
-    generateAccessibilityLabel: accessibilityManager.generateAccessibilityLabel.bind(accessibilityManager),
-    createAccessibilityHint: accessibilityManager.createAccessibilityHint.bind(accessibilityManager),
+    generateAccessibilityLabel:
+      accessibilityManager.generateAccessibilityLabel.bind(
+        accessibilityManager
+      ),
+    createAccessibilityHint:
+      accessibilityManager.createAccessibilityHint.bind(accessibilityManager),
   };
 };

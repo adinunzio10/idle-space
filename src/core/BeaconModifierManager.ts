@@ -1,5 +1,9 @@
 import BigNumber from 'bignumber.js';
-import { ResourceManager, ResourceModifier, ResourceType } from './ResourceManager';
+import {
+  ResourceManager,
+  ResourceModifier,
+  ResourceType,
+} from './ResourceManager';
 import { Beacon } from '../entities/Beacon';
 import { SPECIALIZATION_CONFIG } from '../types/beacon';
 
@@ -15,9 +19,14 @@ export class BeaconModifierManager {
     this.clearBeaconModifiers();
 
     // Convert to array if needed
-    const beaconArray = Array.isArray(beacons) ? beacons : Object.values(beacons);
-    const beaconMap = Array.isArray(beacons) 
-      ? beaconArray.reduce((map, beacon) => ({ ...map, [beacon.id]: beacon }), {})
+    const beaconArray = Array.isArray(beacons)
+      ? beacons
+      : Object.values(beacons);
+    const beaconMap = Array.isArray(beacons)
+      ? beaconArray.reduce(
+          (map, beacon) => ({ ...map, [beacon.id]: beacon }),
+          {}
+        )
       : beacons;
 
     // Add modifiers for each active beacon
@@ -33,13 +42,15 @@ export class BeaconModifierManager {
 
   private clearBeaconModifiers(): void {
     const activeModifiers = this.resourceManager.getActiveModifiers();
-    
+
     // Remove beacon-related modifiers
     activeModifiers.forEach(modifier => {
-      if (modifier.source.startsWith('beacon_') || 
-          modifier.source.startsWith('connection_') ||
-          modifier.source.startsWith('type_') ||
-          modifier.source.startsWith('specialization_')) {
+      if (
+        modifier.source.startsWith('beacon_') ||
+        modifier.source.startsWith('connection_') ||
+        modifier.source.startsWith('type_') ||
+        modifier.source.startsWith('specialization_')
+      ) {
         this.resourceManager.removeModifier(modifier.id);
       }
     });
@@ -50,7 +61,7 @@ export class BeaconModifierManager {
 
     // Each beacon level adds 25% to quantum data generation
     const levelBonus = new BigNumber(0.25).multipliedBy(beacon.level - 1);
-    
+
     const modifier: ResourceModifier = {
       id: `beacon_level_${beacon.id}`,
       type: 'quantumData',
@@ -65,7 +76,7 @@ export class BeaconModifierManager {
 
   private addBeaconTypeModifiers(beacon: Beacon): void {
     const typeModifiers = this.getBeaconTypeModifiers(beacon);
-    
+
     typeModifiers.forEach(modifier => {
       this.resourceManager.addModifier(modifier);
     });
@@ -117,8 +128,12 @@ export class BeaconModifierManager {
 
     // Apply efficiency bonus (affects all resource generation)
     if (specializationConfig.efficiency > 1) {
-      const resourceTypes: ResourceType[] = ['quantumData', 'stellarEssence', 'voidFragments'];
-      
+      const resourceTypes: ResourceType[] = [
+        'quantumData',
+        'stellarEssence',
+        'voidFragments',
+      ];
+
       resourceTypes.forEach(resourceType => {
         const modifier: ResourceModifier = {
           id: `${baseId}_${resourceType}`,
@@ -128,7 +143,7 @@ export class BeaconModifierManager {
           source: `specialization_${beacon.specialization}`,
           createdAt: Date.now(),
         };
-        
+
         this.resourceManager.addModifier(modifier);
       });
     }
@@ -137,14 +152,21 @@ export class BeaconModifierManager {
     // Stability specialization bonus is handled in pattern bonus calculations
   }
 
-  private addBeaconConnectionModifiers(beacon: Beacon, allBeacons: Record<string, Beacon>): void {
+  private addBeaconConnectionModifiers(
+    beacon: Beacon,
+    allBeacons: Record<string, Beacon>
+  ): void {
     const connectionCount = beacon.connections.length;
-    
+
     if (connectionCount === 0) return;
 
     // Each connection adds 10% to all resource generation
     const connectionBonus = new BigNumber(0.1).multipliedBy(connectionCount);
-    const resourceTypes: ResourceType[] = ['quantumData', 'stellarEssence', 'voidFragments'];
+    const resourceTypes: ResourceType[] = [
+      'quantumData',
+      'stellarEssence',
+      'voidFragments',
+    ];
 
     resourceTypes.forEach(resourceType => {
       const modifier: ResourceModifier = {
@@ -165,7 +187,10 @@ export class BeaconModifierManager {
     }
   }
 
-  private addArchitectBoostModifiers(architect: Beacon, allBeacons: Record<string, Beacon>): void {
+  private addArchitectBoostModifiers(
+    architect: Beacon,
+    allBeacons: Record<string, Beacon>
+  ): void {
     // Range-specialized architects boost connected beacons by 30%
     architect.connections.forEach(connectedBeaconId => {
       const connectedBeacon = allBeacons[connectedBeaconId];
@@ -184,13 +209,15 @@ export class BeaconModifierManager {
     });
   }
 
-  addPatternBonusModifiers(patternBonuses: {
-    id: string;
-    beaconIds: string[];
-    shape: string;
-    bonusMultiplier: BigNumber;
-    resourceTypes: ResourceType[];
-  }[]): void {
+  addPatternBonusModifiers(
+    patternBonuses: {
+      id: string;
+      beaconIds: string[];
+      shape: string;
+      bonusMultiplier: BigNumber;
+      resourceTypes: ResourceType[];
+    }[]
+  ): void {
     // Clear existing pattern modifiers
     const activeModifiers = this.resourceManager.getActiveModifiers();
     activeModifiers.forEach(modifier => {
@@ -216,7 +243,12 @@ export class BeaconModifierManager {
     });
   }
 
-  addUpgradeModifiers(upgradeId: string, resourceType: ResourceType, multiplier: BigNumber, flatBonus?: BigNumber): void {
+  addUpgradeModifiers(
+    upgradeId: string,
+    resourceType: ResourceType,
+    multiplier: BigNumber,
+    flatBonus?: BigNumber
+  ): void {
     const modifier: ResourceModifier = {
       id: `upgrade_${upgradeId}_${resourceType}`,
       type: resourceType,
@@ -231,8 +263,8 @@ export class BeaconModifierManager {
 
   addTemporaryModifier(
     id: string,
-    resourceType: ResourceType, 
-    multiplier: BigNumber, 
+    resourceType: ResourceType,
+    multiplier: BigNumber,
     flatBonus: BigNumber,
     duration: number,
     source: string
@@ -250,28 +282,36 @@ export class BeaconModifierManager {
     this.resourceManager.addModifier(modifier);
   }
 
-  getModifierSummary(): Record<ResourceType, {
-    totalMultiplier: BigNumber;
-    totalFlatBonus: BigNumber;
-    modifierCount: number;
-  }> {
-    const summary: Partial<Record<ResourceType, {
+  getModifierSummary(): Record<
+    ResourceType,
+    {
       totalMultiplier: BigNumber;
       totalFlatBonus: BigNumber;
       modifierCount: number;
-    }>> = {};
+    }
+  > {
+    const summary: Partial<
+      Record<
+        ResourceType,
+        {
+          totalMultiplier: BigNumber;
+          totalFlatBonus: BigNumber;
+          modifierCount: number;
+        }
+      >
+    > = {};
 
     const resourceTypes: ResourceType[] = [
       'quantumData',
       'stellarEssence',
       'voidFragments',
       'resonanceCrystals',
-      'chronosParticles'
+      'chronosParticles',
     ];
 
     resourceTypes.forEach(resourceType => {
       const modifiers = this.resourceManager.getActiveModifiers(resourceType);
-      
+
       let totalMultiplier = new BigNumber(1);
       let totalFlatBonus = new BigNumber(0);
 
@@ -287,10 +327,13 @@ export class BeaconModifierManager {
       };
     });
 
-    return summary as Record<ResourceType, {
-      totalMultiplier: BigNumber;
-      totalFlatBonus: BigNumber;
-      modifierCount: number;
-    }>;
+    return summary as Record<
+      ResourceType,
+      {
+        totalMultiplier: BigNumber;
+        totalFlatBonus: BigNumber;
+        modifierCount: number;
+      }
+    >;
   }
 }

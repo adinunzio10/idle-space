@@ -8,7 +8,7 @@ export const RESOURCE_TYPES = {
   CHRONOS_PARTICLES: 'chronosParticles',
 } as const;
 
-export type ResourceType = typeof RESOURCE_TYPES[keyof typeof RESOURCE_TYPES];
+export type ResourceType = (typeof RESOURCE_TYPES)[keyof typeof RESOURCE_TYPES];
 
 export interface ResourceDefinition {
   name: string;
@@ -79,19 +79,23 @@ export const RESOURCE_DISPLAY_ORDER: ResourceType[] = [
 ];
 
 export class ResourceUtils {
-  static formatValue(value: BigNumber, resourceType: ResourceType, compact: boolean = false): string {
+  static formatValue(
+    value: BigNumber,
+    resourceType: ResourceType,
+    compact: boolean = false
+  ): string {
     const definition = RESOURCE_DEFINITIONS[resourceType];
-    
+
     if (compact) {
       return this.formatCompact(value, definition.maxPrecision);
     }
-    
+
     return this.formatFull(value, definition.maxPrecision);
   }
 
   static formatCompact(value: BigNumber, precision: number): string {
     const abs = value.abs();
-    
+
     if (abs.isLessThan(1000)) {
       return value.toFixed(precision);
     } else if (abs.isLessThan(1000000)) {
@@ -116,15 +120,15 @@ export class ResourceUtils {
   static parseValue(input: string): BigNumber {
     // Remove any formatting characters and parse
     const cleanInput = input.replace(/[,\s]/g, '');
-    
+
     // Handle suffixes
     const suffixMap: Record<string, BigNumber> = {
-      'K': new BigNumber(1000),
-      'M': new BigNumber(1000000),
-      'B': new BigNumber(1000000000),
-      'T': new BigNumber(1000000000000),
-      'Qa': new BigNumber(1000000000000000),
-      'Qi': new BigNumber(1000000000000000000),
+      K: new BigNumber(1000),
+      M: new BigNumber(1000000),
+      B: new BigNumber(1000000000),
+      T: new BigNumber(1000000000000),
+      Qa: new BigNumber(1000000000000000),
+      Qi: new BigNumber(1000000000000000000),
     };
 
     for (const [suffix, multiplier] of Object.entries(suffixMap)) {

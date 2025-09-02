@@ -1,5 +1,5 @@
 import { Point2D, PatternType } from '../types/galaxy';
-import { 
+import {
   BeaconType,
   BeaconValidationResult,
   BeaconPlacementInfo,
@@ -10,7 +10,11 @@ import {
   PatternCompletionAnalysis,
 } from '../types/spatialHashing';
 import { Beacon, BeaconFactory } from '../entities';
-import { PlacementValidator, PlacementBounds, PlacementConfig } from '../utils/spatial/PlacementValidator';
+import {
+  PlacementValidator,
+  PlacementBounds,
+  PlacementConfig,
+} from '../utils/spatial/PlacementValidator';
 import { SpatialIndex } from '../utils/spatial/indexing';
 import { PatternDetector } from '../utils/patterns/detection';
 
@@ -31,24 +35,32 @@ export class BeaconPlacementManager {
   constructor(config: PlacementManagerConfig) {
     this.config = config;
     this.beacons = new Map();
-    
+
     // Initialize placement validator
     const placementConfig: PlacementConfig = {
       bounds: config.bounds,
       minimumDistances: BEACON_PLACEMENT_CONFIG.MINIMUM_DISTANCE,
       allowOverlap: false,
     };
-    
+
     this.validator = new PlacementValidator(placementConfig);
-    
+
     // Initialize spatial index if enabled
-    this.spatialIndex = config.enableSpatialIndexing 
+    this.spatialIndex = config.enableSpatialIndexing
       ? new SpatialIndex()
       : null;
-    
+
     // Initialize pattern detector for suggestions
-    this.patternDetector = config.enablePatternSuggestions 
-      ? new PatternDetector(undefined, undefined, undefined, undefined, undefined, this.validator, this.spatialIndex || undefined)
+    this.patternDetector = config.enablePatternSuggestions
+      ? new PatternDetector(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          this.validator,
+          this.spatialIndex || undefined
+        )
       : null;
   }
 
@@ -79,7 +91,7 @@ export class BeaconPlacementManager {
     // Add to collections
     this.beacons.set(beacon.id, beacon);
     this.validator.addBeacon(beacon);
-    
+
     if (this.spatialIndex) {
       this.spatialIndex.addBeacon(beacon);
     }
@@ -95,7 +107,12 @@ export class BeaconPlacementManager {
     type: BeaconType,
     level: number = 1,
     maxAttempts: number = 12
-  ): { success: boolean; beacon?: Beacon; error?: string; finalPosition?: Point2D } {
+  ): {
+    success: boolean;
+    beacon?: Beacon;
+    error?: string;
+    finalPosition?: Point2D;
+  } {
     // First try the exact target position
     const directResult = this.placeBeacon(targetPosition, type, level);
     if (directResult.success) {
@@ -103,7 +120,11 @@ export class BeaconPlacementManager {
     }
 
     // If direct placement fails, try spiral search for alternative positions
-    const alternativePosition = this.findNearbyValidPosition(targetPosition, type, maxAttempts);
+    const alternativePosition = this.findNearbyValidPosition(
+      targetPosition,
+      type,
+      maxAttempts
+    );
     if (!alternativePosition) {
       return {
         success: false,
@@ -137,7 +158,7 @@ export class BeaconPlacementManager {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const radius = searchRadius * (1 + (attempt - 1) * 0.3); // Gradually increase radius
-      
+
       // Try 8 directions at current radius
       for (let i = 0; i < 8; i++) {
         const angle = i * angleStep;
@@ -176,7 +197,7 @@ export class BeaconPlacementManager {
     // Remove from collections
     this.beacons.delete(beaconId);
     this.validator.removeBeacon(beaconId);
-    
+
     if (this.spatialIndex) {
       // Note: QuadTree spatial index removal would need implementation
       // For now, we'll rebuild the spatial index after removal
@@ -198,7 +219,11 @@ export class BeaconPlacementManager {
     }
 
     // Validate new position (excluding this beacon from distance checks)
-    const validation = this.validator.isValidPosition(newPosition, beacon.type, beaconId);
+    const validation = this.validator.isValidPosition(
+      newPosition,
+      beacon.type,
+      beaconId
+    );
     if (!validation.isValid) {
       return {
         success: false,
@@ -218,21 +243,29 @@ export class BeaconPlacementManager {
   /**
    * Validate a potential beacon placement
    */
-  public validatePlacement(position: Point2D, type: BeaconType): BeaconValidationResult {
+  public validatePlacement(
+    position: Point2D,
+    type: BeaconType
+  ): BeaconValidationResult {
     return this.validator.isValidPosition(position, type);
   }
 
   /**
    * Get placement information for UI preview
    */
-  public getPlacementInfo(position: Point2D, type: BeaconType): BeaconPlacementInfo {
+  public getPlacementInfo(
+    position: Point2D,
+    type: BeaconType
+  ): BeaconPlacementInfo {
     return this.validator.getPlacementInfo(position, type);
   }
 
   /**
    * Find nearest beacon to a position
    */
-  public findNearestBeacon(position: Point2D): { beacon: Beacon; distance: number } | null {
+  public findNearestBeacon(
+    position: Point2D
+  ): { beacon: Beacon; distance: number } | null {
     if (this.spatialIndex && !this.config.performanceMode) {
       // Use spatial index for efficient lookup
       // Note: QuadTree queryRange would need proper implementation
@@ -257,7 +290,7 @@ export class BeaconPlacementManager {
       // Note: QuadTree queryRange would need proper implementation
       // For now, fallback to manual filtering
     }
-    
+
     // Manual filtering approach
     const beacons: Beacon[] = [];
     for (const beacon of this.beacons.values()) {
@@ -282,11 +315,7 @@ export class BeaconPlacementManager {
     type: BeaconType,
     count: number = 5
   ): Point2D[] {
-    return this.validator.findOptimalPositions(
-      { center, radius },
-      type,
-      count
-    );
+    return this.validator.findOptimalPositions({ center, radius }, type, count);
   }
 
   /**
@@ -297,7 +326,12 @@ export class BeaconPlacementManager {
     type: BeaconType,
     count: number
   ): Beacon[] {
-    const positions = this.findOptimalPositions(region.center, region.radius, type, count);
+    const positions = this.findOptimalPositions(
+      region.center,
+      region.radius,
+      type,
+      count
+    );
     const placedBeacons: Beacon[] = [];
 
     for (const position of positions) {
@@ -355,7 +389,7 @@ export class BeaconPlacementManager {
       });
 
       this.beacons.set(beacon.id, beacon);
-      
+
       if (this.spatialIndex) {
         this.spatialIndex.addBeacon(beacon);
       }
@@ -370,7 +404,7 @@ export class BeaconPlacementManager {
    */
   public exportBeacons(): Record<string, any> {
     const exportData: Record<string, any> = {};
-    
+
     for (const [id, beacon] of this.beacons) {
       exportData[id] = {
         id: beacon.id,
@@ -398,7 +432,7 @@ export class BeaconPlacementManager {
    */
   public updateConfig(newConfig: Partial<PlacementManagerConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
+
     if (newConfig.bounds) {
       this.validator.updateConfig({ bounds: newConfig.bounds });
     }
@@ -410,7 +444,7 @@ export class BeaconPlacementManager {
   public clear(): void {
     this.beacons.clear();
     this.validator.clear();
-    
+
     if (this.spatialIndex) {
       // Note: QuadTree clear method would need implementation
       // For now, we'll recreate the spatial index
@@ -473,11 +507,11 @@ export class BeaconPlacementManager {
 
     const beacons = this.getAllBeacons();
     const analysis = this.patternDetector.getPatternCompletionAnalysis(beacons);
-    
+
     return analysis.suggestedPositions.filter(suggestion => {
       const distance = Math.sqrt(
         Math.pow(suggestion.suggestedPosition.x - centerPosition.x, 2) +
-        Math.pow(suggestion.suggestedPosition.y - centerPosition.y, 2)
+          Math.pow(suggestion.suggestedPosition.y - centerPosition.y, 2)
       );
       return distance <= radius;
     });
@@ -486,7 +520,10 @@ export class BeaconPlacementManager {
   /**
    * Evaluate placement quality based on pattern formation potential
    */
-  public evaluatePlacementQuality(position: Point2D, type: BeaconType): {
+  public evaluatePlacementQuality(
+    position: Point2D,
+    type: BeaconType
+  ): {
     isValid: boolean;
     patternPotential: number;
     expectedBonus: number;
@@ -494,7 +531,7 @@ export class BeaconPlacementManager {
   } {
     // Basic validation first
     const validation = this.validatePlacement(position, type);
-    
+
     if (!validation.isValid) {
       return {
         isValid: false,
@@ -527,22 +564,26 @@ export class BeaconPlacementManager {
     const nearbyPatterns = analysis.suggestedPositions.filter(s => {
       const distance = Math.sqrt(
         Math.pow(s.suggestedPosition.x - position.x, 2) +
-        Math.pow(s.suggestedPosition.y - position.y, 2)
+          Math.pow(s.suggestedPosition.y - position.y, 2)
       );
       return distance < 200; // Within pattern formation range
     });
 
     const patternPotential = Math.min(1, nearbyPatterns.length / 3); // Normalize to 0-1
-    const expectedBonus = nearbyPatterns.length > 0 
-      ? nearbyPatterns.reduce((sum, s) => sum + s.potentialBonus, 0) / nearbyPatterns.length
-      : 1;
+    const expectedBonus =
+      nearbyPatterns.length > 0
+        ? nearbyPatterns.reduce((sum, s) => sum + s.potentialBonus, 0) /
+          nearbyPatterns.length
+        : 1;
 
     // Generate suggestions
     const suggestions: string[] = [];
     if (nearbyPatterns.length === 0) {
       suggestions.push('No immediate pattern opportunities nearby');
     } else {
-      suggestions.push(`${nearbyPatterns.length} pattern(s) could be completed nearby`);
+      suggestions.push(
+        `${nearbyPatterns.length} pattern(s) could be completed nearby`
+      );
       if (expectedBonus > 2) {
         suggestions.push(`High bonus potential: ${expectedBonus.toFixed(1)}×`);
       }
@@ -565,8 +606,12 @@ export class BeaconPlacementManager {
     count: number = 3
   ): { position: Point2D; score: number; patterns: PatternType[] }[] {
     if (!this.patternDetector || !this.config.enablePatternSuggestions) {
-      return this.findOptimalPositions(searchArea.center, searchArea.radius, type, count)
-        .map(pos => ({ position: pos, score: 0.5, patterns: [] }));
+      return this.findOptimalPositions(
+        searchArea.center,
+        searchArea.radius,
+        type,
+        count
+      ).map(pos => ({ position: pos, score: 0.5, patterns: [] }));
     }
 
     const beacons = this.getAllBeacons();
@@ -577,7 +622,7 @@ export class BeaconPlacementManager {
       .filter(suggestion => {
         const distance = Math.sqrt(
           Math.pow(suggestion.suggestedPosition.x - searchArea.center.x, 2) +
-          Math.pow(suggestion.suggestedPosition.y - searchArea.center.y, 2)
+            Math.pow(suggestion.suggestedPosition.y - searchArea.center.y, 2)
         );
         return distance <= searchArea.radius;
       })

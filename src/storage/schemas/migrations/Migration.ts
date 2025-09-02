@@ -11,7 +11,7 @@ export class MigrationError extends Error {
   constructor(
     message: string,
     public readonly version: number,
-    public readonly cause?: Error,
+    public readonly cause?: Error
   ) {
     super(message);
     this.name = 'MigrationError';

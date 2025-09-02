@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { Audio } from 'expo-audio';
 
 export interface AudioSettings {
   soundEnabled: boolean;
@@ -7,7 +7,7 @@ export interface AudioSettings {
   musicVolume: number; // 0-1
 }
 
-export type SoundType = 
+export type SoundType =
   | 'button_press'
   | 'beacon_place'
   | 'probe_launch'
@@ -27,7 +27,7 @@ export class AudioManager {
     soundVolume: 1.0,
     musicVolume: 0.7,
   };
-  
+
   // Preloaded sound objects for performance
   private sounds: Map<SoundType, Audio.Sound> = new Map();
   private musicSound: Audio.Sound | null = null;
@@ -46,20 +46,29 @@ export class AudioManager {
   async initialize(): Promise<void> {
     try {
       console.log('[AudioManager] Initializing...');
-      
-      // Configure audio mode for mobile devices
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        staysActiveInBackground: false,
-        playThroughEarpieceAndroid: false,
-      });
+
+      // Configure audio mode for mobile devices (if available)
+      try {
+        if (Audio.setAudioModeAsync) {
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            playsInSilentModeIOS: true,
+            shouldDuckAndroid: true,
+            staysActiveInBackground: false,
+            playThroughEarpieceAndroid: false,
+          });
+        }
+      } catch (audioModeError) {
+        console.warn(
+          '[AudioManager] Audio mode configuration not available:',
+          audioModeError
+        );
+      }
 
       // For now, we'll just initialize without preloading sounds
       // In a real implementation, you would load sound files here:
       // await this.preloadSounds();
-      
+
       this.isInitialized = true;
       console.log('[AudioManager] Initialized successfully');
     } catch (error) {
@@ -73,7 +82,7 @@ export class AudioManager {
   updateSettings(newSettings: Partial<AudioSettings>): void {
     const prevSettings = { ...this.settings };
     this.settings = { ...this.settings, ...newSettings };
-    
+
     console.log('[AudioManager] Settings updated:', newSettings);
 
     // Handle music playback based on setting changes
@@ -99,8 +108,10 @@ export class AudioManager {
 
     try {
       // For development, we'll just log the sound instead of playing actual files
-      console.log(`[AudioManager] Playing sound: ${type} (volume: ${this.settings.soundVolume})`);
-      
+      console.log(
+        `[AudioManager] Playing sound: ${type} (volume: ${this.settings.soundVolume})`
+      );
+
       // In a real implementation, you would play the actual sound:
       /*
       const sound = this.sounds.get(type);
@@ -118,13 +129,17 @@ export class AudioManager {
    * Start playing background music if enabled
    */
   async startBackgroundMusic(): Promise<void> {
-    if (!this.isInitialized || !this.settings.musicEnabled || this.isMusicPlaying) {
+    if (
+      !this.isInitialized ||
+      !this.settings.musicEnabled ||
+      this.isMusicPlaying
+    ) {
       return;
     }
 
     try {
       console.log('[AudioManager] Starting background music');
-      
+
       // In a real implementation, you would load and play music:
       /*
       if (!this.musicSound) {
@@ -140,7 +155,7 @@ export class AudioManager {
       
       await this.musicSound.playAsync();
       */
-      
+
       this.isMusicPlaying = true;
     } catch (error) {
       console.error('[AudioManager] Failed to start background music:', error);
@@ -177,21 +192,21 @@ export class AudioManager {
   async shutdown(): Promise<void> {
     try {
       console.log('[AudioManager] Shutting down...');
-      
+
       if (this.musicSound) {
         await this.musicSound.unloadAsync();
         this.musicSound = null;
       }
-      
+
       // Unload all sound effects
       for (const [type, sound] of this.sounds.entries()) {
         await sound.unloadAsync();
         this.sounds.delete(type);
       }
-      
+
       this.isInitialized = false;
       this.isMusicPlaying = false;
-      
+
       console.log('[AudioManager] Shutdown complete');
     } catch (error) {
       console.error('[AudioManager] Error during shutdown:', error);

@@ -6,7 +6,9 @@ export class MigrationManager {
 
   registerMigration(migration: Migration): void {
     // Insert migration in order by version
-    const insertIndex = this.migrations.findIndex(m => m.version > migration.version);
+    const insertIndex = this.migrations.findIndex(
+      m => m.version > migration.version
+    );
     if (insertIndex === -1) {
       this.migrations.push(migration);
     } else {
@@ -22,7 +24,7 @@ export class MigrationManager {
     if (gameState.version > CURRENT_SAVE_VERSION) {
       throw new MigrationError(
         `Save version ${gameState.version} is newer than supported version ${CURRENT_SAVE_VERSION}`,
-        gameState.version,
+        gameState.version
       );
     }
 
@@ -31,19 +33,23 @@ export class MigrationManager {
       m => m.version > gameState.version && m.version <= CURRENT_SAVE_VERSION
     );
 
-    console.log(`Migrating save from version ${gameState.version} to ${CURRENT_SAVE_VERSION}`);
+    console.log(
+      `Migrating save from version ${gameState.version} to ${CURRENT_SAVE_VERSION}`
+    );
     console.log(`Found ${applicableMigrations.length} migrations to apply`);
 
     for (const migration of applicableMigrations) {
       try {
-        console.log(`Applying migration ${migration.version}: ${migration.description}`);
+        console.log(
+          `Applying migration ${migration.version}: ${migration.description}`
+        );
         migratedState = migration.up(migratedState);
         migratedState.version = migration.version;
       } catch (error) {
         throw new MigrationError(
           `Migration ${migration.version} failed: ${migration.description}`,
           migration.version,
-          error as Error,
+          error as Error
         );
       }
     }
@@ -51,7 +57,10 @@ export class MigrationManager {
     return migratedState;
   }
 
-  canMigrate(fromVersion: number, toVersion: number = CURRENT_SAVE_VERSION): boolean {
+  canMigrate(
+    fromVersion: number,
+    toVersion: number = CURRENT_SAVE_VERSION
+  ): boolean {
     if (fromVersion === toVersion) return true;
     if (fromVersion > toVersion) return false;
 
@@ -61,7 +70,9 @@ export class MigrationManager {
 
     // Check if we have all required migrations
     for (let version = fromVersion + 1; version <= toVersion; version++) {
-      const migrationExists = requiredMigrations.some(m => m.version === version);
+      const migrationExists = requiredMigrations.some(
+        m => m.version === version
+      );
       if (!migrationExists) {
         return false;
       }
@@ -70,7 +81,10 @@ export class MigrationManager {
     return true;
   }
 
-  getMigrationPath(fromVersion: number, toVersion: number = CURRENT_SAVE_VERSION): Migration[] {
+  getMigrationPath(
+    fromVersion: number,
+    toVersion: number = CURRENT_SAVE_VERSION
+  ): Migration[] {
     return this.migrations.filter(
       m => m.version > fromVersion && m.version <= toVersion
     );

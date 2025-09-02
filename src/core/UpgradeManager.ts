@@ -13,10 +13,10 @@ import {
   UPGRADE_CATEGORIES,
   CONSCIOUSNESS_EXPANSION_MILESTONES,
 } from '../types/upgrade';
-import { 
+import {
   UpgradeData,
   PlayerUpgrade as SavePlayerUpgrade,
-  ConsciousnessExpansionMilestone as SaveMilestone 
+  ConsciousnessExpansionMilestone as SaveMilestone,
 } from '../storage/schemas/GameState';
 import { ResourceType } from '../types/resources';
 import { ResourceManager } from './ResourceManager';
@@ -43,7 +43,7 @@ export class UpgradeManager {
       availableMilestones: [],
       lastUpdated: Date.now(),
     };
-    
+
     this.initializeUpgrades();
     this.initializeCategories();
   }
@@ -227,8 +227,9 @@ export class UpgradeManager {
    * Get upgrades by category
    */
   getUpgradesByCategory(categoryId: string): Upgrade[] {
-    return Array.from(this.upgrades.values())
-      .filter(upgrade => upgrade.categoryId === categoryId);
+    return Array.from(this.upgrades.values()).filter(
+      upgrade => upgrade.categoryId === categoryId
+    );
   }
 
   /**
@@ -272,12 +273,14 @@ export class UpgradeManager {
    * Check a specific unlock condition
    */
   private checkUnlockCondition(
-    condition: UpgradeUnlockCondition, 
+    condition: UpgradeUnlockCondition,
     currentBeaconCount: number
   ): boolean {
     switch (condition.type) {
       case 'beacon_count':
-        return new BigNumber(currentBeaconCount).isGreaterThanOrEqualTo(condition.value);
+        return new BigNumber(currentBeaconCount).isGreaterThanOrEqualTo(
+          condition.value
+        );
       case 'resource_earned':
         // This would check total resources earned - not implemented yet
         return true;
@@ -363,13 +366,18 @@ export class UpgradeManager {
 
     // Track total spent
     Object.entries(cost).forEach(([resource, amount]) => {
-      const current = this.state.playerUpgrades[upgradeId].totalSpent[resource] || new BigNumber(0);
-      this.state.playerUpgrades[upgradeId].totalSpent[resource] = current.plus(amount);
+      const current =
+        this.state.playerUpgrades[upgradeId].totalSpent[resource] ||
+        new BigNumber(0);
+      this.state.playerUpgrades[upgradeId].totalSpent[resource] =
+        current.plus(amount);
     });
 
     this.state.lastUpdated = Date.now();
 
-    console.log(`[UpgradeManager] Purchased ${upgrade.name} level ${currentLevel + 1}`);
+    console.log(
+      `[UpgradeManager] Purchased ${upgrade.name} level ${currentLevel + 1}`
+    );
     return { success: true };
   }
 
@@ -378,18 +386,23 @@ export class UpgradeManager {
    */
   updateMilestones(currentBeaconCount: number): void {
     const previousAvailable = this.state.availableMilestones.length;
-    
+
     this.state.availableMilestones = CONSCIOUSNESS_EXPANSION_MILESTONES.filter(
       milestone =>
         currentBeaconCount >= milestone.requiredBeacons &&
         !this.state.completedMilestones[milestone.id]
     );
 
-    const newlyAvailable = this.state.availableMilestones.length - previousAvailable;
+    const newlyAvailable =
+      this.state.availableMilestones.length - previousAvailable;
     if (newlyAvailable > 0) {
-      console.log(`[UpgradeManager] ${newlyAvailable} new milestone(s) available!`);
+      console.log(
+        `[UpgradeManager] ${newlyAvailable} new milestone(s) available!`
+      );
       this.state.availableMilestones.forEach(milestone => {
-        console.log(`[UpgradeManager] Available: ${milestone.name} (${milestone.requiredBeacons} beacons)`);
+        console.log(
+          `[UpgradeManager] Available: ${milestone.name} (${milestone.requiredBeacons} beacons)`
+        );
       });
     }
   }
@@ -397,13 +410,16 @@ export class UpgradeManager {
   /**
    * Get the next milestone requirements
    */
-  getNextMilestone(currentBeaconCount: number): ConsciousnessExpansionMilestone | null {
-    return CONSCIOUSNESS_EXPANSION_MILESTONES
-      .filter(milestone => 
-        currentBeaconCount < milestone.requiredBeacons && 
-        !this.state.completedMilestones[milestone.id]
-      )
-      .sort((a, b) => a.requiredBeacons - b.requiredBeacons)[0] || null;
+  getNextMilestone(
+    currentBeaconCount: number
+  ): ConsciousnessExpansionMilestone | null {
+    return (
+      CONSCIOUSNESS_EXPANSION_MILESTONES.filter(
+        milestone =>
+          currentBeaconCount < milestone.requiredBeacons &&
+          !this.state.completedMilestones[milestone.id]
+      ).sort((a, b) => a.requiredBeacons - b.requiredBeacons)[0] || null
+    );
   }
 
   /**
@@ -419,17 +435,17 @@ export class UpgradeManager {
     const nextMilestone = this.getNextMilestone(currentBeaconCount);
     const completedCount = Object.keys(this.state.completedMilestones).length;
     const totalMilestones = CONSCIOUSNESS_EXPANSION_MILESTONES.length;
-    
+
     let progress = 1; // 100% if no next milestone
     if (nextMilestone) {
-      const previousMilestone = CONSCIOUSNESS_EXPANSION_MILESTONES
-        .filter(m => m.requiredBeacons <= currentBeaconCount)
-        .sort((a, b) => b.requiredBeacons - a.requiredBeacons)[0];
-      
+      const previousMilestone = CONSCIOUSNESS_EXPANSION_MILESTONES.filter(
+        m => m.requiredBeacons <= currentBeaconCount
+      ).sort((a, b) => b.requiredBeacons - a.requiredBeacons)[0];
+
       const previousBeacons = previousMilestone?.requiredBeacons || 0;
       const requiredBeacons = nextMilestone.requiredBeacons - previousBeacons;
       const currentProgress = currentBeaconCount - previousBeacons;
-      
+
       progress = Math.min(currentProgress / requiredBeacons, 1);
     }
 
@@ -460,10 +476,12 @@ export class UpgradeManager {
    * Complete a milestone choice
    */
   completeMilestone(
-    milestoneId: string, 
+    milestoneId: string,
     choiceId: string
   ): { success: boolean; error?: string; effects?: UpgradeEffect[] } {
-    const milestone = this.state.availableMilestones.find(m => m.id === milestoneId);
+    const milestone = this.state.availableMilestones.find(
+      m => m.id === milestoneId
+    );
     if (!milestone) {
       return { success: false, error: 'Milestone not available' };
     }
@@ -494,16 +512,18 @@ export class UpgradeManager {
 
     this.state.lastUpdated = Date.now();
 
-    console.log(`[UpgradeManager] Completed milestone ${milestone.name} with choice ${choice.name}`);
-    
+    console.log(
+      `[UpgradeManager] Completed milestone ${milestone.name} with choice ${choice.name}`
+    );
+
     // Log the effects that were applied
     choice.effects.forEach(effect => {
       console.log(`[UpgradeManager] Applied effect: ${effect.description}`);
     });
 
-    return { 
-      success: true, 
-      effects: [...choice.effects] 
+    return {
+      success: true,
+      effects: [...choice.effects],
     };
   }
 
@@ -511,7 +531,7 @@ export class UpgradeManager {
    * Get details about a milestone choice for preview
    */
   getMilestoneChoicePreview(
-    milestoneId: string, 
+    milestoneId: string,
     choiceId: string
   ): {
     milestone: ConsciousnessExpansionMilestone;
@@ -519,7 +539,9 @@ export class UpgradeManager {
     effects: UpgradeEffect[];
     impactDescription: string[];
   } | null {
-    const milestone = this.state.availableMilestones.find(m => m.id === milestoneId);
+    const milestone = this.state.availableMilestones.find(
+      m => m.id === milestoneId
+    );
     if (!milestone) return null;
 
     const choice = milestone.choices.find(c => c.id === choiceId);
@@ -528,7 +550,10 @@ export class UpgradeManager {
     // Generate impact descriptions based on effects
     const impactDescription = choice.effects.map(effect => {
       if (effect.multiplier && effect.multiplier.isGreaterThan(1)) {
-        const percentIncrease = effect.multiplier.minus(1).multipliedBy(100).toFixed(0);
+        const percentIncrease = effect.multiplier
+          .minus(1)
+          .multipliedBy(100)
+          .toFixed(0);
         return `+${percentIncrease}% ${this.getEffectTargetDescription(effect)}`;
       } else if (effect.value.isGreaterThan(0)) {
         return `+${effect.value.toFixed(0)} ${this.getEffectTargetDescription(effect)}`;
@@ -558,7 +583,9 @@ export class UpgradeManager {
       case 'offline_earnings':
         return 'offline earnings';
       case 'resource_generation':
-        return effect.target === 'all' ? 'all resource generation' : `${effect.target} generation`;
+        return effect.target === 'all'
+          ? 'all resource generation'
+          : `${effect.target} generation`;
       case 'beacon_range':
         return 'beacon connection range';
       case 'pattern_bonus':
@@ -583,7 +610,9 @@ export class UpgradeManager {
       reason: string;
     }[];
   } | null {
-    const milestone = this.state.availableMilestones.find(m => m.id === milestoneId);
+    const milestone = this.state.availableMilestones.find(
+      m => m.id === milestoneId
+    );
     if (!milestone) return null;
 
     const recommendations = milestone.choices.map(choice => {
@@ -655,7 +684,10 @@ export class UpgradeManager {
     const nextEffects = this.calculateUpgradeEffects(upgrade, nextLevel);
 
     // Calculate impact summary (placeholder implementation)
-    const impactSummary = this.calculateUpgradeImpact(currentEffects, nextEffects);
+    const impactSummary = this.calculateUpgradeImpact(
+      currentEffects,
+      nextEffects
+    );
 
     return {
       upgrade,
@@ -672,15 +704,18 @@ export class UpgradeManager {
   /**
    * Calculate upgrade effects for a given level
    */
-  private calculateUpgradeEffects(upgrade: Upgrade, level: number): UpgradeEffect[] {
+  private calculateUpgradeEffects(
+    upgrade: Upgrade,
+    level: number
+  ): UpgradeEffect[] {
     if (level <= 0) return [];
 
     return upgrade.effects.map(effect => ({
       ...effect,
       value: effect.value.multipliedBy(level),
-      multiplier: effect.multiplier ? 
-        new BigNumber(1).plus(effect.multiplier.minus(1).multipliedBy(level)) :
-        new BigNumber(1),
+      multiplier: effect.multiplier
+        ? new BigNumber(1).plus(effect.multiplier.minus(1).multipliedBy(level))
+        : new BigNumber(1),
     }));
   }
 
@@ -696,28 +731,35 @@ export class UpgradeManager {
     };
 
     // Calculate resource generation impacts
-    const currentResourceMultipliers = this.calculateResourceMultipliers(currentEffects);
-    const nextResourceMultipliers = this.calculateResourceMultipliers(nextEffects);
+    const currentResourceMultipliers =
+      this.calculateResourceMultipliers(currentEffects);
+    const nextResourceMultipliers =
+      this.calculateResourceMultipliers(nextEffects);
 
-    Object.entries(nextResourceMultipliers).forEach(([resourceType, nextMultiplier]) => {
-      const currentMultiplier = currentResourceMultipliers[resourceType] || new BigNumber(1);
-      const change = nextMultiplier.minus(currentMultiplier);
-      const changePercentage = currentMultiplier.isGreaterThan(0) 
-        ? change.dividedBy(currentMultiplier).multipliedBy(100) 
-        : new BigNumber(0);
+    Object.entries(nextResourceMultipliers).forEach(
+      ([resourceType, nextMultiplier]) => {
+        const currentMultiplier =
+          currentResourceMultipliers[resourceType] || new BigNumber(1);
+        const change = nextMultiplier.minus(currentMultiplier);
+        const changePercentage = currentMultiplier.isGreaterThan(0)
+          ? change.dividedBy(currentMultiplier).multipliedBy(100)
+          : new BigNumber(0);
 
-      impact.resourceGeneration[resourceType as ResourceType] = {
-        current: currentMultiplier,
-        next: nextMultiplier,
-        change,
-        changePercentage,
-      };
-    });
+        impact.resourceGeneration[resourceType as ResourceType] = {
+          current: currentMultiplier,
+          next: nextMultiplier,
+          change,
+          changePercentage,
+        };
+      }
+    );
 
     // Calculate beacon efficiency impact
-    const currentBeaconEfficiency = this.calculateEfficiencyMultiplier(currentEffects);
-    const nextBeaconEfficiency = this.calculateEfficiencyMultiplier(nextEffects);
-    
+    const currentBeaconEfficiency =
+      this.calculateEfficiencyMultiplier(currentEffects);
+    const nextBeaconEfficiency =
+      this.calculateEfficiencyMultiplier(nextEffects);
+
     if (!currentBeaconEfficiency.isEqualTo(nextBeaconEfficiency)) {
       impact.beaconEfficiency = {
         current: currentBeaconEfficiency,
@@ -727,9 +769,10 @@ export class UpgradeManager {
     }
 
     // Calculate probe speed impact
-    const currentProbeSpeed = this.calculateProbeSpeedMultiplier(currentEffects);
+    const currentProbeSpeed =
+      this.calculateProbeSpeedMultiplier(currentEffects);
     const nextProbeSpeed = this.calculateProbeSpeedMultiplier(nextEffects);
-    
+
     if (!currentProbeSpeed.isEqualTo(nextProbeSpeed)) {
       impact.probeSpeed = {
         current: currentProbeSpeed,
@@ -741,7 +784,7 @@ export class UpgradeManager {
     // Calculate offline earnings impact
     const currentOffline = this.calculateOfflineMultiplier(currentEffects);
     const nextOffline = this.calculateOfflineMultiplier(nextEffects);
-    
+
     if (!currentOffline.isEqualTo(nextOffline)) {
       impact.offlineEarnings = {
         current: currentOffline,
@@ -756,20 +799,32 @@ export class UpgradeManager {
   /**
    * Calculate resource generation multipliers from effects
    */
-  private calculateResourceMultipliers(effects: UpgradeEffect[]): Record<string, BigNumber> {
+  private calculateResourceMultipliers(
+    effects: UpgradeEffect[]
+  ): Record<string, BigNumber> {
     const multipliers: Record<string, BigNumber> = {};
-    
+
     effects.forEach(effect => {
       if (effect.type === 'resource_generation') {
         if (effect.target === 'all') {
           // Apply to all resource types
-          ['quantumData', 'stellarEssence', 'voidFragments', 'resonanceCrystals', 'chronosParticles'].forEach(resourceType => {
+          [
+            'quantumData',
+            'stellarEssence',
+            'voidFragments',
+            'resonanceCrystals',
+            'chronosParticles',
+          ].forEach(resourceType => {
             const current = multipliers[resourceType] || new BigNumber(1);
-            multipliers[resourceType] = current.multipliedBy(effect.multiplier || new BigNumber(1));
+            multipliers[resourceType] = current.multipliedBy(
+              effect.multiplier || new BigNumber(1)
+            );
           });
         } else {
           const current = multipliers[effect.target] || new BigNumber(1);
-          multipliers[effect.target] = current.multipliedBy(effect.multiplier || new BigNumber(1));
+          multipliers[effect.target] = current.multipliedBy(
+            effect.multiplier || new BigNumber(1)
+          );
         }
       }
     });
@@ -782,7 +837,7 @@ export class UpgradeManager {
    */
   private calculateEfficiencyMultiplier(effects: UpgradeEffect[]): BigNumber {
     let multiplier = new BigNumber(1);
-    
+
     effects.forEach(effect => {
       if (effect.type === 'beacon_efficiency' && effect.multiplier) {
         multiplier = multiplier.multipliedBy(effect.multiplier);
@@ -797,7 +852,7 @@ export class UpgradeManager {
    */
   private calculateProbeSpeedMultiplier(effects: UpgradeEffect[]): BigNumber {
     let multiplier = new BigNumber(1);
-    
+
     effects.forEach(effect => {
       if (effect.type === 'probe_speed' && effect.multiplier) {
         multiplier = multiplier.multipliedBy(effect.multiplier);
@@ -812,7 +867,7 @@ export class UpgradeManager {
    */
   private calculateOfflineMultiplier(effects: UpgradeEffect[]): BigNumber {
     let multiplier = new BigNumber(1);
-    
+
     effects.forEach(effect => {
       if (effect.type === 'offline_earnings' && effect.multiplier) {
         multiplier = multiplier.multipliedBy(effect.multiplier);
@@ -834,7 +889,11 @@ export class UpgradeManager {
     }
   ): {
     preview: UpgradePreview;
-    recommendation: 'highly_recommended' | 'recommended' | 'situational' | 'not_recommended';
+    recommendation:
+      | 'highly_recommended'
+      | 'recommended'
+      | 'situational'
+      | 'not_recommended';
     reasoning: string[];
     costEfficiency: {
       resourcesPerQuantumDataSpent: BigNumber;
@@ -845,13 +904,25 @@ export class UpgradeManager {
     if (!preview) return null;
 
     const reasoning: string[] = [];
-    let recommendation: 'highly_recommended' | 'recommended' | 'situational' | 'not_recommended' = 'situational';
+    let recommendation:
+      | 'highly_recommended'
+      | 'recommended'
+      | 'situational'
+      | 'not_recommended' = 'situational';
 
     // Analyze upgrade effects
-    const hasResourceGeneration = preview.nextEffects.some(e => e.type === 'resource_generation');
-    const hasBeaconEfficiency = preview.nextEffects.some(e => e.type === 'beacon_efficiency');
-    const hasProbeSpeed = preview.nextEffects.some(e => e.type === 'probe_speed');
-    const hasOfflineEarnings = preview.nextEffects.some(e => e.type === 'offline_earnings');
+    const hasResourceGeneration = preview.nextEffects.some(
+      e => e.type === 'resource_generation'
+    );
+    const hasBeaconEfficiency = preview.nextEffects.some(
+      e => e.type === 'beacon_efficiency'
+    );
+    const hasProbeSpeed = preview.nextEffects.some(
+      e => e.type === 'probe_speed'
+    );
+    const hasOfflineEarnings = preview.nextEffects.some(
+      e => e.type === 'offline_earnings'
+    );
 
     // Scoring system
     let score = 0;
@@ -861,7 +932,9 @@ export class UpgradeManager {
       reasoning.push('Increases resource generation rates');
       if (currentGameState?.beaconCount && currentGameState.beaconCount >= 10) {
         score += 20;
-        reasoning.push(`Especially valuable with ${currentGameState.beaconCount} active beacons`);
+        reasoning.push(
+          `Especially valuable with ${currentGameState.beaconCount} active beacons`
+        );
       }
     }
 
@@ -874,7 +947,11 @@ export class UpgradeManager {
       }
     }
 
-    if (hasProbeSpeed && currentGameState?.beaconCount && currentGameState.beaconCount <= 50) {
+    if (
+      hasProbeSpeed &&
+      currentGameState?.beaconCount &&
+      currentGameState.beaconCount <= 50
+    ) {
       score += 20;
       reasoning.push('Useful for expansion phase');
     } else if (hasProbeSpeed) {
@@ -889,18 +966,27 @@ export class UpgradeManager {
 
     // Cost analysis
     const quantumDataCost = preview.cost.quantumData;
-    let costEfficiency: { resourcesPerQuantumDataSpent: BigNumber; paybackTimeHours: BigNumber } | null = null;
+    let costEfficiency: {
+      resourcesPerQuantumDataSpent: BigNumber;
+      paybackTimeHours: BigNumber;
+    } | null = null;
 
     if (currentGameState?.totalResourcesPerSecond && quantumDataCost) {
       const estimatedIncreasePercent = new BigNumber(0.1); // Simplified 10% increase estimate
-      const additionalResourcesPerSecond = currentGameState.totalResourcesPerSecond.multipliedBy(estimatedIncreasePercent);
-      
+      const additionalResourcesPerSecond =
+        currentGameState.totalResourcesPerSecond.multipliedBy(
+          estimatedIncreasePercent
+        );
+
       if (additionalResourcesPerSecond.isGreaterThan(0)) {
-        const paybackTimeSeconds = quantumDataCost.dividedBy(additionalResourcesPerSecond);
+        const paybackTimeSeconds = quantumDataCost.dividedBy(
+          additionalResourcesPerSecond
+        );
         const paybackTimeHours = paybackTimeSeconds.dividedBy(3600);
-        
+
         costEfficiency = {
-          resourcesPerQuantumDataSpent: additionalResourcesPerSecond.dividedBy(quantumDataCost),
+          resourcesPerQuantumDataSpent:
+            additionalResourcesPerSecond.dividedBy(quantumDataCost),
           paybackTimeHours,
         };
 
@@ -949,7 +1035,10 @@ export class UpgradeManager {
     Object.values(this.state.playerUpgrades).forEach(playerUpgrade => {
       const upgrade = this.getUpgrade(playerUpgrade.upgradeId);
       if (upgrade && playerUpgrade.level > 0) {
-        const effects = this.calculateUpgradeEffects(upgrade, playerUpgrade.level);
+        const effects = this.calculateUpgradeEffects(
+          upgrade,
+          playerUpgrade.level
+        );
         allEffects.push(...effects);
       }
     });
@@ -957,7 +1046,9 @@ export class UpgradeManager {
     // Get effects from completed milestones
     Object.values(this.state.completedMilestones).forEach(milestone => {
       if (milestone.chosenOption) {
-        const choice = milestone.choices.find(c => c.id === milestone.chosenOption);
+        const choice = milestone.choices.find(
+          c => c.id === milestone.chosenOption
+        );
         if (choice) {
           allEffects.push(...choice.effects);
         }
@@ -974,42 +1065,50 @@ export class UpgradeManager {
     if (savedState.playerUpgrades) {
       // Convert saved data to internal format with BigNumber instances
       this.state.playerUpgrades = {};
-      Object.entries(savedState.playerUpgrades).forEach(([id, savedUpgrade]) => {
-        const upgrade: PlayerUpgrade = {
-          upgradeId: savedUpgrade.upgradeId,
-          level: savedUpgrade.level,
-          purchasedAt: savedUpgrade.purchasedAt,
-          totalSpent: {},
-        };
-        
-        // Convert totalSpent from numbers back to BigNumbers
-        Object.entries(savedUpgrade.totalSpent).forEach(([resource, amount]) => {
-          upgrade.totalSpent[resource] = new BigNumber(amount);
-        });
+      Object.entries(savedState.playerUpgrades).forEach(
+        ([id, savedUpgrade]) => {
+          const upgrade: PlayerUpgrade = {
+            upgradeId: savedUpgrade.upgradeId,
+            level: savedUpgrade.level,
+            purchasedAt: savedUpgrade.purchasedAt,
+            totalSpent: {},
+          };
 
-        this.state.playerUpgrades[id] = upgrade;
-      });
+          // Convert totalSpent from numbers back to BigNumbers
+          Object.entries(savedUpgrade.totalSpent).forEach(
+            ([resource, amount]) => {
+              upgrade.totalSpent[resource] = new BigNumber(amount);
+            }
+          );
+
+          this.state.playerUpgrades[id] = upgrade;
+        }
+      );
     }
 
     if (savedState.completedMilestones) {
       // Convert saved milestones to internal format
       this.state.completedMilestones = {};
-      Object.entries(savedState.completedMilestones).forEach(([id, savedMilestone]) => {
-        this.state.completedMilestones[id] = {
-          id: savedMilestone.id,
-          name: savedMilestone.name,
-          description: savedMilestone.description,
-          requiredBeacons: savedMilestone.requiredBeacons,
-          completedAt: savedMilestone.completedAt,
-          chosenOption: savedMilestone.chosenOption,
-          choices: [], // Will be populated from CONSCIOUSNESS_EXPANSION_MILESTONES
-        };
-      });
+      Object.entries(savedState.completedMilestones).forEach(
+        ([id, savedMilestone]) => {
+          this.state.completedMilestones[id] = {
+            id: savedMilestone.id,
+            name: savedMilestone.name,
+            description: savedMilestone.description,
+            requiredBeacons: savedMilestone.requiredBeacons,
+            completedAt: savedMilestone.completedAt,
+            chosenOption: savedMilestone.chosenOption,
+            choices: [], // Will be populated from CONSCIOUSNESS_EXPANSION_MILESTONES
+          };
+        }
+      );
     }
 
     this.state.lastUpdated = savedState.lastUpdated || Date.now();
 
-    console.log(`[UpgradeManager] Loaded state with ${Object.keys(this.state.playerUpgrades).length} upgrades`);
+    console.log(
+      `[UpgradeManager] Loaded state with ${Object.keys(this.state.playerUpgrades).length} upgrades`
+    );
   }
 
   /**
@@ -1018,7 +1117,7 @@ export class UpgradeManager {
   toSaveState(): UpgradeData {
     // Convert internal format to save format
     const playerUpgrades: Record<string, SavePlayerUpgrade> = {};
-    
+
     Object.entries(this.state.playerUpgrades).forEach(([id, upgrade]) => {
       const totalSpent: Record<string, number> = {};
       Object.entries(upgrade.totalSpent).forEach(([resource, amount]) => {
@@ -1035,16 +1134,18 @@ export class UpgradeManager {
 
     // Convert completed milestones to save format
     const completedMilestones: Record<string, SaveMilestone> = {};
-    Object.entries(this.state.completedMilestones).forEach(([id, milestone]) => {
-      completedMilestones[id] = {
-        id: milestone.id,
-        name: milestone.name,
-        description: milestone.description,
-        requiredBeacons: milestone.requiredBeacons,
-        completedAt: milestone.completedAt,
-        chosenOption: milestone.chosenOption,
-      };
-    });
+    Object.entries(this.state.completedMilestones).forEach(
+      ([id, milestone]) => {
+        completedMilestones[id] = {
+          id: milestone.id,
+          name: milestone.name,
+          description: milestone.description,
+          requiredBeacons: milestone.requiredBeacons,
+          completedAt: milestone.completedAt,
+          chosenOption: milestone.chosenOption,
+        };
+      }
+    );
 
     return {
       playerUpgrades,

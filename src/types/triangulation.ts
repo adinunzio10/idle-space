@@ -147,6 +147,10 @@ export function createPointKey(p: Point2D): string {
 /**
  * Helper function to check if two points are equal within tolerance
  */
-export function pointsEqual(p1: Point2D, p2: Point2D, tolerance: number = 1e-10): boolean {
+export function pointsEqual(
+  p1: Point2D,
+  p2: Point2D,
+  tolerance: number = 1e-10
+): boolean {
   return Math.abs(p1.x - p2.x) < tolerance && Math.abs(p1.y - p2.y) < tolerance;
 }

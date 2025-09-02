@@ -12,7 +12,7 @@ export class AsyncStorageAdapter implements StorageAdapter {
       throw new StorageError(
         'Failed to initialize AsyncStorage',
         'ASYNC_STORAGE_INIT_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -26,7 +26,7 @@ export class AsyncStorageAdapter implements StorageAdapter {
       throw new StorageError(
         `Failed to get item: ${key}`,
         'ASYNC_STORAGE_GET_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -39,7 +39,7 @@ export class AsyncStorageAdapter implements StorageAdapter {
       throw new StorageError(
         `Failed to set item: ${key}`,
         'ASYNC_STORAGE_SET_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -52,7 +52,7 @@ export class AsyncStorageAdapter implements StorageAdapter {
       throw new StorageError(
         `Failed to remove item: ${key}`,
         'ASYNC_STORAGE_REMOVE_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -65,7 +65,7 @@ export class AsyncStorageAdapter implements StorageAdapter {
       throw new StorageError(
         'Failed to clear AsyncStorage',
         'ASYNC_STORAGE_CLEAR_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -79,7 +79,7 @@ export class AsyncStorageAdapter implements StorageAdapter {
       throw new StorageError(
         'Failed to get all keys',
         'ASYNC_STORAGE_KEYS_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -88,7 +88,7 @@ export class AsyncStorageAdapter implements StorageAdapter {
     if (!this.isInitialized) {
       throw new StorageError(
         'AsyncStorageAdapter not initialized',
-        'ASYNC_STORAGE_NOT_INITIALIZED',
+        'ASYNC_STORAGE_NOT_INITIALIZED'
       );
     }
   }

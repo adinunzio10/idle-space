@@ -23,7 +23,9 @@ export const useGameSettings = (gameController: GameController | null) => {
     if (!gameController) return;
 
     // Update offline generation setting when it changes
-    gameController.setOfflineGenerationEnabled(settings.offlineGenerationEnabled);
+    gameController.setOfflineGenerationEnabled(
+      settings.offlineGenerationEnabled
+    );
   }, [gameController, settings.offlineGenerationEnabled]);
 
   // Sync audio settings
@@ -45,7 +47,11 @@ export const useGameSettings = (gameController: GameController | null) => {
       highContrastEnabled: settings.highContrastEnabled,
       reduceAnimationsEnabled: settings.reduceAnimationsEnabled,
     });
-  }, [settings.largeTextEnabled, settings.highContrastEnabled, settings.reduceAnimationsEnabled]);
+  }, [
+    settings.largeTextEnabled,
+    settings.highContrastEnabled,
+    settings.reduceAnimationsEnabled,
+  ]);
 
   // Initialize and sync battery optimization settings
   useEffect(() => {
@@ -53,19 +59,25 @@ export const useGameSettings = (gameController: GameController | null) => {
       try {
         // Initialize the battery optimization manager
         await batteryOptimizationManager.initialize();
-        
+
         // Sync settings with battery optimization manager
         batteryOptimizationManager.updateConfig({
           enabled: settings.batteryOptimizationEnabled,
           lowBatteryThreshold: settings.lowBatteryThreshold,
-          criticalBatteryThreshold: Math.max(0.05, settings.lowBatteryThreshold - 0.15),
+          criticalBatteryThreshold: Math.max(
+            0.05,
+            settings.lowBatteryThreshold - 0.15
+          ),
           adaptiveFrameRate: settings.adaptiveFrameRateEnabled,
           backgroundThrottling: settings.backgroundThrottlingEnabled,
           visualEffectsReduction: true,
           batteryEfficientMode: settings.batteryEfficientModeEnabled,
         });
       } catch (error) {
-        console.warn('[useGameSettings] Failed to initialize battery optimization:', error);
+        console.warn(
+          '[useGameSettings] Failed to initialize battery optimization:',
+          error
+        );
       }
     };
 

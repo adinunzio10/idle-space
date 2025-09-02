@@ -28,7 +28,7 @@ export class BeaconConnectionManager {
    */
   public updateBeacons(beacons: Record<string, Beacon> | Beacon[]): void {
     this.beacons.clear();
-    
+
     if (Array.isArray(beacons)) {
       beacons.forEach(beacon => {
         this.beacons.set(beacon.id, beacon);
@@ -48,14 +48,14 @@ export class BeaconConnectionManager {
    */
   public rebuildConnections(): void {
     this.connections.clear();
-    
+
     const beaconArray = Array.from(this.beacons.values());
-    
+
     for (let i = 0; i < beaconArray.length; i++) {
       for (let j = i + 1; j < beaconArray.length; j++) {
         const beacon1 = beaconArray[i];
         const beacon2 = beaconArray[j];
-        
+
         if (this.shouldConnect(beacon1, beacon2)) {
           this.establishConnection(beacon1, beacon2);
         }
@@ -73,13 +73,18 @@ export class BeaconConnectionManager {
     }
 
     // Check if already connected
-    if (beacon1.isConnectedTo(beacon2.id) || beacon2.isConnectedTo(beacon1.id)) {
+    if (
+      beacon1.isConnectedTo(beacon2.id) ||
+      beacon2.isConnectedTo(beacon1.id)
+    ) {
       return true; // Already connected, maintain connection
     }
 
     // Check connection capacity
-    if (beacon1.connections.length >= beacon1.getMaxConnections() ||
-        beacon2.connections.length >= beacon2.getMaxConnections()) {
+    if (
+      beacon1.connections.length >= beacon1.getMaxConnections() ||
+      beacon2.connections.length >= beacon2.getMaxConnections()
+    ) {
       return false;
     }
 
@@ -96,7 +101,10 @@ export class BeaconConnectionManager {
   /**
    * Establish a connection between two beacons
    */
-  private establishConnection(beacon1: Beacon, beacon2: Beacon): ConnectionInfo | null {
+  private establishConnection(
+    beacon1: Beacon,
+    beacon2: Beacon
+  ): ConnectionInfo | null {
     // Check if connection already exists
     const existingConnectionId = this.getConnectionId(beacon1.id, beacon2.id);
     if (this.connections.has(existingConnectionId)) {
@@ -104,7 +112,11 @@ export class BeaconConnectionManager {
     }
 
     const distance = beacon1.getDistanceTo(beacon2.position);
-    const strength = this.calculateConnectionStrength(beacon1, beacon2, distance);
+    const strength = this.calculateConnectionStrength(
+      beacon1,
+      beacon2,
+      distance
+    );
 
     const connection: ConnectionInfo = {
       id: existingConnectionId,
@@ -132,7 +144,7 @@ export class BeaconConnectionManager {
   public removeConnection(beacon1Id: string, beacon2Id: string): boolean {
     const connectionId = this.getConnectionId(beacon1Id, beacon2Id);
     const connection = this.connections.get(connectionId);
-    
+
     if (!connection) {
       return false;
     }
@@ -157,22 +169,29 @@ export class BeaconConnectionManager {
   /**
    * Calculate connection strength based on distance and beacon properties
    */
-  private calculateConnectionStrength(beacon1: Beacon, beacon2: Beacon, distance: number): number {
+  private calculateConnectionStrength(
+    beacon1: Beacon,
+    beacon2: Beacon,
+    distance: number
+  ): number {
     const maxRange = Math.max(
       beacon1.calculateConnectionRange(),
       beacon2.calculateConnectionRange()
     );
-    
+
     // Base strength decreases with distance (1.0 at distance 0, 0.1 at max range)
     const distanceStrength = Math.max(0.1, 1.0 - (distance / maxRange) * 0.9);
-    
+
     // Level difference bonus/penalty
     const avgLevel = (beacon1.level + beacon2.level) / 2;
     const levelStrength = Math.min(1.0, avgLevel / 10); // Stronger connections at higher levels
-    
+
     // Type compatibility bonus
-    const typeStrength = this.getTypeCompatibilityBonus(beacon1.type, beacon2.type);
-    
+    const typeStrength = this.getTypeCompatibilityBonus(
+      beacon1.type,
+      beacon2.type
+    );
+
     return Math.min(1.0, distanceStrength * levelStrength * typeStrength);
   }
 
@@ -184,22 +203,27 @@ export class BeaconConnectionManager {
     if (type1 === 'architect' || type2 === 'architect') {
       return 1.2;
     }
-    
+
     // Harvester-Pioneer synergy
-    if ((type1 === 'harvester' && type2 === 'pioneer') ||
-        (type1 === 'pioneer' && type2 === 'harvester')) {
+    if (
+      (type1 === 'harvester' && type2 === 'pioneer') ||
+      (type1 === 'pioneer' && type2 === 'harvester')
+    ) {
       return 1.15;
     }
-    
+
     return 1.0; // Default compatibility
   }
 
   /**
    * Find potential connections for a beacon
    */
-  public findConnectionCandidates(beacon: Beacon, maxCandidates: number = 10): ConnectionCandidate[] {
+  public findConnectionCandidates(
+    beacon: Beacon,
+    maxCandidates: number = 10
+  ): ConnectionCandidate[] {
     const candidates: ConnectionCandidate[] = [];
-    
+
     for (const otherBeacon of this.beacons.values()) {
       if (otherBeacon.id === beacon.id || otherBeacon.status !== 'active') {
         continue;
@@ -207,7 +231,7 @@ export class BeaconConnectionManager {
 
       const distance = beacon.getDistanceTo(otherBeacon.position);
       const maxRange = beacon.calculateConnectionRange();
-      
+
       const candidate: ConnectionCandidate = {
         beacon: otherBeacon,
         distance,
@@ -222,7 +246,9 @@ export class BeaconConnectionManager {
         candidate.reason = `Out of range (${distance.toFixed(1)}/${maxRange.toFixed(1)})`;
       } else if (beacon.connections.length >= beacon.getMaxConnections()) {
         candidate.reason = 'At connection capacity';
-      } else if (otherBeacon.connections.length >= otherBeacon.getMaxConnections()) {
+      } else if (
+        otherBeacon.connections.length >= otherBeacon.getMaxConnections()
+      ) {
         candidate.reason = 'Target at capacity';
       } else {
         candidate.canConnect = true;
@@ -242,20 +268,26 @@ export class BeaconConnectionManager {
    */
   public getBeaconConnections(beaconId: string): ConnectionInfo[] {
     const connections: ConnectionInfo[] = [];
-    
+
     for (const connection of this.connections.values()) {
-      if (connection.sourceId === beaconId || connection.targetId === beaconId) {
+      if (
+        connection.sourceId === beaconId ||
+        connection.targetId === beaconId
+      ) {
         connections.push(connection);
       }
     }
-    
+
     return connections;
   }
 
   /**
    * Get connection between two specific beacons
    */
-  public getConnection(beacon1Id: string, beacon2Id: string): ConnectionInfo | null {
+  public getConnection(
+    beacon1Id: string,
+    beacon2Id: string
+  ): ConnectionInfo | null {
     const connectionId = this.getConnectionId(beacon1Id, beacon2Id);
     return this.connections.get(connectionId) || null;
   }
@@ -274,14 +306,15 @@ export class BeaconConnectionManager {
     for (const connection of this.connections.values()) {
       const beacon1 = this.beacons.get(connection.sourceId);
       const beacon2 = this.beacons.get(connection.targetId);
-      
+
       if (beacon1 && beacon2) {
         connection.strength = this.calculateConnectionStrength(
-          beacon1, 
-          beacon2, 
+          beacon1,
+          beacon2,
           connection.distance
         );
-        connection.isActive = beacon1.status === 'active' && beacon2.status === 'active';
+        connection.isActive =
+          beacon1.status === 'active' && beacon2.status === 'active';
       } else {
         // Remove connections to non-existent beacons
         this.connections.delete(connection.id);
@@ -292,10 +325,13 @@ export class BeaconConnectionManager {
   /**
    * Force establish a connection (override capacity limits)
    */
-  public forceConnection(beacon1Id: string, beacon2Id: string): ConnectionInfo | null {
+  public forceConnection(
+    beacon1Id: string,
+    beacon2Id: string
+  ): ConnectionInfo | null {
     const beacon1 = this.beacons.get(beacon1Id);
     const beacon2 = this.beacons.get(beacon2Id);
-    
+
     if (!beacon1 || !beacon2) {
       return null;
     }
@@ -320,13 +356,18 @@ export class BeaconConnectionManager {
   } {
     const connections = Array.from(this.connections.values());
     const activeConnections = connections.filter(c => c.isActive);
-    
-    const averageStrength = activeConnections.length > 0
-      ? activeConnections.reduce((sum, c) => sum + c.strength, 0) / activeConnections.length
-      : 0;
-    
-    const strongestConnection = connections.reduce((strongest, current) =>
-      !strongest || current.strength > strongest.strength ? current : strongest, 
+
+    const averageStrength =
+      activeConnections.length > 0
+        ? activeConnections.reduce((sum, c) => sum + c.strength, 0) /
+          activeConnections.length
+        : 0;
+
+    const strongestConnection = connections.reduce(
+      (strongest, current) =>
+        !strongest || current.strength > strongest.strength
+          ? current
+          : strongest,
       null as ConnectionInfo | null
     );
 
@@ -334,7 +375,7 @@ export class BeaconConnectionManager {
     for (const connection of activeConnections) {
       const beacon1 = this.beacons.get(connection.sourceId);
       const beacon2 = this.beacons.get(connection.targetId);
-      
+
       if (beacon1 && beacon2) {
         const typeKey = [beacon1.type, beacon2.type].sort().join('-');
         connectionsByType[typeKey] = (connectionsByType[typeKey] || 0) + 1;
@@ -374,7 +415,7 @@ export class BeaconConnectionManager {
    */
   public exportConnections(): Record<string, any> {
     const exportData: Record<string, any> = {};
-    
+
     for (const [id, connection] of this.connections) {
       exportData[id] = {
         id: connection.id,
@@ -386,7 +427,7 @@ export class BeaconConnectionManager {
         establishedAt: connection.establishedAt,
       };
     }
-    
+
     return exportData;
   }
 
@@ -395,7 +436,7 @@ export class BeaconConnectionManager {
    */
   public importConnections(connectionData: Record<string, any>): void {
     this.connections.clear();
-    
+
     for (const data of Object.values(connectionData)) {
       const connection: ConnectionInfo = {
         id: data.id,
@@ -406,7 +447,7 @@ export class BeaconConnectionManager {
         isActive: data.isActive,
         establishedAt: data.establishedAt,
       };
-      
+
       this.connections.set(connection.id, connection);
     }
   }

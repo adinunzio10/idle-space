@@ -2,7 +2,12 @@ import { Point2D } from './galaxy';
 import { ResourceType } from './resources';
 
 export type ProbeType = 'pioneer' | 'harvester' | 'architect';
-export type ProbeStatus = 'queued' | 'launching' | 'traveling' | 'deployed' | 'failed';
+export type ProbeStatus =
+  | 'queued'
+  | 'launching'
+  | 'traveling'
+  | 'deployed'
+  | 'failed';
 
 export interface ProbeConfig {
   deploymentTime: number; // seconds
@@ -66,7 +71,11 @@ export const PROBE_TYPE_CONFIG: Record<ProbeType, ProbeConfig> = {
   },
 };
 
-export const PROBE_DISPLAY_ORDER: ProbeType[] = ['pioneer', 'harvester', 'architect'];
+export const PROBE_DISPLAY_ORDER: ProbeType[] = [
+  'pioneer',
+  'harvester',
+  'architect',
+];
 
 export class ProbeUtils {
   static getProbeConfig(type: ProbeType): ProbeConfig {
@@ -79,11 +88,16 @@ export class ProbeUtils {
     } else {
       const minutes = Math.floor(seconds / 60);
       const remainingSeconds = seconds % 60;
-      return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+      return remainingSeconds > 0
+        ? `${minutes}m ${remainingSeconds}s`
+        : `${minutes}m`;
     }
   }
 
-  static calculateDeploymentTimeWithAcceleration(baseTime: number, accelerationBonus: number): number {
+  static calculateDeploymentTimeWithAcceleration(
+    baseTime: number,
+    accelerationBonus: number
+  ): number {
     return baseTime / accelerationBonus;
   }
 

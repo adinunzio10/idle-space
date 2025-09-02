@@ -1,7 +1,11 @@
 import { Point2D } from './galaxy';
 
 export type BeaconType = 'pioneer' | 'harvester' | 'architect';
-export type BeaconSpecialization = 'none' | 'efficiency' | 'range' | 'stability';
+export type BeaconSpecialization =
+  | 'none'
+  | 'efficiency'
+  | 'range'
+  | 'stability';
 export type BeaconStatus = 'active' | 'inactive' | 'upgrading' | 'corrupted';
 
 export interface BeaconSpecializationBonus {
@@ -88,7 +92,10 @@ export const BEACON_TYPE_CONFIG: Record<BeaconType, BeaconStats> = {
   },
 };
 
-export const SPECIALIZATION_CONFIG: Record<BeaconSpecialization, BeaconSpecializationBonus> = {
+export const SPECIALIZATION_CONFIG: Record<
+  BeaconSpecialization,
+  BeaconSpecializationBonus
+> = {
   none: {
     efficiency: 1.0,
     range: 1.0,

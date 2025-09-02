@@ -129,27 +129,27 @@ export class DatabaseSchema {
     await this.sqliteAdapter.query(`
       CREATE INDEX IF NOT EXISTS idx_beacons_player_id ON beacons (player_id)
     `);
-    
+
     await this.sqliteAdapter.query(`
       CREATE INDEX IF NOT EXISTS idx_beacons_position ON beacons (x, y)
     `);
-    
+
     await this.sqliteAdapter.query(`
       CREATE INDEX IF NOT EXISTS idx_beacons_status ON beacons (status)
     `);
-    
+
     await this.sqliteAdapter.query(`
       CREATE INDEX IF NOT EXISTS idx_probes_player_id ON probes (player_id)
     `);
-    
+
     await this.sqliteAdapter.query(`
       CREATE INDEX IF NOT EXISTS idx_probes_status ON probes (status)
     `);
-    
+
     await this.sqliteAdapter.query(`
       CREATE INDEX IF NOT EXISTS idx_galaxy_sectors_galaxy_id ON galaxy_sectors (galaxy_id)
     `);
-    
+
     await this.sqliteAdapter.query(`
       CREATE INDEX IF NOT EXISTS idx_galaxy_sectors_position ON galaxy_sectors (x, y)
     `);
@@ -158,7 +158,7 @@ export class DatabaseSchema {
   async dropAllTables(): Promise<void> {
     const tables = [
       'game_metadata',
-      'galaxy_sectors', 
+      'galaxy_sectors',
       'galaxy',
       'probes',
       'beacons',

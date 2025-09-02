@@ -38,9 +38,14 @@ export class ProbeBackgroundService {
       // For now, we'll focus on persistent storage and foreground processing
       // Background task execution can be added later if needed
       this.isRegistered = true;
-      console.log('[ProbeBackgroundService] Background processing capabilities initialized');
+      console.log(
+        '[ProbeBackgroundService] Background processing capabilities initialized'
+      );
     } catch (error) {
-      console.error('[ProbeBackgroundService] Failed to initialize background processing:', error);
+      console.error(
+        '[ProbeBackgroundService] Failed to initialize background processing:',
+        error
+      );
     }
   }
 
@@ -54,7 +59,10 @@ export class ProbeBackgroundService {
       this.isRegistered = false;
       console.log('[ProbeBackgroundService] Background processing cleaned up');
     } catch (error) {
-      console.error('[ProbeBackgroundService] Failed to cleanup background processing:', error);
+      console.error(
+        '[ProbeBackgroundService] Failed to cleanup background processing:',
+        error
+      );
     }
   }
 
@@ -100,7 +108,10 @@ export class ProbeBackgroundService {
 
       // Convert active probes to background-processable format
       const backgroundProbes = activeProbes
-        .filter((probe: ProbeInstance) => probe.status === 'launching' && probe.deploymentStartedAt)
+        .filter(
+          (probe: ProbeInstance) =>
+            probe.status === 'launching' && probe.deploymentStartedAt
+        )
         .map((probe: ProbeInstance) => ({
           id: probe.id,
           type: probe.type,
@@ -116,9 +127,14 @@ export class ProbeBackgroundService {
       };
 
       await persistProbeData(probeData);
-      console.log(`[ProbeBackgroundService] Synced ${backgroundProbes.length} probes to background storage`);
+      console.log(
+        `[ProbeBackgroundService] Synced ${backgroundProbes.length} probes to background storage`
+      );
     } catch (error) {
-      console.error('[ProbeBackgroundService] Failed to sync probe queue:', error);
+      console.error(
+        '[ProbeBackgroundService] Failed to sync probe queue:',
+        error
+      );
     }
   }
 
@@ -135,7 +151,8 @@ export class ProbeBackgroundService {
 
       // Check which background probes should have completed
       for (const bgProbe of probeData.probeQueue) {
-        const adjustedDeploymentTime = (bgProbe.deploymentTime * 1000) / bgProbe.accelerationBonus;
+        const adjustedDeploymentTime =
+          (bgProbe.deploymentTime * 1000) / bgProbe.accelerationBonus;
         const elapsedSinceStart = now - bgProbe.deploymentStartedAt;
 
         if (elapsedSinceStart >= adjustedDeploymentTime) {
@@ -146,16 +163,21 @@ export class ProbeBackgroundService {
       if (completedProbeIds.length > 0) {
         // Remove completed probes from background storage
         probeData.probeQueue = probeData.probeQueue.filter(
-          (probe) => !completedProbeIds.includes(probe.id)
+          probe => !completedProbeIds.includes(probe.id)
         );
         await persistProbeData(probeData);
 
-        console.log(`[ProbeBackgroundService] Processed ${completedProbeIds.length} background completions`);
+        console.log(
+          `[ProbeBackgroundService] Processed ${completedProbeIds.length} background completions`
+        );
       }
 
       return completedProbeIds;
     } catch (error) {
-      console.error('[ProbeBackgroundService] Error processing background completions:', error);
+      console.error(
+        '[ProbeBackgroundService] Error processing background completions:',
+        error
+      );
       return [];
     }
   }
@@ -178,7 +200,10 @@ async function persistProbeData(data: ProbeBackgroundData): Promise<void> {
   try {
     await AsyncStorage.setItem('@probe_background_data', JSON.stringify(data));
   } catch (error) {
-    console.error('[ProbeBackgroundService] Failed to persist probe data:', error);
+    console.error(
+      '[ProbeBackgroundService] Failed to persist probe data:',
+      error
+    );
   }
 }
 
@@ -190,7 +215,10 @@ async function getPersistedProbeData(): Promise<ProbeBackgroundData | null> {
     const data = await AsyncStorage.getItem('@probe_background_data');
     return data ? JSON.parse(data) : null;
   } catch (error) {
-    console.error('[ProbeBackgroundService] Failed to retrieve probe data:', error);
+    console.error(
+      '[ProbeBackgroundService] Failed to retrieve probe data:',
+      error
+    );
     return null;
   }
 }

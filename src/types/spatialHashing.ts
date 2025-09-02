@@ -117,10 +117,10 @@ export interface SpatialPatternCacheEntry {
 /**
  * Cache invalidation strategy
  */
-export type CacheInvalidationStrategy = 
-  | 'immediate' 
-  | 'lazy' 
-  | 'periodic' 
+export type CacheInvalidationStrategy =
+  | 'immediate'
+  | 'lazy'
+  | 'periodic'
   | 'on-demand';
 
 /**

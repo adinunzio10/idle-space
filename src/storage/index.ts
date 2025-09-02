@@ -1,7 +1,11 @@
 // Adapters
 export { AsyncStorageAdapter } from './adapters/AsyncStorageAdapter';
 export { SQLiteAdapter } from './adapters/SQLiteAdapter';
-export { StorageAdapter, SQLStorageAdapter, StorageError } from './adapters/StorageAdapter';
+export {
+  StorageAdapter,
+  SQLStorageAdapter,
+  StorageError,
+} from './adapters/StorageAdapter';
 
 // Schemas
 export * from './schemas/GameState';

@@ -54,7 +54,11 @@ export interface Beacon {
 }
 
 export type BeaconType = 'pioneer' | 'harvester' | 'architect';
-export type BeaconSpecialization = 'none' | 'efficiency' | 'range' | 'stability';
+export type BeaconSpecialization =
+  | 'none'
+  | 'efficiency'
+  | 'range'
+  | 'stability';
 export type BeaconStatus = 'active' | 'inactive' | 'upgrading' | 'corrupted';
 
 export interface Probe {
@@ -101,7 +105,11 @@ export interface GalaxySector {
   threatLevel: number;
 }
 
-export type SectorStatus = 'unexplored' | 'discovered' | 'colonized' | 'abandoned';
+export type SectorStatus =
+  | 'unexplored'
+  | 'discovered'
+  | 'colonized'
+  | 'abandoned';
 
 export interface Star {
   id: string;
@@ -115,7 +123,12 @@ export interface Star {
 }
 
 export type StarStatus = 'dying' | 'stable' | 'reignited';
-export type StarType = 'red_dwarf' | 'yellow_dwarf' | 'blue_giant' | 'white_dwarf' | 'neutron';
+export type StarType =
+  | 'red_dwarf'
+  | 'yellow_dwarf'
+  | 'blue_giant'
+  | 'white_dwarf'
+  | 'neutron';
 
 export interface UpgradeData {
   playerUpgrades: Record<string, PlayerUpgrade>;

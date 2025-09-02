@@ -26,7 +26,7 @@ export class BeaconFactory {
    */
   public static create(options: BeaconCreateOptions): Beacon {
     const id = options.id ?? BeaconFactory.generateId();
-    
+
     const beaconData: Partial<BeaconEntity> & {
       id: string;
       position: Point2D;
@@ -57,13 +57,15 @@ export class BeaconFactory {
   /**
    * Create multiple beacons from save data
    */
-  public static fromSaveDataBatch(beaconData: Record<string, BeaconEntity>): Record<string, Beacon> {
+  public static fromSaveDataBatch(
+    beaconData: Record<string, BeaconEntity>
+  ): Record<string, Beacon> {
     const beacons: Record<string, Beacon> = {};
-    
+
     Object.values(beaconData).forEach(data => {
       beacons[data.id] = BeaconFactory.fromSaveData(data);
     });
-    
+
     return beacons;
   }
 
@@ -110,12 +112,19 @@ export class BeaconFactory {
     const reasons: string[] = [];
 
     // Validate position
-    if (!options.position || typeof options.position.x !== 'number' || typeof options.position.y !== 'number') {
+    if (
+      !options.position ||
+      typeof options.position.x !== 'number' ||
+      typeof options.position.y !== 'number'
+    ) {
       reasons.push('Invalid position coordinates');
     }
 
     // Validate type
-    if (!options.type || !['pioneer', 'harvester', 'architect'].includes(options.type)) {
+    if (
+      !options.type ||
+      !['pioneer', 'harvester', 'architect'].includes(options.type)
+    ) {
       reasons.push('Invalid beacon type');
     }
 
@@ -149,7 +158,7 @@ export class BeaconFactory {
     const types: BeaconType[] = ['pioneer', 'harvester', 'architect'];
     const randomType = types[Math.floor(Math.random() * types.length)];
     const randomLevel = Math.floor(Math.random() * 10) + 1;
-    
+
     const testPosition = position ?? {
       x: Math.random() * 1000,
       y: Math.random() * 1000,

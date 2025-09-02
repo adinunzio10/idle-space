@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { 
+import {
   batteryOptimizationManager,
   BatteryOptimizationState,
-  BatteryMetrics
+  BatteryMetrics,
 } from '../utils/performance/BatteryOptimizationManager';
 import { useBatteryOptimization as useBaseBatteryOptimization } from '../utils/performance/BatteryOptimizationManager';
 
@@ -21,7 +21,10 @@ export function useBatteryOptimizationWithSettings() {
     const config = {
       enabled: settings.batteryOptimizationEnabled,
       lowBatteryThreshold: settings.lowBatteryThreshold,
-      criticalBatteryThreshold: Math.max(0.05, settings.lowBatteryThreshold - 0.15), // 15% below low threshold
+      criticalBatteryThreshold: Math.max(
+        0.05,
+        settings.lowBatteryThreshold - 0.15
+      ), // 15% below low threshold
       adaptiveFrameRate: settings.adaptiveFrameRateEnabled,
       backgroundThrottling: settings.backgroundThrottlingEnabled,
       visualEffectsReduction: true, // Always enable when optimizing
@@ -41,7 +44,8 @@ export function useBatteryOptimizationWithSettings() {
     state,
     metrics,
     isOptimizationEnabled: settings.batteryOptimizationEnabled,
-    recommendations: batteryOptimizationManager.getOptimizationRecommendations(),
+    recommendations:
+      batteryOptimizationManager.getOptimizationRecommendations(),
   };
 }
 
@@ -54,9 +58,11 @@ export function useBatteryAwareVisualEffects() {
 
   return {
     enableVisualEffects: state.visualEffectsEnabled,
-    enableParticleEffects: state.visualEffectsEnabled && state.batteryLevel > 0.3,
+    enableParticleEffects:
+      state.visualEffectsEnabled && state.batteryLevel > 0.3,
     enableGlowEffects: state.visualEffectsEnabled && state.batteryLevel > 0.2,
-    enableAnimations: state.visualEffectsEnabled || state.currentOptimizationLevel === 'none',
+    enableAnimations:
+      state.visualEffectsEnabled || state.currentOptimizationLevel === 'none',
     animationScale: state.currentOptimizationLevel === 'high' ? 0.5 : 1.0,
   };
 }

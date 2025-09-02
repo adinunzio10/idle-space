@@ -4,7 +4,11 @@ import { ResourceType } from './resources';
 /**
  * Strategy for combining bonuses from multiple patterns
  */
-export type BonusStrategy = 'multiplicative' | 'additive' | 'maximum' | 'weighted';
+export type BonusStrategy =
+  | 'multiplicative'
+  | 'additive'
+  | 'maximum'
+  | 'weighted';
 
 /**
  * Individual beacon's contribution to bonus calculations
@@ -45,13 +49,13 @@ export interface PatternOverlap {
 /**
  * Types of pattern overlaps
  */
-export type OverlapType = 
-  | 'none'           // No shared beacons
-  | 'vertex'         // Share 1-2 vertices
-  | 'edge'           // Share an entire edge
-  | 'partial'        // Share multiple vertices but not nested
-  | 'nested'         // One pattern completely inside another
-  | 'identical';     // Same pattern (duplicate)
+export type OverlapType =
+  | 'none' // No shared beacons
+  | 'vertex' // Share 1-2 vertices
+  | 'edge' // Share an entire edge
+  | 'partial' // Share multiple vertices but not nested
+  | 'nested' // One pattern completely inside another
+  | 'identical'; // Same pattern (duplicate)
 
 /**
  * Complete bonus calculation result
@@ -153,20 +157,20 @@ export const DEFAULT_BONUS_CONFIG: BonusCalculationConfig = {
  * Beacon type multipliers for bonus calculations
  */
 export const BEACON_TYPE_MULTIPLIERS = {
-  pioneer: 1.0,     // Base multiplier
-  harvester: 1.2,   // 20% bonus for resource generation
-  architect: 1.1,   // 10% bonus for pattern efficiency
+  pioneer: 1.0, // Base multiplier
+  harvester: 1.2, // 20% bonus for resource generation
+  architect: 1.1, // 10% bonus for pattern efficiency
 } as const;
 
 /**
  * Connection quality bonuses
  */
 export const CONNECTION_QUALITY_BONUSES = {
-  1: 1.0,  // Weak connections (level 1 beacons)
+  1: 1.0, // Weak connections (level 1 beacons)
   2: 1.05, // 5% bonus
-  3: 1.1,  // 10% bonus
+  3: 1.1, // 10% bonus
   4: 1.15, // 15% bonus
-  5: 1.2,  // 20% bonus (max level connections)
+  5: 1.2, // 20% bonus (max level connections)
 } as const;
 
 /**
@@ -174,22 +178,22 @@ export const CONNECTION_QUALITY_BONUSES = {
  */
 export const OVERLAP_MODIFIERS = {
   none: 1.0,
-  vertex: 0.95,    // 5% penalty for vertex sharing
-  edge: 0.9,       // 10% penalty for edge sharing
-  partial: 0.85,   // 15% penalty for partial overlap
-  nested: 1.1,     // 10% bonus for nested patterns
-  identical: 0.5,  // 50% penalty for identical patterns
+  vertex: 0.95, // 5% penalty for vertex sharing
+  edge: 0.9, // 10% penalty for edge sharing
+  partial: 0.85, // 15% penalty for partial overlap
+  nested: 1.1, // 10% bonus for nested patterns
+  identical: 0.5, // 50% penalty for identical patterns
 } as const;
 
 /**
  * Resource type weights for bonus application
  */
 export const RESOURCE_BONUS_WEIGHTS = {
-  quantumData: 1.0,        // Primary resource, full bonus
-  stellarEssence: 0.8,     // Secondary resource, 80% bonus
-  voidFragments: 0.6,      // Secondary resource, 60% bonus
-  resonanceCrystals: 1.5,  // Special resource, 150% bonus from patterns
-  chronosParticles: 0.3,   // Premium resource, limited bonus
+  quantumData: 1.0, // Primary resource, full bonus
+  stellarEssence: 0.8, // Secondary resource, 80% bonus
+  voidFragments: 0.6, // Secondary resource, 60% bonus
+  resonanceCrystals: 1.5, // Special resource, 150% bonus from patterns
+  chronosParticles: 0.3, // Premium resource, limited bonus
 } as const;
 
 /**

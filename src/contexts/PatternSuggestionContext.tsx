@@ -1,12 +1,23 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from 'react';
 import { Beacon } from '../types/galaxy';
-import { 
-  PatternSuggestion, 
-  PatternSuggestionState, 
+import {
+  PatternSuggestion,
+  PatternSuggestionState,
   SuggestionInteractionEvent,
-  PatternCompletionAnalysis 
+  PatternCompletionAnalysis,
 } from '../types/spatialHashing';
-import { PatternDetector, buildConnectionsFromBeacons } from '../utils/patterns/detection';
+import {
+  PatternDetector,
+  buildConnectionsFromBeacons,
+} from '../utils/patterns/detection';
 import { useSettings } from './SettingsContext';
 
 interface PatternSuggestionContextValue {
@@ -19,7 +30,7 @@ interface PatternSuggestionContextValue {
   dismissedSuggestions: Set<string>;
   displayMode: PatternSuggestionState['displayMode'];
   suggestions: PatternSuggestion[];
-  
+
   // Actions
   showPopup: () => void;
   hidePopup: () => void;
@@ -30,88 +41,97 @@ interface PatternSuggestionContextValue {
   hoverSuggestion: (suggestion: PatternSuggestion | null) => void;
   dismissSuggestion: (suggestionId: string) => void;
   setDisplayMode: (mode: PatternSuggestionState['displayMode']) => void;
-  
+
   // Internal methods for updating beacons and calculating patterns
   updateBeacons: (beacons: Beacon[]) => void;
   onSuggestionInteraction: (event: SuggestionInteractionEvent) => void;
 }
 
-const PatternSuggestionContext = createContext<PatternSuggestionContextValue | null>(null);
+const PatternSuggestionContext =
+  createContext<PatternSuggestionContextValue | null>(null);
 
 interface PatternSuggestionProviderProps {
   children: ReactNode;
   initialBeacons?: Beacon[];
 }
 
-export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps> = ({ 
-  children, 
-  initialBeacons = [] 
-}) => {
+export const PatternSuggestionProvider: React.FC<
+  PatternSuggestionProviderProps
+> = ({ children, initialBeacons = [] }) => {
   const { settings } = useSettings();
   // Core suggestion state
-  const [suggestionState, setSuggestionState] = useState<PatternSuggestionState>({
-    popupVisible: false,
-    mapVisualizationsVisible: true,
-    selectedSuggestion: null,
-    hoveredSuggestion: null,
-    dismissedSuggestions: new Set(),
-    autoHideTimer: null,
-    displayMode: 'best',
-  });
-  
+  const [suggestionState, setSuggestionState] =
+    useState<PatternSuggestionState>({
+      popupVisible: false,
+      mapVisualizationsVisible: true,
+      selectedSuggestion: null,
+      hoveredSuggestion: null,
+      dismissedSuggestions: new Set(),
+      autoHideTimer: null,
+      displayMode: 'best',
+    });
+
   // Beacon tracking for pattern calculation
   const [beacons, setBeacons] = useState<Beacon[]>(initialBeacons);
   const [patternCount, setPatternCount] = useState<number>(0);
   const [suggestions, setSuggestions] = useState<PatternSuggestion[]>([]);
-  
+
   // Pattern detector instance - memoized to prevent recreation
   const patternDetector = useMemo(() => new PatternDetector(), []);
 
   // Calculate pattern suggestion count using PatternDetector's suggestion engine
-  const calculatePatternCount = useCallback((currentBeacons: Beacon[]): number => {
-    // Return 0 if pattern suggestions are disabled
-    if (!settings.patternSuggestionsEnabled) {
-      return 0;
-    }
-    
-    // Need at least 2 beacons to have suggestions for completing patterns
-    if (currentBeacons.length < 2) {
-      return 0;
-    }
-    
-    try {
-      // Get pattern suggestions instead of completed patterns
-      const suggestions = patternDetector.getPatternSuggestions(currentBeacons);
-      
-      return suggestions.length;
-    } catch (error) {
-      console.warn('Failed to get pattern suggestions:', error);
-      return 0;
-    }
-  }, [patternDetector, settings.patternSuggestionsEnabled]);
-  
-  // Update beacons and recalculate pattern suggestions
-  const updateBeacons = useCallback((newBeacons: Beacon[]) => {
-    setBeacons(newBeacons);
-    
-    // Calculate pattern suggestions
-    const newPatternCount = calculatePatternCount(newBeacons);
-    setPatternCount(newPatternCount);
-    
-    // Only update suggestions if pattern suggestions are enabled
-    if (settings.patternSuggestionsEnabled) {
+  const calculatePatternCount = useCallback(
+    (currentBeacons: Beacon[]): number => {
+      // Return 0 if pattern suggestions are disabled
+      if (!settings.patternSuggestionsEnabled) {
+        return 0;
+      }
+
+      // Need at least 2 beacons to have suggestions for completing patterns
+      if (currentBeacons.length < 2) {
+        return 0;
+      }
+
       try {
-        const newSuggestions = patternDetector.getPatternSuggestions(newBeacons);
-        setSuggestions(newSuggestions);
+        // Get pattern suggestions instead of completed patterns
+        const suggestions =
+          patternDetector.getPatternSuggestions(currentBeacons);
+
+        return suggestions.length;
       } catch (error) {
-        console.warn('Failed to update suggestions array:', error);
+        console.warn('Failed to get pattern suggestions:', error);
+        return 0;
+      }
+    },
+    [patternDetector, settings.patternSuggestionsEnabled]
+  );
+
+  // Update beacons and recalculate pattern suggestions
+  const updateBeacons = useCallback(
+    (newBeacons: Beacon[]) => {
+      setBeacons(newBeacons);
+
+      // Calculate pattern suggestions
+      const newPatternCount = calculatePatternCount(newBeacons);
+      setPatternCount(newPatternCount);
+
+      // Only update suggestions if pattern suggestions are enabled
+      if (settings.patternSuggestionsEnabled) {
+        try {
+          const newSuggestions =
+            patternDetector.getPatternSuggestions(newBeacons);
+          setSuggestions(newSuggestions);
+        } catch (error) {
+          console.warn('Failed to update suggestions array:', error);
+          setSuggestions([]);
+        }
+      } else {
+        // Clear suggestions if disabled
         setSuggestions([]);
       }
-    } else {
-      // Clear suggestions if disabled
-      setSuggestions([]);
-    }
-  }, [calculatePatternCount, patternDetector, settings.patternSuggestionsEnabled]);
+    },
+    [calculatePatternCount, patternDetector, settings.patternSuggestionsEnabled]
+  );
 
   // Effect to handle pattern suggestions setting changes
   useEffect(() => {
@@ -129,7 +149,7 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
       // Recalculate suggestions when re-enabled
       const newPatternCount = calculatePatternCount(beacons);
       setPatternCount(newPatternCount);
-      
+
       try {
         const newSuggestions = patternDetector.getPatternSuggestions(beacons);
         setSuggestions(newSuggestions);
@@ -138,48 +158,68 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
         setSuggestions([]);
       }
     }
-  }, [settings.patternSuggestionsEnabled, beacons, calculatePatternCount, patternDetector]);
-  
+  }, [
+    settings.patternSuggestionsEnabled,
+    beacons,
+    calculatePatternCount,
+    patternDetector,
+  ]);
+
   // Pattern suggestion actions
-  const actions = useMemo(() => ({
-    showPopup: () => setSuggestionState(s => ({ ...s, popupVisible: true })),
-    hidePopup: () => setSuggestionState(s => ({ ...s, popupVisible: false })),
-    showMapVisualizations: () => setSuggestionState(s => ({ ...s, mapVisualizationsVisible: true })),
-    hideMapVisualizations: () => setSuggestionState(s => ({ ...s, mapVisualizationsVisible: false })),
-    toggleMapVisualizations: () => setSuggestionState(s => ({ ...s, mapVisualizationsVisible: !s.mapVisualizationsVisible })),
-    selectSuggestion: (suggestion: PatternSuggestion | null) => 
-      setSuggestionState(s => ({ ...s, selectedSuggestion: suggestion })),
-    hoverSuggestion: (suggestion: PatternSuggestion | null) => 
-      setSuggestionState(s => ({ ...s, hoveredSuggestion: suggestion })),
-    dismissSuggestion: (suggestionId: string) => 
-      setSuggestionState(s => ({ 
-        ...s, 
-        dismissedSuggestions: new Set([...s.dismissedSuggestions, suggestionId]) 
-      })),
-    setDisplayMode: (mode: PatternSuggestionState['displayMode']) => 
-      setSuggestionState(s => ({ ...s, displayMode: mode })),
-  }), []);
-  
+  const actions = useMemo(
+    () => ({
+      showPopup: () => setSuggestionState(s => ({ ...s, popupVisible: true })),
+      hidePopup: () => setSuggestionState(s => ({ ...s, popupVisible: false })),
+      showMapVisualizations: () =>
+        setSuggestionState(s => ({ ...s, mapVisualizationsVisible: true })),
+      hideMapVisualizations: () =>
+        setSuggestionState(s => ({ ...s, mapVisualizationsVisible: false })),
+      toggleMapVisualizations: () =>
+        setSuggestionState(s => ({
+          ...s,
+          mapVisualizationsVisible: !s.mapVisualizationsVisible,
+        })),
+      selectSuggestion: (suggestion: PatternSuggestion | null) =>
+        setSuggestionState(s => ({ ...s, selectedSuggestion: suggestion })),
+      hoverSuggestion: (suggestion: PatternSuggestion | null) =>
+        setSuggestionState(s => ({ ...s, hoveredSuggestion: suggestion })),
+      dismissSuggestion: (suggestionId: string) =>
+        setSuggestionState(s => ({
+          ...s,
+          dismissedSuggestions: new Set([
+            ...s.dismissedSuggestions,
+            suggestionId,
+          ]),
+        })),
+      setDisplayMode: (mode: PatternSuggestionState['displayMode']) =>
+        setSuggestionState(s => ({ ...s, displayMode: mode })),
+    }),
+    []
+  );
+
   // Handle suggestion interactions
-  const onSuggestionInteraction = useCallback((event: SuggestionInteractionEvent) => {
-    switch (event.type) {
-      case 'select':
-        actions.selectSuggestion(event.suggestion);
-        break;
-      case 'dismiss':
-        actions.dismissSuggestion(event.suggestion.id);
-        break;
-      case 'hover':
-        actions.hoverSuggestion(event.suggestion);
-        break;
-    }
-  }, [actions]);
-  
+  const onSuggestionInteraction = useCallback(
+    (event: SuggestionInteractionEvent) => {
+      switch (event.type) {
+        case 'select':
+          actions.selectSuggestion(event.suggestion);
+          break;
+        case 'dismiss':
+          actions.dismissSuggestion(event.suggestion.id);
+          break;
+        case 'hover':
+          actions.hoverSuggestion(event.suggestion);
+          break;
+      }
+    },
+    [actions]
+  );
+
   // Initialize pattern suggestion count on mount and when beacons change
   useEffect(() => {
     const newPatternCount = calculatePatternCount(beacons);
     setPatternCount(newPatternCount);
-    
+
     // Also update suggestions array
     try {
       const newSuggestions = patternDetector.getPatternSuggestions(beacons);
@@ -189,7 +229,7 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
       setSuggestions([]);
     }
   }, [beacons, calculatePatternCount, patternDetector]);
-  
+
   const contextValue: PatternSuggestionContextValue = {
     // State
     patternCount,
@@ -200,10 +240,10 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
     dismissedSuggestions: suggestionState.dismissedSuggestions,
     displayMode: suggestionState.displayMode,
     suggestions,
-    
+
     // Actions
     ...actions,
-    
+
     // Internal methods
     updateBeacons,
     onSuggestionInteraction,
@@ -219,7 +259,9 @@ export const PatternSuggestionProvider: React.FC<PatternSuggestionProviderProps>
 export const usePatternSuggestions = (): PatternSuggestionContextValue => {
   const context = useContext(PatternSuggestionContext);
   if (!context) {
-    throw new Error('usePatternSuggestions must be used within a PatternSuggestionProvider');
+    throw new Error(
+      'usePatternSuggestions must be used within a PatternSuggestionProvider'
+    );
   }
   return context;
 };
@@ -232,16 +274,16 @@ export const usePatternCount = () => {
 
 // Convenience hook for pattern visibility controls
 export const usePatternVisibility = () => {
-  const { 
-    mapVisualizationsVisible, 
+  const {
+    mapVisualizationsVisible,
     popupVisible,
-    showMapVisualizations, 
-    hideMapVisualizations, 
+    showMapVisualizations,
+    hideMapVisualizations,
     toggleMapVisualizations,
     showPopup,
-    hidePopup
+    hidePopup,
   } = usePatternSuggestions();
-  
+
   return {
     mapVisualizationsVisible,
     popupVisible,
@@ -262,7 +304,7 @@ export const usePatternSuggestionActions = () => {
     setDisplayMode,
     onSuggestionInteraction,
   } = usePatternSuggestions();
-  
+
   return {
     selectSuggestion,
     hoverSuggestion,

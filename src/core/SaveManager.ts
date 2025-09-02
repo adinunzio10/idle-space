@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { AsyncStorageAdapter } from '../storage/adapters/AsyncStorageAdapter';
 import { SQLiteAdapter } from '../storage/adapters/SQLiteAdapter';
 import { StorageError } from '../storage/adapters/StorageAdapter';
@@ -26,12 +27,13 @@ export interface SaveManagerConfig {
 export class SaveManager {
   private static instance: SaveManager | null = null;
   private asyncStorage: AsyncStorageAdapter;
-  private sqliteStorage: SQLiteAdapter;
+  private sqliteStorage: SQLiteAdapter | null = null;
   private migrationManager: MigrationManager;
-  private databaseSchema: DatabaseSchema;
+  private databaseSchema: DatabaseSchema | null = null;
   private autoSaveTimer: NodeJS.Timeout | null = null;
   private isInitialized = false;
   private currentGameState: GameState | null = null;
+  private isWebPlatform = Platform.OS === 'web';
 
   private readonly config: SaveManagerConfig = {
     useCompression: true,
@@ -42,10 +44,15 @@ export class SaveManager {
 
   private constructor() {
     this.asyncStorage = new AsyncStorageAdapter();
-    this.sqliteStorage = new SQLiteAdapter();
+
+    // Only initialize SQLite on native platforms
+    if (!this.isWebPlatform) {
+      this.sqliteStorage = new SQLiteAdapter();
+      this.databaseSchema = new DatabaseSchema(this.sqliteStorage);
+    }
+
     this.migrationManager = new MigrationManager();
-    this.databaseSchema = new DatabaseSchema(this.sqliteStorage);
-    
+
     // Register all available migrations
     registerAllMigrations(this.migrationManager);
   }
@@ -60,33 +67,40 @@ export class SaveManager {
   async initialize(): Promise<void> {
     try {
       this.log('Initializing SaveManager...');
-      
-      await Promise.all([
-        this.asyncStorage.initialize(),
-        this.sqliteStorage.initialize(),
-      ]);
 
-      // Initialize database schema
-      await this.databaseSchema.initializeSchema();
+      // Initialize AsyncStorage
+      await this.asyncStorage.initialize();
+
+      // Only initialize SQLite on native platforms
+      if (!this.isWebPlatform && this.sqliteStorage) {
+        await this.sqliteStorage.initialize();
+
+        // Initialize database schema
+        if (this.databaseSchema) {
+          await this.databaseSchema.initializeSchema();
+        }
+      }
 
       this.isInitialized = true;
-      this.log('SaveManager initialized successfully');
+      this.log(
+        `SaveManager initialized successfully (platform: ${Platform.OS})`
+      );
     } catch (error) {
       this.logError('Failed to initialize SaveManager', error);
       throw new StorageError(
         'SaveManager initialization failed',
         'SAVE_MANAGER_INIT_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   async saveGameState(gameState: GameState): Promise<void> {
     this.ensureInitialized();
-    
+
     try {
       this.log('Saving game state...');
-      
+
       // Update save metadata
       gameState.lastSaved = Date.now();
       gameState.saveCount++;
@@ -100,15 +114,19 @@ export class SaveManager {
       // Create backup before saving
       await this.createBackup();
 
-      // Save to both storage systems for redundancy
-      await Promise.all([
-        this.saveToAsyncStorage(saveFile),
-        this.saveToSQLite(saveFile),
-      ]);
+      // Save to available storage systems
+      const savePromises = [this.saveToAsyncStorage(saveFile)];
+
+      // Only save to SQLite on native platforms
+      if (!this.isWebPlatform && this.sqliteStorage) {
+        savePromises.push(this.saveToSQLite(saveFile));
+      }
+
+      await Promise.all(savePromises);
 
       // Update current state
       this.currentGameState = { ...gameState };
-      
+
       // Update player statistics
       if (this.currentGameState.player.statistics) {
         this.currentGameState.player.statistics.totalSaveCount++;
@@ -120,21 +138,29 @@ export class SaveManager {
       throw new StorageError(
         'Failed to save game state',
         'SAVE_GAME_STATE_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
 
   async loadGameState(): Promise<GameState | null> {
     this.ensureInitialized();
-    
+
     try {
       this.log('Loading game state...');
-      
-      // Try to load from SQLite first, then AsyncStorage as fallback
-      let saveFile = await this.loadFromSQLite();
-      if (!saveFile) {
-        this.log('SQLite load failed, trying AsyncStorage...');
+
+      // Load from available storage systems
+      let saveFile: SaveFile | null = null;
+
+      if (!this.isWebPlatform && this.sqliteStorage) {
+        // Try SQLite first on native platforms
+        saveFile = await this.loadFromSQLite();
+        if (!saveFile) {
+          this.log('SQLite load failed, trying AsyncStorage...');
+          saveFile = await this.loadFromAsyncStorage();
+        }
+      } else {
+        // Use AsyncStorage on web
         saveFile = await this.loadFromAsyncStorage();
       }
 
@@ -152,15 +178,19 @@ export class SaveManager {
       }
 
       // Handle version migration if needed
-      const migratedState = await this.migrationManager.migrateGameState(saveFile.gameState);
-      
+      const migratedState = await this.migrationManager.migrateGameState(
+        saveFile.gameState
+      );
+
       this.currentGameState = migratedState;
-      this.log(`Game state loaded successfully (save #${migratedState.saveCount})`);
-      
+      this.log(
+        `Game state loaded successfully (save #${migratedState.saveCount})`
+      );
+
       return migratedState;
     } catch (error) {
       this.logError('Failed to load game state', error);
-      
+
       // Attempt recovery
       try {
         const recoveredState = await this.recoverFromCorruption();
@@ -171,11 +201,11 @@ export class SaveManager {
       } catch (recoveryError) {
         this.logError('Recovery also failed', recoveryError);
       }
-      
+
       throw new StorageError(
         'Failed to load game state',
         'LOAD_GAME_STATE_ERROR',
-        error as Error,
+        error as Error
       );
     }
   }
@@ -191,10 +221,10 @@ export class SaveManager {
       };
 
       await this.asyncStorage.set(backupKey, saveFile);
-      
+
       // Clean up old backups
       await this.cleanupOldBackups();
-      
+
       this.log(`Backup created: ${backupKey}`);
     } catch (error) {
       this.logError('Failed to create backup', error);
@@ -204,15 +234,16 @@ export class SaveManager {
 
   async recoverFromCorruption(): Promise<GameState | null> {
     this.log('Attempting corruption recovery...');
-    
+
     try {
       // Try to load from backups
       const backupKeys = await this.getBackupKeys();
-      
-      for (const backupKey of backupKeys.reverse()) { // Try newest first
+
+      for (const backupKey of backupKeys.reverse()) {
+        // Try newest first
         try {
           const backup = await this.asyncStorage.get<SaveFile>(backupKey);
-          if (backup && await this.validateSaveFile(backup)) {
+          if (backup && (await this.validateSaveFile(backup))) {
             this.log(`Recovered from backup: ${backupKey}`);
             return backup.gameState;
           }
@@ -232,7 +263,7 @@ export class SaveManager {
 
   async startAutoSave(): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.autoSaveTimer) {
       clearInterval(this.autoSaveTimer);
     }
@@ -270,18 +301,22 @@ export class SaveManager {
   // Private methods
 
   private async saveToAsyncStorage(saveFile: SaveFile): Promise<void> {
-    const data = this.config.useCompression 
+    const data = this.config.useCompression
       ? CompressionUtils.compressObject(saveFile)
       : JSON.stringify(saveFile);
-    
+
     await this.asyncStorage.set('gameState', data);
   }
 
   private async saveToSQLite(saveFile: SaveFile): Promise<void> {
-    const data = this.config.useCompression 
+    if (!this.sqliteStorage) {
+      throw new StorageError('SQLite not available', 'SQLITE_NOT_AVAILABLE');
+    }
+
+    const data = this.config.useCompression
       ? CompressionUtils.compressObject(saveFile)
       : JSON.stringify(saveFile);
-    
+
     await this.sqliteStorage.set('gameState', data);
   }
 
@@ -289,23 +324,27 @@ export class SaveManager {
     const data = await this.asyncStorage.get<string>('gameState');
     if (!data) return null;
 
-    return this.config.useCompression 
+    return this.config.useCompression
       ? CompressionUtils.decompressObject<SaveFile>(data)
       : JSON.parse(data);
   }
 
   private async loadFromSQLite(): Promise<SaveFile | null> {
+    if (!this.sqliteStorage) {
+      return null;
+    }
+
     const data = await this.sqliteStorage.get<string>('gameState');
     if (!data) return null;
 
-    return this.config.useCompression 
+    return this.config.useCompression
       ? CompressionUtils.decompressObject<SaveFile>(data)
       : JSON.parse(data);
   }
 
   private createSaveMetadata(gameState: GameState): SaveMetadata {
     const jsonSize = JSON.stringify(gameState).length;
-    
+
     return {
       version: CURRENT_SAVE_VERSION,
       timestamp: Date.now(),
@@ -321,7 +360,7 @@ export class SaveManager {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString(16);
@@ -331,7 +370,7 @@ export class SaveManager {
     try {
       // Check required fields
       if (!saveFile.metadata || !saveFile.gameState) return false;
-      
+
       // Validate checksum
       const expectedChecksum = this.generateChecksum(saveFile.gameState);
       if (saveFile.metadata.checksum !== expectedChecksum) {
@@ -352,7 +391,6 @@ export class SaveManager {
     }
   }
 
-
   private async getBackupKeys(): Promise<string[]> {
     const keys = await this.asyncStorage.getAllKeys();
     return keys
@@ -367,14 +405,17 @@ export class SaveManager {
   private async cleanupOldBackups(): Promise<void> {
     try {
       const backupKeys = await this.getBackupKeys();
-      
+
       if (backupKeys.length > this.config.maxBackups) {
-        const keysToDelete = backupKeys.slice(0, backupKeys.length - this.config.maxBackups);
-        
+        const keysToDelete = backupKeys.slice(
+          0,
+          backupKeys.length - this.config.maxBackups
+        );
+
         for (const key of keysToDelete) {
           await this.asyncStorage.remove(key);
         }
-        
+
         this.log(`Cleaned up ${keysToDelete.length} old backups`);
       }
     } catch (error) {
@@ -385,7 +426,7 @@ export class SaveManager {
   private createNewGameState(): GameState {
     const now = Date.now();
     const playerId = `player_${now}`;
-    
+
     const player: Player = {
       id: playerId,
       name: 'Commander',
@@ -423,7 +464,7 @@ export class SaveManager {
     if (!this.isInitialized) {
       throw new StorageError(
         'SaveManager not initialized',
-        'SAVE_MANAGER_NOT_INITIALIZED',
+        'SAVE_MANAGER_NOT_INITIALIZED'
       );
     }
   }

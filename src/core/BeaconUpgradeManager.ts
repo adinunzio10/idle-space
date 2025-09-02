@@ -1,5 +1,5 @@
-import { 
-  BeaconSpecialization, 
+import {
+  BeaconSpecialization,
   BeaconUpgradeOption,
   SPECIALIZATION_OPTIONS,
   BEACON_PLACEMENT_CONFIG,
@@ -24,11 +24,17 @@ export interface UpgradeStats {
 export class BeaconUpgradeManager {
   private upgradeHistory: UpgradeEvent[] = [];
   private pendingSpecializations: Map<string, number> = new Map(); // beacon ID -> level when choice became available
-  private onSpecializationNeeded?: (beaconId: string, options: BeaconUpgradeOption[]) => void;
+  private onSpecializationNeeded?: (
+    beaconId: string,
+    options: BeaconUpgradeOption[]
+  ) => void;
   private onUpgradeCompleted?: (event: UpgradeEvent) => void;
 
   constructor(config?: {
-    onSpecializationNeeded?: (beaconId: string, options: BeaconUpgradeOption[]) => void;
+    onSpecializationNeeded?: (
+      beaconId: string,
+      options: BeaconUpgradeOption[]
+    ) => void;
     onUpgradeCompleted?: (event: UpgradeEvent) => void;
   }) {
     this.onSpecializationNeeded = config?.onSpecializationNeeded;
@@ -38,13 +44,21 @@ export class BeaconUpgradeManager {
   /**
    * Process automatic leveling for a beacon based on resources generated
    */
-  public processAutoLeveling(beacon: Beacon, resourcesGenerated: number): boolean {
-    const requiredResources = this.getResourcesRequiredForNextLevel(beacon.level);
-    
-    if (resourcesGenerated >= requiredResources && beacon.level < BEACON_PLACEMENT_CONFIG.MAX_LEVEL) {
+  public processAutoLeveling(
+    beacon: Beacon,
+    resourcesGenerated: number
+  ): boolean {
+    const requiredResources = this.getResourcesRequiredForNextLevel(
+      beacon.level
+    );
+
+    if (
+      resourcesGenerated >= requiredResources &&
+      beacon.level < BEACON_PLACEMENT_CONFIG.MAX_LEVEL
+    ) {
       return this.levelUpBeacon(beacon);
     }
-    
+
     return false;
   }
 
@@ -53,25 +67,25 @@ export class BeaconUpgradeManager {
    */
   public levelUpBeacon(beacon: Beacon): boolean {
     const fromLevel = beacon.level;
-    
+
     try {
       beacon.levelUp();
-      
+
       const event: UpgradeEvent = {
         beaconId: beacon.id,
         fromLevel,
         toLevel: beacon.level,
         timestamp: Date.now(),
       };
-      
+
       this.upgradeHistory.push(event);
-      
+
       // Check if specialization choice is needed
       if (beacon.needsSpecializationChoice()) {
         this.pendingSpecializations.set(beacon.id, beacon.level);
         this.triggerSpecializationChoice(beacon.id);
       }
-      
+
       this.onUpgradeCompleted?.(event);
       return true;
     } catch (error) {
@@ -84,24 +98,24 @@ export class BeaconUpgradeManager {
    * Apply specialization to a beacon
    */
   public applySpecialization(
-    beacon: Beacon, 
+    beacon: Beacon,
     specialization: BeaconSpecialization
   ): boolean {
     try {
       beacon.applySpecialization(specialization);
-      
+
       // Update upgrade history
       const lastUpgrade = this.upgradeHistory.find(
         event => event.beaconId === beacon.id && !event.specializationChosen
       );
-      
+
       if (lastUpgrade) {
         lastUpgrade.specializationChosen = specialization;
       }
-      
+
       // Remove from pending
       this.pendingSpecializations.delete(beacon.id);
-      
+
       return true;
     } catch (error) {
       console.error('Failed to apply specialization:', error);
@@ -116,7 +130,7 @@ export class BeaconUpgradeManager {
     if (!beacon.needsSpecializationChoice()) {
       return [];
     }
-    
+
     return [...SPECIALIZATION_OPTIONS];
   }
 
@@ -214,9 +228,9 @@ export class BeaconUpgradeManager {
   } {
     return {
       history: this.upgradeHistory,
-      pendingSpecializations: Array.from(this.pendingSpecializations.entries()).map(
-        ([beaconId, level]) => ({ beaconId, level })
-      ),
+      pendingSpecializations: Array.from(
+        this.pendingSpecializations.entries()
+      ).map(([beaconId, level]) => ({ beaconId, level })),
     };
   }
 
@@ -230,7 +244,7 @@ export class BeaconUpgradeManager {
     if (data.history) {
       this.upgradeHistory = data.history;
     }
-    
+
     if (data.pendingSpecializations) {
       this.pendingSpecializations.clear();
       data.pendingSpecializations.forEach(({ beaconId, level }) => {
@@ -248,21 +262,22 @@ export class BeaconUpgradeManager {
   } {
     const upgraded: string[] = [];
     const pendingSpecializations: string[] = [];
-    
+
     for (const beacon of beacons) {
       // Check if beacon should level up based on total resources generated
-      const shouldUpgrade = beacon.totalResourcesGenerated >= 
+      const shouldUpgrade =
+        beacon.totalResourcesGenerated >=
         this.getResourcesRequiredForNextLevel(beacon.level);
-      
+
       if (shouldUpgrade && this.levelUpBeacon(beacon)) {
         upgraded.push(beacon.id);
-        
+
         if (beacon.needsSpecializationChoice()) {
           pendingSpecializations.push(beacon.id);
         }
       }
     }
-    
+
     return { upgraded, pendingSpecializations };
   }
 
@@ -277,8 +292,11 @@ export class BeaconUpgradeManager {
     progress: number; // 0-1
   } {
     const resourcesNeeded = this.getResourcesRequiredForNextLevel(beacon.level);
-    const progress = Math.min(beacon.totalResourcesGenerated / resourcesNeeded, 1);
-    
+    const progress = Math.min(
+      beacon.totalResourcesGenerated / resourcesNeeded,
+      1
+    );
+
     return {
       currentLevel: beacon.level,
       nextLevel: beacon.level + 1,
@@ -295,19 +313,20 @@ export class BeaconUpgradeManager {
     if (beacon.level >= BEACON_PLACEMENT_CONFIG.MAX_LEVEL) {
       return null; // Already at max level
     }
-    
+
     const milestone = this.getNextMilestone(beacon);
-    const remainingResources = milestone.resourcesNeeded - milestone.resourcesGenerated;
-    
+    const remainingResources =
+      milestone.resourcesNeeded - milestone.resourcesGenerated;
+
     if (remainingResources <= 0) {
       return 0; // Ready now
     }
-    
+
     const generationRate = beacon.generationRate;
     if (generationRate <= 0) {
       return null; // No generation
     }
-    
+
     return remainingResources / generationRate; // Seconds until next level
   }
 
@@ -324,24 +343,30 @@ export class BeaconUpgradeManager {
   /**
    * Batch upgrade multiple beacons to specific level
    */
-  public batchUpgrade(beacons: Beacon[], targetLevel: number): {
+  public batchUpgrade(
+    beacons: Beacon[],
+    targetLevel: number
+  ): {
     success: string[];
     failed: string[];
   } {
     const success: string[] = [];
     const failed: string[] = [];
-    
+
     for (const beacon of beacons) {
       let upgraded = true;
-      
+
       try {
-        while (beacon.level < targetLevel && beacon.level < BEACON_PLACEMENT_CONFIG.MAX_LEVEL) {
+        while (
+          beacon.level < targetLevel &&
+          beacon.level < BEACON_PLACEMENT_CONFIG.MAX_LEVEL
+        ) {
           if (!this.levelUpBeacon(beacon)) {
             upgraded = false;
             break;
           }
         }
-        
+
         if (upgraded) {
           success.push(beacon.id);
         } else {
@@ -351,7 +376,7 @@ export class BeaconUpgradeManager {
         failed.push(beacon.id);
       }
     }
-    
+
     return { success, failed };
   }
 }

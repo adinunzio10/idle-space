@@ -20,7 +20,12 @@ export interface ResourceModifier {
   createdAt: number;
 }
 
-export type ResourceType = 'quantumData' | 'stellarEssence' | 'voidFragments' | 'resonanceCrystals' | 'chronosParticles';
+export type ResourceType =
+  | 'quantumData'
+  | 'stellarEssence'
+  | 'voidFragments'
+  | 'resonanceCrystals'
+  | 'chronosParticles';
 
 export interface ResourceGeneration {
   baseRate: BigNumber;
@@ -65,14 +70,16 @@ export class ResourceManager {
   }
 
   addResource(type: ResourceType, amount: BigNumber | number): void {
-    const amountBN = amount instanceof BigNumber ? amount : new BigNumber(amount);
+    const amountBN =
+      amount instanceof BigNumber ? amount : new BigNumber(amount);
     this.resources[type] = this.resources[type].plus(amountBN);
     this.resources.lastUpdated = Date.now();
     this.notifyChange();
   }
 
   subtractResource(type: ResourceType, amount: BigNumber | number): boolean {
-    const amountBN = amount instanceof BigNumber ? amount : new BigNumber(amount);
+    const amountBN =
+      amount instanceof BigNumber ? amount : new BigNumber(amount);
     if (this.resources[type].isLessThan(amountBN)) {
       return false; // Insufficient resources
     }
@@ -83,7 +90,8 @@ export class ResourceManager {
   }
 
   setResource(type: ResourceType, amount: BigNumber | number): void {
-    const amountBN = amount instanceof BigNumber ? amount : new BigNumber(amount);
+    const amountBN =
+      amount instanceof BigNumber ? amount : new BigNumber(amount);
     this.resources[type] = amountBN;
     this.resources.lastUpdated = Date.now();
     this.notifyChange();
@@ -92,18 +100,23 @@ export class ResourceManager {
   canAfford(costs: Partial<Record<ResourceType, BigNumber | number>>): boolean {
     return Object.entries(costs).every(([type, cost]) => {
       const costBN = cost instanceof BigNumber ? cost : new BigNumber(cost);
-      return this.resources[type as ResourceType].isGreaterThanOrEqualTo(costBN);
+      return this.resources[type as ResourceType].isGreaterThanOrEqualTo(
+        costBN
+      );
     });
   }
 
-  spendResources(costs: Partial<Record<ResourceType, BigNumber | number>>): boolean {
+  spendResources(
+    costs: Partial<Record<ResourceType, BigNumber | number>>
+  ): boolean {
     if (!this.canAfford(costs)) {
       return false;
     }
 
     Object.entries(costs).forEach(([type, cost]) => {
       const costBN = cost instanceof BigNumber ? cost : new BigNumber(cost);
-      this.resources[type as ResourceType] = this.resources[type as ResourceType].minus(costBN);
+      this.resources[type as ResourceType] =
+        this.resources[type as ResourceType].minus(costBN);
     });
 
     this.resources.lastUpdated = Date.now();
@@ -124,20 +137,23 @@ export class ResourceManager {
     return Array.from(this.modifiers.values()).filter(modifier => {
       // Filter by resource type if specified
       if (resourceType && modifier.type !== resourceType) return false;
-      
+
       // Check if modifier is still active (not expired)
       if (modifier.duration !== undefined) {
         const elapsed = (now - modifier.createdAt) / 1000;
         return elapsed < modifier.duration;
       }
-      
+
       return true;
     });
   }
 
-  calculateResourceGeneration(resourceType: ResourceType, baseRate: BigNumber): ResourceGeneration {
+  calculateResourceGeneration(
+    resourceType: ResourceType,
+    baseRate: BigNumber
+  ): ResourceGeneration {
     const activeModifiers = this.getActiveModifiers(resourceType);
-    
+
     let totalMultiplier = new BigNumber(1);
     let totalFlatBonus = new BigNumber(0);
 
@@ -146,7 +162,9 @@ export class ResourceManager {
       totalFlatBonus = totalFlatBonus.plus(modifier.flatBonus);
     });
 
-    const modifiedRate = baseRate.multipliedBy(totalMultiplier).plus(totalFlatBonus);
+    const modifiedRate = baseRate
+      .multipliedBy(totalMultiplier)
+      .plus(totalFlatBonus);
 
     return {
       baseRate,
@@ -211,31 +229,37 @@ export class ResourceManager {
   /**
    * Calculate the cost to place a beacon based on current beacon count and specialization
    */
-  calculateBeaconPlacementCost(beaconCount: number, specialization?: 'efficiency' | 'range' | 'stability'): { quantumData: number } {
+  calculateBeaconPlacementCost(
+    beaconCount: number,
+    specialization?: 'efficiency' | 'range' | 'stability'
+  ): { quantumData: number } {
     const baseCost = 50;
     const scalingFactor = 1.5;
-    
+
     // Calculate base escalating cost: 50 * 1.5^beacon_count
     let cost = Math.floor(baseCost * Math.pow(scalingFactor, beaconCount));
-    
+
     // Apply specialization multipliers
     if (specialization) {
       const multipliers = {
-        efficiency: 2.0,  // +100% cost
-        range: 2.5,       // +150% cost
-        stability: 3.0,   // +200% cost
+        efficiency: 2.0, // +100% cost
+        range: 2.5, // +150% cost
+        stability: 3.0, // +200% cost
       };
-      
+
       cost = Math.floor(cost * multipliers[specialization]);
     }
-    
+
     return { quantumData: cost };
   }
 
   /**
    * Check if player can afford beacon placement at current beacon count
    */
-  canAffordBeaconPlacement(beaconCount: number, specialization?: 'efficiency' | 'range' | 'stability'): boolean {
+  canAffordBeaconPlacement(
+    beaconCount: number,
+    specialization?: 'efficiency' | 'range' | 'stability'
+  ): boolean {
     const cost = this.calculateBeaconPlacementCost(beaconCount, specialization);
     return this.canAfford(cost);
   }
@@ -243,7 +267,10 @@ export class ResourceManager {
   /**
    * Spend resources for beacon placement if affordable
    */
-  spendBeaconPlacementCost(beaconCount: number, specialization?: 'efficiency' | 'range' | 'stability'): boolean {
+  spendBeaconPlacementCost(
+    beaconCount: number,
+    specialization?: 'efficiency' | 'range' | 'stability'
+  ): boolean {
     const cost = this.calculateBeaconPlacementCost(beaconCount, specialization);
     return this.spendResources(cost);
   }

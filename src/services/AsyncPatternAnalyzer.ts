@@ -47,7 +47,7 @@ export class AsyncPatternAnalyzer {
           incompletePatterns: [],
           optimalNextPlacement: null,
           totalPotentialBonus: 0,
-          averageCompletionCost: 0
+          averageCompletionCost: 0,
         });
         return;
       }
@@ -60,7 +60,7 @@ export class AsyncPatternAnalyzer {
           incompletePatterns: [],
           optimalNextPlacement: null,
           totalPotentialBonus: 0,
-          averageCompletionCost: 0
+          averageCompletionCost: 0,
         });
         return;
       }
@@ -70,13 +70,13 @@ export class AsyncPatternAnalyzer {
         id: `analysis_${now}_${Math.random()}`,
         beacons: [...beacons], // Deep copy to avoid mutation
         viewport,
-        timestamp: now
+        timestamp: now,
       };
 
       this.pendingRequest = request;
       this.pendingCallback = {
         onComplete: resolve,
-        onError: reject
+        onError: reject,
       };
 
       // Use triple deferral to ensure it runs after all UI updates
@@ -127,7 +127,9 @@ export class AsyncPatternAnalyzer {
       }
     } catch (error) {
       if (this.pendingRequest?.id === request.id) {
-        callback.onError(error instanceof Error ? error : new Error(String(error)));
+        callback.onError(
+          error instanceof Error ? error : new Error(String(error))
+        );
         this.clearPending();
       }
     } finally {

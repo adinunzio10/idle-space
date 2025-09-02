@@ -12,7 +12,12 @@ export interface GenerationSource {
   active: boolean;
 }
 
-export type GenerationSourceType = 'beacon' | 'pattern' | 'upgrade' | 'star' | 'special';
+export type GenerationSourceType =
+  | 'beacon'
+  | 'pattern'
+  | 'upgrade'
+  | 'star'
+  | 'special';
 
 export interface PatternBonus {
   id: string;
@@ -22,7 +27,13 @@ export interface PatternBonus {
   resourceTypes: ResourceType[];
 }
 
-export type PatternShape = 'triangle' | 'square' | 'pentagon' | 'hexagon' | 'line' | 'star';
+export type PatternShape =
+  | 'triangle'
+  | 'square'
+  | 'pentagon'
+  | 'hexagon'
+  | 'line'
+  | 'star';
 
 export class ResourceGenerationEngine {
   private resourceManager: ResourceManager;
@@ -58,14 +69,17 @@ export class ResourceGenerationEngine {
     // Calculate generation for each resource type
     const resourceTypes: ResourceType[] = [
       'quantumData',
-      'stellarEssence', 
+      'stellarEssence',
       'voidFragments',
       'resonanceCrystals',
-      'chronosParticles'
+      'chronosParticles',
     ];
 
     resourceTypes.forEach(resourceType => {
-      const totalGeneration = this.calculateResourceGeneration(resourceType, deltaSeconds);
+      const totalGeneration = this.calculateResourceGeneration(
+        resourceType,
+        deltaSeconds
+      );
       if (totalGeneration.isGreaterThan(0)) {
         this.resourceManager.addResource(resourceType, totalGeneration);
       }
@@ -156,12 +170,14 @@ export class ResourceGenerationEngine {
     this.generationSources.set(source.id, source);
   }
 
-  private calculateBeaconGeneration(beacon: Beacon): Partial<Record<ResourceType, BigNumber>> {
+  private calculateBeaconGeneration(
+    beacon: Beacon
+  ): Partial<Record<ResourceType, BigNumber>> {
     const generation: Partial<Record<ResourceType, BigNumber>> = {};
-    
+
     // Use the beacon's calculated generation rate
     const baseRate = new BigNumber(beacon.generationRate);
-    
+
     // Base quantum data generation for all active beacons
     generation.quantumData = baseRate;
 
@@ -183,13 +199,16 @@ export class ResourceGenerationEngine {
     return generation;
   }
 
-  private calculateResourceGeneration(resourceType: ResourceType, deltaSeconds: number): BigNumber {
+  private calculateResourceGeneration(
+    resourceType: ResourceType,
+    deltaSeconds: number
+  ): BigNumber {
     let totalGeneration = new BigNumber(0);
 
     // Sum base generation from all active sources
     this.generationSources.forEach(source => {
       if (!source.active) return;
-      
+
       const baseAmount = source.baseGeneration[resourceType];
       if (!baseAmount) return;
 
@@ -207,7 +226,10 @@ export class ResourceGenerationEngine {
     }
 
     // Apply resource modifiers from ResourceManager
-    const generationResult = this.resourceManager.calculateResourceGeneration(resourceType, totalGeneration);
+    const generationResult = this.resourceManager.calculateResourceGeneration(
+      resourceType,
+      totalGeneration
+    );
     return generationResult.modifiedRate;
   }
 
@@ -225,9 +247,9 @@ export class ResourceGenerationEngine {
 
   private detectPatternBonuses(beacons: Beacon[]): void {
     this.patternBonuses = [];
-    
+
     const activeBeacons = beacons.filter(b => b.status === 'active');
-    
+
     // Simple triangle detection
     const triangles = this.findTrianglePatterns(activeBeacons);
     triangles.forEach(triangle => {
@@ -255,7 +277,7 @@ export class ResourceGenerationEngine {
 
   private findTrianglePatterns(beacons: Beacon[]): string[][] {
     const triangles: string[][] = [];
-    
+
     // Simple implementation: check all combinations of 3 connected beacons
     for (let i = 0; i < beacons.length; i++) {
       for (let j = i + 1; j < beacons.length; j++) {
@@ -263,52 +285,63 @@ export class ResourceGenerationEngine {
           const b1 = beacons[i];
           const b2 = beacons[j];
           const b3 = beacons[k];
-          
+
           // Check if they form a connected triangle
-          if (this.areBeaconsConnected(b1, b2) && 
-              this.areBeaconsConnected(b2, b3) && 
-              this.areBeaconsConnected(b3, b1)) {
+          if (
+            this.areBeaconsConnected(b1, b2) &&
+            this.areBeaconsConnected(b2, b3) &&
+            this.areBeaconsConnected(b3, b1)
+          ) {
             triangles.push([b1.id, b2.id, b3.id]);
           }
         }
       }
     }
-    
+
     return triangles;
   }
 
   private findSquarePatterns(beacons: Beacon[]): string[][] {
     const squares: string[][] = [];
-    
+
     // Simple implementation: check all combinations of 4 beacons
     for (let i = 0; i < beacons.length; i++) {
       for (let j = i + 1; j < beacons.length; j++) {
         for (let k = j + 1; k < beacons.length; k++) {
           for (let l = k + 1; l < beacons.length; l++) {
             const beaconSet = [beacons[i], beacons[j], beacons[k], beacons[l]];
-            
+
             if (this.formsSquarePattern(beaconSet)) {
-              squares.push([beacons[i].id, beacons[j].id, beacons[k].id, beacons[l].id]);
+              squares.push([
+                beacons[i].id,
+                beacons[j].id,
+                beacons[k].id,
+                beacons[l].id,
+              ]);
             }
           }
         }
       }
     }
-    
+
     return squares;
   }
 
   private areBeaconsConnected(beacon1: Beacon, beacon2: Beacon): boolean {
-    return beacon1.connections.includes(beacon2.id) || beacon2.connections.includes(beacon1.id);
+    return (
+      beacon1.connections.includes(beacon2.id) ||
+      beacon2.connections.includes(beacon1.id)
+    );
   }
 
   private formsSquarePattern(beacons: Beacon[]): boolean {
     if (beacons.length !== 4) return false;
-    
+
     // Check that each beacon is connected to exactly 2 others (forming a cycle)
     return beacons.every(beacon => {
-      const connections = beacons.filter(other => 
-        other.id !== beacon.id && this.areBeaconsConnected(beacon, other)
+      const connections = beacons.filter(
+        other =>
+          other.id !== beacon.id && this.areBeaconsConnected(beacon, other)
       );
       return connections.length === 2;
     });
@@ -316,13 +349,13 @@ export class ResourceGenerationEngine {
 
   getGenerationSummary(): Record<ResourceType, BigNumber> {
     const summary: Partial<Record<ResourceType, BigNumber>> = {};
-    
+
     const resourceTypes: ResourceType[] = [
       'quantumData',
       'stellarEssence',
-      'voidFragments', 
+      'voidFragments',
       'resonanceCrystals',
-      'chronosParticles'
+      'chronosParticles',
     ];
 
     resourceTypes.forEach(resourceType => {
@@ -337,7 +370,9 @@ export class ResourceGenerationEngine {
   }
 
   getActiveSources(): GenerationSource[] {
-    return Array.from(this.generationSources.values()).filter(source => source.active);
+    return Array.from(this.generationSources.values()).filter(
+      source => source.active
+    );
   }
 
   getModifierManager(): BeaconModifierManager {

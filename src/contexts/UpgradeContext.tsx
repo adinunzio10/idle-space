@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import { UpgradeManager } from '../core/UpgradeManager';
 import { GameController } from '../core/GameController';
 
@@ -10,13 +16,13 @@ interface UpgradeContextType {
     progress: number; // 0-1
   };
   availableMilestone: any | null;
-  
+
   // Actions
   purchaseUpgrade: (category: string) => Promise<boolean>;
   makeMilestoneChoice: (milestone: any, choice: string) => Promise<boolean>;
   getUpgradePreview: (category: string) => any | null;
   dismissMilestone: () => void;
-  
+
   // State
   loading: boolean;
   error: string | null;
@@ -29,17 +35,21 @@ interface UpgradeProviderProps {
   gameController: GameController;
 }
 
-export const UpgradeProvider: React.FC<UpgradeProviderProps> = ({ 
-  children, 
-  gameController 
+export const UpgradeProvider: React.FC<UpgradeProviderProps> = ({
+  children,
+  gameController,
 }) => {
-  const [upgradeManager, setUpgradeManager] = useState<UpgradeManager | null>(null);
+  const [upgradeManager, setUpgradeManager] = useState<UpgradeManager | null>(
+    null
+  );
   const [milestoneProgress, setMilestoneProgress] = useState({
     currentBeacons: 0,
     nextMilestone: null,
     progress: 0,
   });
-  const [availableMilestone, setAvailableMilestone] = useState<any | null>(null);
+  const [availableMilestone, setAvailableMilestone] = useState<any | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +80,10 @@ export const UpgradeProvider: React.FC<UpgradeProviderProps> = ({
 
         setAvailableMilestone(null);
       } catch (err) {
-        console.error('[UpgradeContext] Error updating milestone progress:', err);
+        console.error(
+          '[UpgradeContext] Error updating milestone progress:',
+          err
+        );
       }
     };
 
@@ -88,16 +101,24 @@ export const UpgradeProvider: React.FC<UpgradeProviderProps> = ({
       const resourceManager = gameController.getResourceManager();
       // This would need to match the actual UpgradeManager API
       // For now, return false as placeholder
-      console.log(`[UpgradeContext] Purchase upgrade ${category} - not implemented`);
+      console.log(
+        `[UpgradeContext] Purchase upgrade ${category} - not implemented`
+      );
       return false;
     } catch (err) {
-      console.error(`[UpgradeContext] Error purchasing ${category} upgrade:`, err);
+      console.error(
+        `[UpgradeContext] Error purchasing ${category} upgrade:`,
+        err
+      );
       setError(`Failed to purchase ${category} upgrade`);
       return false;
     }
   };
 
-  const makeMilestoneChoice = async (milestone: any, choice: string): Promise<boolean> => {
+  const makeMilestoneChoice = async (
+    milestone: any,
+    choice: string
+  ): Promise<boolean> => {
     if (!upgradeManager) return false;
 
     try {
@@ -125,7 +146,10 @@ export const UpgradeProvider: React.FC<UpgradeProviderProps> = ({
         paybackTime: 60,
       };
     } catch (err) {
-      console.error(`[UpgradeContext] Error getting preview for ${category}:`, err);
+      console.error(
+        `[UpgradeContext] Error getting preview for ${category}:`,
+        err
+      );
       return null;
     }
   };

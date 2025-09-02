@@ -24,13 +24,19 @@ export class Beacon implements BeaconEntity {
   public totalResourcesGenerated: number;
   public upgradePendingAt?: number;
 
-  constructor(data: Partial<BeaconEntity> & { id: string; position: Point2D; type: BeaconType }) {
+  constructor(
+    data: Partial<BeaconEntity> & {
+      id: string;
+      position: Point2D;
+      type: BeaconType;
+    }
+  ) {
     this.id = data.id;
     this.position = data.position;
     this.type = data.type;
-    
+
     // Initialize with defaults
-    
+
     this.level = data.level ?? 1;
     this.specialization = data.specialization ?? 'none';
     this.status = data.status ?? 'active';
@@ -48,8 +54,9 @@ export class Beacon implements BeaconEntity {
   public calculateGenerationRate(): number {
     const baseRate = BEACON_TYPE_CONFIG[this.type].baseGenerationRate;
     const levelMultiplier = 1 + (this.level - 1) * 0.1; // 10% increase per level
-    const specializationBonus = SPECIALIZATION_CONFIG[this.specialization].efficiency;
-    
+    const specializationBonus =
+      SPECIALIZATION_CONFIG[this.specialization].efficiency;
+
     return baseRate * levelMultiplier * specializationBonus;
   }
 
@@ -59,8 +66,9 @@ export class Beacon implements BeaconEntity {
   public calculateConnectionRange(): number {
     const baseRange = BEACON_TYPE_CONFIG[this.type].connectionRange;
     const levelBonus = this.level * 5; // 5 units per level
-    const specializationBonus = SPECIALIZATION_CONFIG[this.specialization].range;
-    
+    const specializationBonus =
+      SPECIALIZATION_CONFIG[this.specialization].range;
+
     return (baseRange + levelBonus) * specializationBonus;
   }
 
@@ -70,7 +78,7 @@ export class Beacon implements BeaconEntity {
   public getMaxConnections(): number {
     const baseMax = BEACON_TYPE_CONFIG[this.type].maxConnections;
     const levelBonus = Math.floor(this.level / 10); // +1 connection every 10 levels
-    
+
     return baseMax + levelBonus;
   }
 
@@ -79,7 +87,9 @@ export class Beacon implements BeaconEntity {
    */
   public getTerritoryRadius(): number {
     const connectionRange = this.calculateConnectionRange();
-    return connectionRange * BEACON_PLACEMENT_CONFIG.TERRITORY_RADIUS_MULTIPLIER;
+    return (
+      connectionRange * BEACON_PLACEMENT_CONFIG.TERRITORY_RADIUS_MULTIPLIER
+    );
   }
 
   /**
@@ -120,7 +130,7 @@ export class Beacon implements BeaconEntity {
     if (this.specialization !== 'none') {
       throw new Error('Beacon already has a specialization');
     }
-    
+
     this.specialization = specialization;
     this.generationRate = this.calculateGenerationRate();
     this.lastUpgraded = Date.now();
@@ -134,11 +144,11 @@ export class Beacon implements BeaconEntity {
     if (this.level >= BEACON_PLACEMENT_CONFIG.MAX_LEVEL) {
       throw new Error('Beacon is already at maximum level');
     }
-    
+
     this.level++;
     this.generationRate = this.calculateGenerationRate();
     this.lastUpgraded = Date.now();
-    
+
     // Check if specialization choice is needed
     if (this.needsSpecializationChoice()) {
       this.upgradePendingAt = Date.now();
@@ -152,11 +162,11 @@ export class Beacon implements BeaconEntity {
     if (this.connections.includes(beaconId)) {
       return false; // Already connected
     }
-    
+
     if (this.connections.length >= this.getMaxConnections()) {
       return false; // At max capacity
     }
-    
+
     this.connections.push(beaconId);
     return true;
   }
@@ -169,7 +179,7 @@ export class Beacon implements BeaconEntity {
     if (index === -1) {
       return false; // Not connected
     }
-    
+
     this.connections.splice(index, 1);
     return true;
   }
@@ -186,31 +196,38 @@ export class Beacon implements BeaconEntity {
    */
   public validateState(): BeaconValidationResult {
     const reasons: string[] = [];
-    
+
     // Check level bounds
     if (this.level < 1) {
       reasons.push('Level must be at least 1');
     }
-    
+
     if (this.level > BEACON_PLACEMENT_CONFIG.MAX_LEVEL) {
       reasons.push(`Level cannot exceed ${BEACON_PLACEMENT_CONFIG.MAX_LEVEL}`);
     }
-    
+
     // Check connection limits
     if (this.connections.length > this.getMaxConnections()) {
-      reasons.push(`Too many connections: ${this.connections.length}/${this.getMaxConnections()}`);
+      reasons.push(
+        `Too many connections: ${this.connections.length}/${this.getMaxConnections()}`
+      );
     }
-    
+
     // Check specialization consistency
-    if (this.level < BEACON_PLACEMENT_CONFIG.AUTO_LEVEL_INTERVAL && this.specialization !== 'none') {
+    if (
+      this.level < BEACON_PLACEMENT_CONFIG.AUTO_LEVEL_INTERVAL &&
+      this.specialization !== 'none'
+    ) {
       reasons.push('Specialization not available until level 5');
     }
-    
+
     // Check status
-    if (!['active', 'inactive', 'upgrading', 'corrupted'].includes(this.status)) {
+    if (
+      !['active', 'inactive', 'upgrading', 'corrupted'].includes(this.status)
+    ) {
       reasons.push('Invalid beacon status');
     }
-    
+
     return {
       isValid: reasons.length === 0,
       reasons,

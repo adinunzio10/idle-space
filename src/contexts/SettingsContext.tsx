@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PlayerSettings as BasePlayerSettings } from '../storage/schemas/GameState';
 
@@ -38,7 +44,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   autoSaveInterval: 120, // 2 minutes default
   theme: 'dark',
   language: 'en',
-  
+
   // Extended settings
   offlineGenerationEnabled: true,
   patternSuggestionsEnabled: true,
@@ -48,20 +54,23 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   highContrastEnabled: false,
   reduceAnimationsEnabled: false,
   animationSpeed: 1.0,
-  
+
   // Battery optimization defaults
   batteryOptimizationEnabled: true,
   adaptiveFrameRateEnabled: true,
   lowBatteryThreshold: 0.25, // 25%
   batteryEfficientModeEnabled: false,
   backgroundThrottlingEnabled: true,
-  
+
   version: 1,
 };
 
 interface SettingsContextType {
   settings: AppSettings;
-  updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>;
+  updateSetting: <K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K]
+  ) => Promise<void>;
   updateSettings: (updates: Partial<AppSettings>) => Promise<void>;
   resetSettings: () => Promise<void>;
   isLoading: boolean;
@@ -73,7 +82,9 @@ const SettingsContext = createContext<SettingsContextType | null>(null);
 
 const SETTINGS_STORAGE_KEY = '@signal_garden_settings';
 
-export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,23 +94,28 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         console.log('[SettingsContext] Loading settings from storage...');
         const storedSettings = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
-        
+
         if (storedSettings) {
           const parsedSettings = JSON.parse(storedSettings) as AppSettings;
-          
+
           // Merge with defaults to ensure all properties exist (for app updates)
           const mergedSettings: AppSettings = {
             ...DEFAULT_APP_SETTINGS,
             ...parsedSettings,
             version: DEFAULT_APP_SETTINGS.version, // Always use current version
           };
-          
+
           setSettings(mergedSettings);
           console.log('[SettingsContext] Settings loaded successfully');
         } else {
-          console.log('[SettingsContext] No stored settings found, using defaults');
+          console.log(
+            '[SettingsContext] No stored settings found, using defaults'
+          );
           // Save defaults to storage
-          await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_APP_SETTINGS));
+          await AsyncStorage.setItem(
+            SETTINGS_STORAGE_KEY,
+            JSON.stringify(DEFAULT_APP_SETTINGS)
+          );
           setSettings(DEFAULT_APP_SETTINGS);
         }
       } catch (error) {
@@ -116,7 +132,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Save settings to AsyncStorage
   const saveSettings = useCallback(async (newSettings: AppSettings) => {
     try {
-      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+      await AsyncStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify(newSettings)
+      );
       console.log('[SettingsContext] Settings saved successfully');
     } catch (error) {
       console.error('[SettingsContext] Failed to save settings:', error);
@@ -125,37 +144,46 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   // Update a single setting
-  const updateSetting = useCallback(async <K extends keyof AppSettings>(
-    key: K, 
-    value: AppSettings[K]
-  ) => {
-    try {
-      const newSettings = { ...settings, [key]: value };
-      setSettings(newSettings);
-      await saveSettings(newSettings);
-      console.log(`[SettingsContext] Updated setting: ${key} = ${value}`);
-    } catch (error) {
-      console.error(`[SettingsContext] Failed to update setting ${key}:`, error);
-      // Revert settings on error
-      setSettings(settings);
-      throw error;
-    }
-  }, [settings, saveSettings]);
+  const updateSetting = useCallback(
+    async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+      try {
+        const newSettings = { ...settings, [key]: value };
+        setSettings(newSettings);
+        await saveSettings(newSettings);
+        console.log(`[SettingsContext] Updated setting: ${key} = ${value}`);
+      } catch (error) {
+        console.error(
+          `[SettingsContext] Failed to update setting ${key}:`,
+          error
+        );
+        // Revert settings on error
+        setSettings(settings);
+        throw error;
+      }
+    },
+    [settings, saveSettings]
+  );
 
   // Update multiple settings
-  const updateSettings = useCallback(async (updates: Partial<AppSettings>) => {
-    try {
-      const newSettings = { ...settings, ...updates };
-      setSettings(newSettings);
-      await saveSettings(newSettings);
-      console.log('[SettingsContext] Updated multiple settings:', Object.keys(updates));
-    } catch (error) {
-      console.error('[SettingsContext] Failed to update settings:', error);
-      // Revert settings on error
-      setSettings(settings);
-      throw error;
-    }
-  }, [settings, saveSettings]);
+  const updateSettings = useCallback(
+    async (updates: Partial<AppSettings>) => {
+      try {
+        const newSettings = { ...settings, ...updates };
+        setSettings(newSettings);
+        await saveSettings(newSettings);
+        console.log(
+          '[SettingsContext] Updated multiple settings:',
+          Object.keys(updates)
+        );
+      } catch (error) {
+        console.error('[SettingsContext] Failed to update settings:', error);
+        // Revert settings on error
+        setSettings(settings);
+        throw error;
+      }
+    },
+    [settings, saveSettings]
+  );
 
   // Reset settings to defaults
   const resetSettings = useCallback(async () => {
@@ -187,31 +215,34 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [settings]);
 
   // Import settings from JSON string
-  const importSettings = useCallback(async (settingsJson: string): Promise<boolean> => {
-    try {
-      const importData = JSON.parse(settingsJson);
-      
-      if (!importData.settings) {
-        throw new Error('Invalid settings format: missing settings object');
+  const importSettings = useCallback(
+    async (settingsJson: string): Promise<boolean> => {
+      try {
+        const importData = JSON.parse(settingsJson);
+
+        if (!importData.settings) {
+          throw new Error('Invalid settings format: missing settings object');
+        }
+
+        // Validate that imported settings have required properties
+        const importedSettings = importData.settings as Partial<AppSettings>;
+        const validatedSettings: AppSettings = {
+          ...DEFAULT_APP_SETTINGS,
+          ...importedSettings,
+          version: DEFAULT_APP_SETTINGS.version, // Always use current version
+        };
+
+        setSettings(validatedSettings);
+        await saveSettings(validatedSettings);
+        console.log('[SettingsContext] Settings imported successfully');
+        return true;
+      } catch (error) {
+        console.error('[SettingsContext] Failed to import settings:', error);
+        return false;
       }
-
-      // Validate that imported settings have required properties
-      const importedSettings = importData.settings as Partial<AppSettings>;
-      const validatedSettings: AppSettings = {
-        ...DEFAULT_APP_SETTINGS,
-        ...importedSettings,
-        version: DEFAULT_APP_SETTINGS.version, // Always use current version
-      };
-
-      setSettings(validatedSettings);
-      await saveSettings(validatedSettings);
-      console.log('[SettingsContext] Settings imported successfully');
-      return true;
-    } catch (error) {
-      console.error('[SettingsContext] Failed to import settings:', error);
-      return false;
-    }
-  }, [saveSettings]);
+    },
+    [saveSettings]
+  );
 
   const contextValue: SettingsContextType = {
     settings,
@@ -241,14 +272,20 @@ export const useSettings = (): SettingsContextType => {
 // Hook for specific setting access with type safety
 export const useSetting = <K extends keyof AppSettings>(key: K) => {
   const { settings, updateSetting } = useSettings();
-  return [settings[key], (value: AppSettings[K]) => updateSetting(key, value)] as const;
+  return [
+    settings[key],
+    (value: AppSettings[K]) => updateSetting(key, value),
+  ] as const;
 };
 
 // Hook for multiple settings access
 export const useSettingsSubset = <K extends keyof AppSettings>(keys: K[]) => {
   const { settings } = useSettings();
-  return keys.reduce((subset, key) => {
-    subset[key] = settings[key];
-    return subset;
-  }, {} as Pick<AppSettings, K>);
+  return keys.reduce(
+    (subset, key) => {
+      subset[key] = settings[key];
+      return subset;
+    },
+    {} as Pick<AppSettings, K>
+  );
 };

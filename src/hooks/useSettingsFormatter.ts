@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { createSettingsFormatter, FormattingSettings } from '../utils/SettingsAwareFormatter';
+import {
+  createSettingsFormatter,
+  FormattingSettings,
+} from '../utils/SettingsAwareFormatter';
 
 /**
  * Hook that provides a settings-aware formatter
@@ -9,18 +12,21 @@ import { createSettingsFormatter, FormattingSettings } from '../utils/SettingsAw
 export const useSettingsFormatter = () => {
   const { settings } = useSettings();
 
-  const formattingSettings: FormattingSettings = useMemo(() => ({
-    scientificNotationEnabled: settings.scientificNotationEnabled,
-    largeTextEnabled: settings.largeTextEnabled,
-    reduceAnimationsEnabled: settings.reduceAnimationsEnabled,
-  }), [
-    settings.scientificNotationEnabled,
-    settings.largeTextEnabled,
-    settings.reduceAnimationsEnabled,
-  ]);
+  const formattingSettings: FormattingSettings = useMemo(
+    () => ({
+      scientificNotationEnabled: settings.scientificNotationEnabled,
+      largeTextEnabled: settings.largeTextEnabled,
+      reduceAnimationsEnabled: settings.reduceAnimationsEnabled,
+    }),
+    [
+      settings.scientificNotationEnabled,
+      settings.largeTextEnabled,
+      settings.reduceAnimationsEnabled,
+    ]
+  );
 
-  const formatter = useMemo(() => 
-    createSettingsFormatter(formattingSettings), 
+  const formatter = useMemo(
+    () => createSettingsFormatter(formattingSettings),
     [formattingSettings]
   );
 

@@ -9,7 +9,7 @@ const migration_v2: Migration = {
   up(gameState: GameState): GameState {
     // Example: Add new settings that might be added in the future
     const migratedState = { ...gameState };
-    
+
     // Ensure all required player settings exist
     if (!migratedState.player.settings) {
       migratedState.player.settings = { ...DEFAULT_PLAYER_SETTINGS };
@@ -35,7 +35,7 @@ const migration_v2: Migration = {
 
     return migratedState;
   },
-  
+
   down(gameState: GameState): GameState {
     // Downgrade migration (optional, for testing)
     const downgradedState = { ...gameState };

@@ -87,10 +87,10 @@ export interface PointInPolygonResult {
  * Geometric tolerance settings
  */
 export interface GeometricTolerance {
-  position: number;      // Tolerance for position comparisons
-  angle: number;         // Tolerance for angle comparisons (radians)
-  distance: number;      // Tolerance for distance comparisons
-  area: number;          // Tolerance for area comparisons
+  position: number; // Tolerance for position comparisons
+  angle: number; // Tolerance for angle comparisons (radians)
+  distance: number; // Tolerance for distance comparisons
+  area: number; // Tolerance for area comparisons
 }
 
 /**
