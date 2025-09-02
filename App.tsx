@@ -11,7 +11,9 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { PatternSuggestionProvider } from './src/contexts/PatternSuggestionContext';
 import { ResourceProvider } from './src/core/ResourceContext';
 import { SettingsProvider } from './src/contexts/SettingsContext';
+import { UpgradeProvider } from './src/contexts/UpgradeContext';
 import { useGameSettings } from './src/hooks/useGameSettings';
+import { batteryOptimizationManager } from './src/utils/performance/BatteryOptimizationManager';
 
 // Inner component that can use settings hooks
 function GameApp() {
@@ -138,21 +140,24 @@ function GameApp() {
         removeGameStateChangeCallback();
       }
       gameController.shutdown();
+      batteryOptimizationManager.shutdown();
     };
   }, [gameController, handleProbeUpdate, handleProbeDeployment]);
 
 
   return (
     <ResourceProvider>
-      <PatternSuggestionProvider initialBeacons={[]}>
-        <AppNavigator
-          gameState={gameState}
-          gameController={gameController}
-          probes={probes}
-          isInitialized={isInitialized}
-          error={error}
-        />
-      </PatternSuggestionProvider>
+      <UpgradeProvider gameController={gameController}>
+        <PatternSuggestionProvider initialBeacons={[]}>
+          <AppNavigator
+            gameState={gameState}
+            gameController={gameController}
+            probes={probes}
+            isInitialized={isInitialized}
+            error={error}
+          />
+        </PatternSuggestionProvider>
+      </UpgradeProvider>
     </ResourceProvider>
   );
 }
