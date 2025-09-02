@@ -19,6 +19,13 @@ export interface AppSettings extends BasePlayerSettings {
   reduceAnimationsEnabled: boolean;
   animationSpeed: number; // multiplier (0.5 = slower, 2 = faster)
 
+  // Battery optimization settings
+  batteryOptimizationEnabled: boolean;
+  adaptiveFrameRateEnabled: boolean;
+  lowBatteryThreshold: number; // 0-1 range
+  batteryEfficientModeEnabled: boolean;
+  backgroundThrottlingEnabled: boolean;
+
   // Additional settings
   version: number;
 }
@@ -41,6 +48,14 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   highContrastEnabled: false,
   reduceAnimationsEnabled: false,
   animationSpeed: 1.0,
+  
+  // Battery optimization defaults
+  batteryOptimizationEnabled: true,
+  adaptiveFrameRateEnabled: true,
+  lowBatteryThreshold: 0.25, // 25%
+  batteryEfficientModeEnabled: false,
+  backgroundThrottlingEnabled: true,
+  
   version: 1,
 };
 

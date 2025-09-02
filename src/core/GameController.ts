@@ -10,6 +10,7 @@ import { GameState, DEFAULT_RESOURCES, DEFAULT_PLAYER_SETTINGS, DEFAULT_PLAYER_S
 import { BeaconType } from '../types/beacon';
 import { Point2D } from '../types/galaxy';
 import { Beacon } from '../entities/Beacon';
+import { batteryOptimizationManager, BatteryOptimizationState } from '../utils/performance/BatteryOptimizationManager';
 
 export interface GameControllerConfig {
   autoSaveInterval: number; // seconds
@@ -110,6 +111,14 @@ export class GameController {
       
       // Initialize probe manager with background processing
       await this.probeManager.initialize();
+      
+      // Initialize battery optimization manager
+      try {
+        await batteryOptimizationManager.initialize();
+        console.log('[GameController] Battery optimization initialized');
+      } catch (error) {
+        console.warn('[GameController] Battery optimization failed to initialize:', error);
+      }
       
       if (this.config.enableAppStateHandling) {
         this.setupAppStateHandling();
@@ -591,6 +600,9 @@ export class GameController {
       
       // Stop timers and systems
       this.stopAutoSave();
+      
+      // Shutdown battery optimization
+      batteryOptimizationManager.shutdown();
       this.stopGameTimer();
       this.generationEngine.stop();
       await this.probeManager.stop();

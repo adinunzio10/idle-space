@@ -121,12 +121,12 @@ export const useAccessibleNavigation = () => {
     };
   }, [config.accessibilityMode]);
 
-  const createAccessibleTabBar = useCallback((tabs: Array<{
+  const createAccessibleTabBar = useCallback((tabs: {
     key: string;
     title: string;
     isActive: boolean;
     onPress: () => void;
-  }>) => {
+  }[]) => {
     return tabs.map(tab => ({
       ...tab,
       ...AccessibilityHelper.getAccessibilityProps({

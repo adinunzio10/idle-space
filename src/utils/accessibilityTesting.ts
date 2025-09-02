@@ -4,13 +4,13 @@ import { AccessibilityHelper } from './accessibility';
  * Accessibility testing and validation utilities for development and QA
  */
 export class AccessibilityTesting {
-  private static testResults: Array<{
+  private static testResults: {
     component: string;
     test: string;
     passed: boolean;
     message: string;
     timestamp: number;
-  }> = [];
+  }[] = [];
 
   /**
    * Test component accessibility compliance
@@ -106,12 +106,12 @@ export class AccessibilityTesting {
   /**
    * Test one-handed navigation compliance
    */
-  static testOneHandedNavigation(screenName: string, elements: Array<{
+  static testOneHandedNavigation(screenName: string, elements: {
     name: string;
     position: { bottom: number };
     isImportant: boolean;
     isInteractive: boolean;
-  }>, screenHeight: number): boolean {
+  }[], screenHeight: number): boolean {
     const thumbReachHeight = screenHeight * 0.65; // Bottom 65% is reachable
     const reachableTop = screenHeight - thumbReachHeight;
     
@@ -163,13 +163,13 @@ export class AccessibilityTesting {
   /**
    * Test screen reader compatibility
    */
-  static testScreenReaderCompatibility(screenName: string, elements: Array<{
+  static testScreenReaderCompatibility(screenName: string, elements: {
     type: 'text' | 'button' | 'image' | 'list' | 'header';
     hasLabel: boolean;
     hasRole: boolean;
     hasState?: boolean;
     isDecorative?: boolean;
-  }>): boolean {
+  }[]): boolean {
     let allPassed = true;
     const results = [];
 
