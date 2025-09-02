@@ -12,153 +12,157 @@ import Animated, {
   runOnJS,
   useDerivedValue,
 } from 'react-native-reanimated';
-import { usePatternCount, usePatternVisibility } from '../../contexts/PatternSuggestionContext';
+import {
+  usePatternCount,
+  usePatternVisibility,
+} from '../../contexts/PatternSuggestionContext';
 
 interface PatternToggleButtonProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 }
 
-export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(({
-  position = 'bottom-right',
-}) => {
-  const insets = useSafeAreaInsets();
-  
-  // Use context instead of props
-  const patternCount = usePatternCount();
-  const { 
-    mapVisualizationsVisible: isMapVisualizationsVisible, 
-    toggleMapVisualizations: onToggleVisualizations,
-    showPopup: onOpenPopup 
-  } = usePatternVisibility();
-  
-  // Debug logging for pattern suggestion count changes
-  React.useEffect(() => {
-    console.log(`[PatternToggleButton] Pattern suggestion count changed to: ${patternCount}`);
-  }, [patternCount]);
-  const scaleValue = useSharedValue(1);
-  const pulseValue = useSharedValue(0);
-  
-  // Convert React prop to shared value for worklet access
-  const isVisibleShared = useDerivedValue(() => isMapVisualizationsVisible);
+export const PatternToggleButton: React.FC<PatternToggleButtonProps> = memo(
+  ({ position = 'bottom-right' }) => {
+    const insets = useSafeAreaInsets();
 
-  // Start pulsing animation when new patterns are detected
-  React.useEffect(() => {
-    if (patternCount > 0 && !isMapVisualizationsVisible) {
-      pulseValue.value = withRepeat(
-        withTiming(1, { duration: 1500 }),
-        -1,
-        true
+    // Use context instead of props
+    const patternCount = usePatternCount();
+    const {
+      mapVisualizationsVisible: isMapVisualizationsVisible,
+      toggleMapVisualizations: onToggleVisualizations,
+      showPopup: onOpenPopup,
+    } = usePatternVisibility();
+
+    // Debug logging for pattern suggestion count changes
+    React.useEffect(() => {
+      console.log(
+        `[PatternToggleButton] Pattern suggestion count changed to: ${patternCount}`
       );
-    } else {
-      pulseValue.value = withTiming(0, { duration: 300 });
-    }
-  }, [patternCount, isMapVisualizationsVisible, pulseValue]);
+    }, [patternCount]);
+    const scaleValue = useSharedValue(1);
+    const pulseValue = useSharedValue(0);
 
-  // Gesture handling for tap and long press
-  const tapGesture = Gesture.Tap()
-    .onStart(() => {
-      scaleValue.value = withSpring(0.9, { damping: 15, stiffness: 400 });
-    })
-    .onEnd(() => {
-      scaleValue.value = withSpring(1, { damping: 15, stiffness: 400 });
-      runOnJS(onToggleVisualizations)();
+    // Convert React prop to shared value for worklet access
+    const isVisibleShared = useDerivedValue(() => isMapVisualizationsVisible);
+
+    // Start pulsing animation when new patterns are detected
+    React.useEffect(() => {
+      if (patternCount > 0 && !isMapVisualizationsVisible) {
+        pulseValue.value = withRepeat(
+          withTiming(1, { duration: 1500 }),
+          -1,
+          true
+        );
+      } else {
+        pulseValue.value = withTiming(0, { duration: 300 });
+      }
+    }, [patternCount, isMapVisualizationsVisible, pulseValue]);
+
+    // Gesture handling for tap and long press
+    const tapGesture = Gesture.Tap()
+      .onStart(() => {
+        scaleValue.value = withSpring(0.9, { damping: 15, stiffness: 400 });
+      })
+      .onEnd(() => {
+        scaleValue.value = withSpring(1, { damping: 15, stiffness: 400 });
+        runOnJS(onToggleVisualizations)();
+      });
+
+    const longPressGesture = Gesture.LongPress()
+      .minDuration(500)
+      .onStart(() => {
+        scaleValue.value = withSpring(0.85, { damping: 15, stiffness: 400 });
+      })
+      .onEnd(() => {
+        scaleValue.value = withSpring(1, { damping: 15, stiffness: 400 });
+        runOnJS(onOpenPopup)();
+      });
+
+    const combinedGesture = Gesture.Exclusive(longPressGesture, tapGesture);
+
+    // Animated styles
+    const buttonStyle = useAnimatedStyle(() => {
+      const pulseScale = interpolate(pulseValue.value, [0, 1], [1, 1.1]);
+      const glowOpacity = interpolate(pulseValue.value, [0, 1], [0.3, 0.8]);
+
+      // Include active button styles when visible
+      const activeStyles = isVisibleShared.value
+        ? {
+            backgroundColor: '#4F46E5',
+            borderColor: '#6366F1',
+          }
+        : {};
+
+      return {
+        transform: [{ scale: scaleValue.value * pulseScale }],
+        shadowOpacity: isVisibleShared.value ? 0.8 : glowOpacity,
+        ...activeStyles,
+      };
     });
 
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(500)
-    .onStart(() => {
-      scaleValue.value = withSpring(0.85, { damping: 15, stiffness: 400 });
-    })
-    .onEnd(() => {
-      scaleValue.value = withSpring(1, { damping: 15, stiffness: 400 });
-      runOnJS(onOpenPopup)();
+    const glowStyle = useAnimatedStyle(() => {
+      const glowScale = interpolate(pulseValue.value, [0, 1], [1, 1.3]);
+      const glowOpacity = interpolate(pulseValue.value, [0, 1], [0, 0.4]);
+
+      return {
+        transform: [{ scale: glowScale }],
+        opacity: glowOpacity,
+      };
     });
 
-  const combinedGesture = Gesture.Exclusive(longPressGesture, tapGesture);
-
-  // Animated styles
-  const buttonStyle = useAnimatedStyle(() => {
-    const pulseScale = interpolate(pulseValue.value, [0, 1], [1, 1.1]);
-    const glowOpacity = interpolate(pulseValue.value, [0, 1], [0.3, 0.8]);
-    
-    // Include active button styles when visible
-    const activeStyles = isVisibleShared.value ? {
-      backgroundColor: '#4F46E5',
-      borderColor: '#6366F1',
-    } : {};
-    
-    return {
-      transform: [{ scale: scaleValue.value * pulseScale }],
-      shadowOpacity: isVisibleShared.value ? 0.8 : glowOpacity,
-      ...activeStyles,
-    };
-  });
-
-  const glowStyle = useAnimatedStyle(() => {
-    const glowScale = interpolate(pulseValue.value, [0, 1], [1, 1.3]);
-    const glowOpacity = interpolate(pulseValue.value, [0, 1], [0, 0.4]);
-    
-    return {
-      transform: [{ scale: glowScale }],
-      opacity: glowOpacity,
-    };
-  });
-
-  if (patternCount === 0) {
-    return null;
-  }
-
-  // Dynamic position style using safe area insets
-  const getPositionStyle = () => {
-    console.log('[PatternToggleButton] Safe area insets:', insets);
-    
-    const baseStyle = {
-      position: 'absolute' as const,
-      zIndex: 1000,
-    };
-    
-    switch (position) {
-      case 'bottom-right':
-        return { ...baseStyle, bottom: insets.bottom + 20, right: 20 };
-      case 'bottom-left':
-        return { ...baseStyle, bottom: insets.bottom + 20, left: 20 };
-      case 'top-right':
-        return { ...baseStyle, top: insets.top + 80, right: 20 };
-      case 'top-left':
-        return { ...baseStyle, top: insets.top + 80, left: 20 };
-      default:
-        return { ...baseStyle, bottom: insets.bottom + 20, right: 20 };
+    if (patternCount === 0) {
+      return null;
     }
-  };
 
-  return (
-    <View style={getPositionStyle()}>
-      {/* Glow effect */}
-      <Animated.View style={[styles.glow, glowStyle]} />
-      
-      {/* Main button */}
-      <GestureDetector gesture={combinedGesture}>
-        <Animated.View style={[
-          styles.button,
-          buttonStyle
-        ]}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.icon}>⬢</Text>
-          </View>
-          
-          {/* Badge with pattern count */}
-          {patternCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {patternCount > 9 ? '9+' : patternCount}
-              </Text>
+    // Dynamic position style using safe area insets
+    const getPositionStyle = () => {
+      console.log('[PatternToggleButton] Safe area insets:', insets);
+
+      const baseStyle = {
+        position: 'absolute' as const,
+        zIndex: 1000,
+      };
+
+      switch (position) {
+        case 'bottom-right':
+          return { ...baseStyle, bottom: insets.bottom + 20, right: 20 };
+        case 'bottom-left':
+          return { ...baseStyle, bottom: insets.bottom + 20, left: 20 };
+        case 'top-right':
+          return { ...baseStyle, top: insets.top + 80, right: 20 };
+        case 'top-left':
+          return { ...baseStyle, top: insets.top + 80, left: 20 };
+        default:
+          return { ...baseStyle, bottom: insets.bottom + 20, right: 20 };
+      }
+    };
+
+    return (
+      <View style={getPositionStyle()}>
+        {/* Glow effect */}
+        <Animated.View style={[styles.glow, glowStyle]} />
+
+        {/* Main button */}
+        <GestureDetector gesture={combinedGesture}>
+          <Animated.View style={[styles.button, buttonStyle]}>
+            <View style={styles.iconContainer}>
+              <Text style={styles.icon}>⬢</Text>
             </View>
-          )}
-        </Animated.View>
-      </GestureDetector>
-    </View>
-  );
-});
+
+            {/* Badge with pattern count */}
+            {patternCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {patternCount > 9 ? '9+' : patternCount}
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        </GestureDetector>
+      </View>
+    );
+  }
+);
 
 PatternToggleButton.displayName = 'PatternToggleButton';
 

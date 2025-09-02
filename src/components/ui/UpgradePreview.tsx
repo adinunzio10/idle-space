@@ -2,7 +2,11 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { formatNumber } from '../../utils/numberFormatting';
 
-type UpgradeCategory = 'beaconEfficiency' | 'probeSystems' | 'offlineProcessing' | 'consciousness';
+type UpgradeCategory =
+  | 'beaconEfficiency'
+  | 'probeSystems'
+  | 'offlineProcessing'
+  | 'consciousness';
 
 interface UpgradePreviewType {
   currentLevel: number;
@@ -60,7 +64,9 @@ export const UpgradePreview: React.FC<UpgradePreviewProps> = ({
 
   const categoryInfo = getCategoryInfo(category);
   const improvement = preview.newValue - preview.currentValue;
-  const improvementPercent = Math.round((improvement / preview.currentValue) * 100);
+  const improvementPercent = Math.round(
+    (improvement / preview.currentValue) * 100
+  );
 
   if (compact) {
     return (
@@ -73,10 +79,12 @@ export const UpgradePreview: React.FC<UpgradePreviewProps> = ({
             +{improvementPercent}%
           </Text>
         </View>
-        
+
         <View className="flex-row justify-between items-center">
           <Text className="text-text/70 text-xs">
-            {formatNumber(preview.currentValue)} → {formatNumber(preview.newValue)}{categoryInfo.unit}
+            {formatNumber(preview.currentValue)} →{' '}
+            {formatNumber(preview.newValue)}
+            {categoryInfo.unit}
           </Text>
           <Text className="text-accent text-xs font-semibold">
             {formatNumber(preview.cost)} QD
@@ -101,14 +109,12 @@ export const UpgradePreview: React.FC<UpgradePreviewProps> = ({
             </Text>
           </View>
         </View>
-        
+
         <View className="items-end">
           <Text className="text-green-400 text-xl font-bold">
             +{improvementPercent}%
           </Text>
-          <Text className="text-text/60 text-xs">
-            improvement
-          </Text>
+          <Text className="text-text/60 text-xs">improvement</Text>
         </View>
       </View>
 
@@ -117,21 +123,24 @@ export const UpgradePreview: React.FC<UpgradePreviewProps> = ({
         <View className="flex-row justify-between items-center py-2 border-b border-text/10">
           <Text className="text-text/70 text-sm">Current</Text>
           <Text className="text-text font-semibold">
-            {formatNumber(preview.currentValue)}{categoryInfo.unit}
+            {formatNumber(preview.currentValue)}
+            {categoryInfo.unit}
           </Text>
         </View>
-        
+
         <View className="flex-row justify-between items-center py-2 border-b border-text/10">
           <Text className="text-text/70 text-sm">After Upgrade</Text>
           <Text className="text-green-400 font-semibold">
-            {formatNumber(preview.newValue)}{categoryInfo.unit}
+            {formatNumber(preview.newValue)}
+            {categoryInfo.unit}
           </Text>
         </View>
-        
+
         <View className="flex-row justify-between items-center py-2">
           <Text className="text-text/70 text-sm">Improvement</Text>
           <Text className="text-green-400 font-bold">
-            +{formatNumber(improvement)}{categoryInfo.unit}
+            +{formatNumber(improvement)}
+            {categoryInfo.unit}
           </Text>
         </View>
       </View>
@@ -144,26 +153,30 @@ export const UpgradePreview: React.FC<UpgradePreviewProps> = ({
             {formatNumber(preview.cost)} QD
           </Text>
         </View>
-        
+
         {preview.paybackTime && (
           <View className="flex-row justify-between items-center">
             <Text className="text-text/70 text-sm">Payback Time</Text>
             <Text className="text-text/80 text-sm">
-              {preview.paybackTime < 60 
+              {preview.paybackTime < 60
                 ? `${Math.ceil(preview.paybackTime)}s`
-                : `${Math.ceil(preview.paybackTime / 60)}m`
-              }
+                : `${Math.ceil(preview.paybackTime / 60)}m`}
             </Text>
           </View>
         )}
-        
+
         <View className="flex-row justify-between items-center">
           <Text className="text-text/70 text-sm">Efficiency Score</Text>
           <View className="flex-row items-center">
-            <View className={`w-2 h-2 rounded-full mr-2 ${
-              preview.efficiencyScore >= 0.8 ? 'bg-green-400' :
-              preview.efficiencyScore >= 0.6 ? 'bg-yellow-400' : 'bg-red-400'
-            }`} />
+            <View
+              className={`w-2 h-2 rounded-full mr-2 ${
+                preview.efficiencyScore >= 0.8
+                  ? 'bg-green-400'
+                  : preview.efficiencyScore >= 0.6
+                    ? 'bg-yellow-400'
+                    : 'bg-red-400'
+              }`}
+            />
             <Text className="text-text/80 text-sm">
               {Math.round(preview.efficiencyScore * 100)}%
             </Text>
@@ -173,19 +186,29 @@ export const UpgradePreview: React.FC<UpgradePreviewProps> = ({
 
       {/* Recommendation */}
       {preview.recommendation && (
-        <View className={`mt-3 p-3 rounded-lg ${
-          preview.recommendation === 'highly_recommended' ? 'bg-green-500/20 border border-green-500/30' :
-          preview.recommendation === 'recommended' ? 'bg-yellow-500/20 border border-yellow-500/30' :
-          'bg-red-500/20 border border-red-500/30'
-        }`}>
-          <Text className={`text-center text-sm font-semibold ${
-            preview.recommendation === 'highly_recommended' ? 'text-green-400' :
-            preview.recommendation === 'recommended' ? 'text-yellow-400' :
-            'text-red-400'
-          }`}>
-            {preview.recommendation === 'highly_recommended' && '⭐ Highly Recommended'}
+        <View
+          className={`mt-3 p-3 rounded-lg ${
+            preview.recommendation === 'highly_recommended'
+              ? 'bg-green-500/20 border border-green-500/30'
+              : preview.recommendation === 'recommended'
+                ? 'bg-yellow-500/20 border border-yellow-500/30'
+                : 'bg-red-500/20 border border-red-500/30'
+          }`}
+        >
+          <Text
+            className={`text-center text-sm font-semibold ${
+              preview.recommendation === 'highly_recommended'
+                ? 'text-green-400'
+                : preview.recommendation === 'recommended'
+                  ? 'text-yellow-400'
+                  : 'text-red-400'
+            }`}
+          >
+            {preview.recommendation === 'highly_recommended' &&
+              '⭐ Highly Recommended'}
             {preview.recommendation === 'recommended' && '👍 Recommended'}
-            {preview.recommendation === 'not_recommended' && '⚠️ Not Recommended'}
+            {preview.recommendation === 'not_recommended' &&
+              '⚠️ Not Recommended'}
           </Text>
         </View>
       )}

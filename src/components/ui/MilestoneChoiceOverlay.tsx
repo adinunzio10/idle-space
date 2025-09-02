@@ -1,16 +1,16 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { BaseModal } from './BaseModal';
+import { BaseOverlay } from './BaseOverlay';
 
-interface MilestoneChoiceModalProps {
+interface MilestoneChoiceOverlayProps {
   isVisible: boolean;
   milestone: any | null;
   onChoice: (milestone: any, choice: string) => void;
   onDismiss: () => void;
 }
 
-export const MilestoneChoiceModal: React.FC<MilestoneChoiceModalProps> = ({
+export const MilestoneChoiceOverlay: React.FC<MilestoneChoiceOverlayProps> = ({
   isVisible,
   milestone,
   onChoice,
@@ -31,7 +31,7 @@ export const MilestoneChoiceModal: React.FC<MilestoneChoiceModalProps> = ({
   };
 
   return (
-    <BaseModal
+    <BaseOverlay
       isVisible={isVisible}
       onClose={handleDismiss}
       title="Consciousness Expansion"
@@ -60,7 +60,8 @@ export const MilestoneChoiceModal: React.FC<MilestoneChoiceModalProps> = ({
             Milestone Achieved!
           </Text>
           <Text className="text-text/70 text-sm text-center mt-1">
-            Your consciousness network has reached a new threshold. Choose your expansion path:
+            Your consciousness network has reached a new threshold. Choose your
+            expansion path:
           </Text>
         </View>
 
@@ -69,7 +70,7 @@ export const MilestoneChoiceModal: React.FC<MilestoneChoiceModalProps> = ({
           <Text className="text-text font-semibold text-lg text-center mb-2">
             Choose Your Path
           </Text>
-          
+
           <Text className="text-text/60 text-center">
             Milestone choices will be available in a future update.
           </Text>
@@ -84,7 +85,8 @@ export const MilestoneChoiceModal: React.FC<MilestoneChoiceModalProps> = ({
             </Text>
           </View>
           <Text className="text-text/80 text-xs">
-            This choice cannot be changed. Choose the path that best aligns with your expansion strategy.
+            This choice cannot be changed. Choose the path that best aligns with
+            your expansion strategy.
           </Text>
         </View>
 
@@ -98,7 +100,6 @@ export const MilestoneChoiceModal: React.FC<MilestoneChoiceModalProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
-    </BaseModal>
+    </BaseOverlay>
   );
 };
-

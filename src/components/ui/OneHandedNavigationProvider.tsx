@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 import { Dimensions, AccessibilityInfo, Platform } from 'react-native';
 import { AccessibilityHelper } from '../../utils/accessibility';
 
@@ -30,12 +36,16 @@ interface OneHandedContextType {
   refreshConfig: () => Promise<void>;
 }
 
-const OneHandedNavigationContext = createContext<OneHandedContextType | null>(null);
+const OneHandedNavigationContext = createContext<OneHandedContextType | null>(
+  null
+);
 
 export const useOneHandedNavigation = () => {
   const context = useContext(OneHandedNavigationContext);
   if (!context) {
-    throw new Error('useOneHandedNavigation must be used within OneHandedNavigationProvider');
+    throw new Error(
+      'useOneHandedNavigation must be used within OneHandedNavigationProvider'
+    );
   }
   return context;
 };
@@ -44,12 +54,12 @@ interface OneHandedNavigationProviderProps {
   children: ReactNode;
 }
 
-export const OneHandedNavigationProvider: React.FC<OneHandedNavigationProviderProps> = ({
-  children
-}) => {
+export const OneHandedNavigationProvider: React.FC<
+  OneHandedNavigationProviderProps
+> = ({ children }) => {
   const [config, setConfig] = useState<NavigationConfig>(() => {
     const { width, height } = Dimensions.get('window');
-    
+
     return {
       thumbReachZone: {
         height: height * 0.65, // Bottom 65% of screen is reachable
@@ -66,14 +76,16 @@ export const OneHandedNavigationProvider: React.FC<OneHandedNavigationProviderPr
         screenHeight: height,
         isSmallDevice: width < 375,
         isTablet: width > 768,
-      }
+      },
     };
   });
 
   const refreshConfig = async () => {
     const { width, height } = Dimensions.get('window');
-    const screenReaderEnabled = await AccessibilityHelper.isScreenReaderEnabled();
-    const reduceMotionEnabled = await AccessibilityHelper.isReduceMotionEnabled();
+    const screenReaderEnabled =
+      await AccessibilityHelper.isScreenReaderEnabled();
+    const reduceMotionEnabled =
+      await AccessibilityHelper.isReduceMotionEnabled();
 
     setConfig(prev => ({
       ...prev,
@@ -94,7 +106,7 @@ export const OneHandedNavigationProvider: React.FC<OneHandedNavigationProviderPr
       thumbReachZone: {
         height: height * (screenReaderEnabled ? 0.75 : 0.65), // More space for screen reader users
         bottomPadding: Platform.OS === 'ios' ? 34 : 16,
-      }
+      },
     }));
   };
 
@@ -103,34 +115,34 @@ export const OneHandedNavigationProvider: React.FC<OneHandedNavigationProviderPr
 
     // Listen for accessibility changes
     const cleanup = AccessibilityHelper.initializeListeners({
-      onScreenReaderChange: (enabled) => {
+      onScreenReaderChange: enabled => {
         setConfig(prev => ({
           ...prev,
           accessibilityMode: {
             ...prev.accessibilityMode,
-            screenReaderEnabled: enabled
+            screenReaderEnabled: enabled,
           },
           thumbReachZone: {
             ...prev.thumbReachZone,
-            height: prev.deviceInfo.screenHeight * (enabled ? 0.75 : 0.65)
-          }
+            height: prev.deviceInfo.screenHeight * (enabled ? 0.75 : 0.65),
+          },
         }));
-        
+
         if (enabled) {
           AccessibilityHelper.announceForAccessibility(
             'Screen reader enabled. Interface optimized for accessibility navigation.'
           );
         }
       },
-      onReduceMotionChange: (enabled) => {
+      onReduceMotionChange: enabled => {
         setConfig(prev => ({
           ...prev,
           accessibilityMode: {
             ...prev.accessibilityMode,
-            reduceMotionEnabled: enabled
-          }
+            reduceMotionEnabled: enabled,
+          },
         }));
-      }
+      },
     });
 
     // Listen for orientation changes
@@ -145,8 +157,10 @@ export const OneHandedNavigationProvider: React.FC<OneHandedNavigationProviderPr
         },
         thumbReachZone: {
           ...prev.thumbReachZone,
-          height: window.height * (prev.accessibilityMode.screenReaderEnabled ? 0.75 : 0.65)
-        }
+          height:
+            window.height *
+            (prev.accessibilityMode.screenReaderEnabled ? 0.75 : 0.65),
+        },
       }));
     });
 
@@ -157,25 +171,30 @@ export const OneHandedNavigationProvider: React.FC<OneHandedNavigationProviderPr
   }, []);
 
   const isElementInReachZone = (elementBottom: number): boolean => {
-    const reachableTop = config.deviceInfo.screenHeight - config.thumbReachZone.height;
+    const reachableTop =
+      config.deviceInfo.screenHeight - config.thumbReachZone.height;
     return elementBottom >= reachableTop;
   };
 
   const getThumbReachableStyles = () => {
     const { deviceInfo, thumbReachZone } = config;
-    
+
     return {
       // Ensure important controls are in the bottom 65% of screen
       thumbZoneHeight: thumbReachZone.height,
       thumbZonePadding: thumbReachZone.bottomPadding,
-      
+
       // Responsive spacing based on device size
-      horizontalPadding: deviceInfo.isSmallDevice ? 16 : deviceInfo.isTablet ? 32 : 20,
+      horizontalPadding: deviceInfo.isSmallDevice
+        ? 16
+        : deviceInfo.isTablet
+          ? 32
+          : 20,
       verticalSpacing: deviceInfo.isSmallDevice ? 12 : 16,
-      
+
       // Touch target sizes for accessibility
       minTouchTarget: config.accessibilityMode.screenReaderEnabled ? 48 : 44,
-      
+
       // Font scaling for readability
       baseFontSize: config.accessibilityMode.largeTextEnabled ? 18 : 16,
       smallFontSize: config.accessibilityMode.largeTextEnabled ? 16 : 14,
@@ -196,7 +215,7 @@ export const OneHandedNavigationProvider: React.FC<OneHandedNavigationProviderPr
         isElementInReachZone,
         getThumbReachableStyles,
         announceNavigation,
-        refreshConfig
+        refreshConfig,
       }}
     >
       {children}
@@ -212,11 +231,14 @@ export const useAccessibleStyling = () => {
   return {
     ...styles,
     // Accessibility-aware colors
-    getColor: (baseColor: string, type: 'text' | 'background' | 'border' = 'text') => {
+    getColor: (
+      baseColor: string,
+      type: 'text' | 'background' | 'border' = 'text'
+    ) => {
       if (!config.accessibilityMode.highContrastEnabled) {
         return baseColor;
       }
-      
+
       // High contrast mode adjustments
       switch (type) {
         case 'text':
@@ -229,16 +251,16 @@ export const useAccessibleStyling = () => {
           return baseColor;
       }
     },
-    
+
     // Accessibility-aware animations
     getAnimationConfig: (baseConfig: any) => ({
       ...baseConfig,
-      duration: config.accessibilityMode.reduceMotionEnabled 
+      duration: config.accessibilityMode.reduceMotionEnabled
         ? baseConfig.duration * 0.3 // Reduce animation duration
         : baseConfig.duration,
       useNativeDriver: !config.accessibilityMode.screenReaderEnabled, // Avoid conflicts
     }),
-    
+
     // Screen reader optimized props
     getAccessibilityProps: (elementConfig: {
       label?: string;
@@ -254,9 +276,9 @@ export const useAccessibleStyling = () => {
           accessibilityRole: elementConfig.role,
         };
       }
-      
+
       // Full accessibility props for screen reader users
       return AccessibilityHelper.getAccessibilityProps(elementConfig);
-    }
+    },
   };
 };

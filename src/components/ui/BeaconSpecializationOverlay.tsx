@@ -1,80 +1,66 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, Dimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-  BeaconUpgradeOption, 
+import { View, Text, TouchableOpacity } from 'react-native';
+import { BaseOverlay } from './BaseOverlay';
+import {
+  BeaconUpgradeOption,
   BeaconSpecialization,
-  SPECIALIZATION_OPTIONS 
+  SPECIALIZATION_OPTIONS,
 } from '../../types/beacon';
 
-interface BeaconSpecializationModalProps {
+interface BeaconSpecializationOverlayProps {
   isVisible: boolean;
   beaconId: string;
   beaconLevel: number;
-  onSelectSpecialization: (beaconId: string, specialization: BeaconSpecialization) => void;
+  onSelectSpecialization: (
+    beaconId: string,
+    specialization: BeaconSpecialization
+  ) => void;
   onClose: () => void;
 }
 
-export const BeaconSpecializationModal: React.FC<BeaconSpecializationModalProps> = ({
-  isVisible,
-  beaconId,
-  beaconLevel,
-  onSelectSpecialization,
-  onClose,
-}) => {
-  const insets = useSafeAreaInsets();
-  const { width, height } = Dimensions.get('window');
-
+export const BeaconSpecializationOverlay: React.FC<
+  BeaconSpecializationOverlayProps
+> = ({ isVisible, beaconId, beaconLevel, onSelectSpecialization, onClose }) => {
   const handleSelectSpecialization = (specialization: BeaconSpecialization) => {
     onSelectSpecialization(beaconId, specialization);
     onClose();
   };
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+    <BaseOverlay
+      isVisible={isVisible}
+      onClose={onClose}
+      title="Beacon Specialization"
+      maxHeight={600}
     >
-      <View className="flex-1 bg-black/70 justify-center items-center p-4">
-        <View 
-          className="bg-surface rounded-2xl p-6 mx-4 max-w-md w-full"
-          style={{ maxHeight: height * 0.8 }}
-        >
-          {/* Header */}
-          <View className="items-center mb-6">
-            <Text className="text-text text-2xl font-bold mb-2">
-              Beacon Specialization
-            </Text>
-            <Text className="text-text/70 text-center">
-              Level {beaconLevel} - Choose your beacon's specialization path
-            </Text>
-          </View>
-
-          {/* Specialization Options */}
-          <View className="space-y-4 mb-6">
-            {SPECIALIZATION_OPTIONS.map((option) => (
-              <SpecializationOption
-                key={option.type}
-                option={option}
-                onSelect={() => handleSelectSpecialization(option.type)}
-              />
-            ))}
-          </View>
-
-          {/* Close Button */}
-          <TouchableOpacity
-            className="bg-surface border border-text/20 rounded-lg py-3"
-            onPress={onClose}
-          >
-            <Text className="text-text text-center font-semibold">
-              Decide Later
-            </Text>
-          </TouchableOpacity>
-        </View>
+      {/* Header Info */}
+      <View className="items-center mb-6">
+        <Text className="text-text/70 text-center">
+          Level {beaconLevel} - Choose your beacon's specialization path
+        </Text>
       </View>
-    </Modal>
+
+      {/* Specialization Options */}
+      <View className="space-y-4 mb-6">
+        {SPECIALIZATION_OPTIONS.map(option => (
+          <SpecializationOption
+            key={option.type}
+            option={option}
+            onSelect={() => handleSelectSpecialization(option.type)}
+          />
+        ))}
+      </View>
+
+      {/* Close Button */}
+      <TouchableOpacity
+        className="bg-surface border border-text/20 rounded-lg py-3"
+        onPress={onClose}
+      >
+        <Text className="text-text text-center font-semibold">
+          Decide Later
+        </Text>
+      </TouchableOpacity>
+    </BaseOverlay>
   );
 };
 
@@ -121,7 +107,9 @@ const SpecializationOption: React.FC<SpecializationOptionProps> = ({
     >
       <View className="flex-row items-start space-x-4">
         {/* Icon */}
-        <View className={`w-12 h-12 rounded-xl ${getSpecializationColor(option.type)} items-center justify-center`}>
+        <View
+          className={`w-12 h-12 rounded-xl ${getSpecializationColor(option.type)} items-center justify-center`}
+        >
           <Text className="text-white text-2xl">{option.icon}</Text>
         </View>
 
@@ -133,7 +121,7 @@ const SpecializationOption: React.FC<SpecializationOptionProps> = ({
           <Text className="text-text/70 text-sm mb-2">
             {option.description}
           </Text>
-          
+
           {/* Bonus Details */}
           <View className="flex-row flex-wrap gap-2">
             {option.bonus.efficiency > 1 && (
@@ -153,7 +141,8 @@ const SpecializationOption: React.FC<SpecializationOptionProps> = ({
             {option.bonus.stability > 1 && (
               <View className="bg-purple-500/20 rounded-md px-2 py-1">
                 <Text className="text-purple-400 text-xs font-medium">
-                  +{Math.round((option.bonus.stability - 1) * 100)}% Pattern Bonus
+                  +{Math.round((option.bonus.stability - 1) * 100)}% Pattern
+                  Bonus
                 </Text>
               </View>
             )}
@@ -164,4 +153,4 @@ const SpecializationOption: React.FC<SpecializationOptionProps> = ({
   );
 };
 
-export default BeaconSpecializationModal;
+export default BeaconSpecializationOverlay;

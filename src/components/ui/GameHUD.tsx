@@ -3,7 +3,10 @@ import { View, Text, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ResourceManager, ResourceState } from '../../core/ResourceManager';
 import { useSettingsFormatter } from '../../hooks/useSettingsFormatter';
-import { AccessibilityHelper, AccessibilityRoles } from '../../utils/accessibility';
+import {
+  AccessibilityHelper,
+  AccessibilityRoles,
+} from '../../utils/accessibility';
 
 interface GameHUDProps {
   resourceManager: ResourceManager;
@@ -18,11 +21,13 @@ interface FormattedResource {
   shortName: string;
 }
 
-export const GameHUD: React.FC<GameHUDProps> = ({ 
-  resourceManager, 
-  showDetailed = false 
+export const GameHUD: React.FC<GameHUDProps> = ({
+  resourceManager,
+  showDetailed = false,
 }) => {
-  const [resources, setResources] = useState<ResourceState>(resourceManager.getResources());
+  const [resources, setResources] = useState<ResourceState>(
+    resourceManager.getResources()
+  );
   const formatter = useSettingsFormatter();
   const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
@@ -53,36 +58,36 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         displayName: 'Quantum Data',
         value: formatResource(resources.quantumData.toNumber()),
         color: 'text-primary',
-        shortName: 'QD'
+        shortName: 'QD',
       },
       {
         name: 'stellarEssence',
         displayName: 'Stellar Essence',
         value: formatResource(resources.stellarEssence.toNumber()),
         color: 'text-secondary',
-        shortName: 'SE'
+        shortName: 'SE',
       },
       {
         name: 'voidFragments',
         displayName: 'Void Fragments',
         value: formatResource(resources.voidFragments.toNumber()),
         color: 'text-accent',
-        shortName: 'VF'
+        shortName: 'VF',
       },
       {
         name: 'resonanceCrystals',
         displayName: 'Resonance Crystals',
         value: formatResource(resources.resonanceCrystals.toNumber()),
         color: 'text-blue-400',
-        shortName: 'RC'
+        shortName: 'RC',
       },
       {
         name: 'chronosParticles',
         displayName: 'Chronos Particles',
         value: formatResource(resources.chronosParticles.toNumber()),
         color: 'text-pink-400',
-        shortName: 'CP'
-      }
+        shortName: 'CP',
+      },
     ];
   };
 
@@ -95,42 +100,43 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
   if (showDetailed) {
     return (
-      <View 
+      <View
         className="bg-surface/95 backdrop-blur-sm border-b border-text/10"
         style={{ paddingTop: insets.top + 12, paddingBottom: 12 }}
         {...AccessibilityHelper.getAccessibilityProps({
           role: AccessibilityRoles.HEADER,
           label: 'Resource Dashboard',
           hint: 'Shows current resource amounts',
-          liveRegion: 'polite'
+          liveRegion: 'polite',
         })}
       >
         <View className="px-4">
           <View className="flex-row flex-wrap justify-between">
-            {visibleResources.map((resource) => {
-              const accessibilityLabel = AccessibilityHelper.describeGameElement('resource', {
-                name: resource.displayName,
-                amount: resource.value,
-                rate: null
-              });
-              
+            {visibleResources.map(resource => {
+              const accessibilityLabel =
+                AccessibilityHelper.describeGameElement('resource', {
+                  name: resource.displayName,
+                  amount: resource.value,
+                  rate: null,
+                });
+
               return (
-                <View 
-                  key={resource.name} 
+                <View
+                  key={resource.name}
                   className="mb-2 min-w-[30%]"
                   {...AccessibilityHelper.getAccessibilityProps({
                     role: AccessibilityRoles.TEXT,
-                    label: accessibilityLabel
+                    label: accessibilityLabel,
                   })}
                 >
                   <Text className="text-text/60 text-xs font-medium">
                     {resource.displayName}
                   </Text>
-                  <Text 
+                  <Text
                     className={`${resource.color} text-sm font-bold`}
                     {...AccessibilityHelper.getAccessibilityProps({
                       role: AccessibilityRoles.TEXT,
-                      label: `${resource.displayName}: ${resource.value}`
+                      label: `${resource.displayName}: ${resource.value}`,
                     })}
                   >
                     {resource.value}
@@ -149,37 +155,39 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     .slice(0, isSmallScreen ? 3 : 5)
     .map(r => `${r.displayName}: ${r.value}`)
     .join(', ');
-  
+
   return (
-    <View 
+    <View
       className="bg-surface/95 backdrop-blur-sm border-b border-text/10"
       style={{ paddingTop: insets.top + 8, paddingBottom: 8 }}
       {...AccessibilityHelper.getAccessibilityProps({
         role: AccessibilityRoles.HEADER,
         label: `Compact Resource HUD: ${compactResourcesText}`,
         hint: 'Shows abbreviated resource amounts',
-        liveRegion: 'polite'
+        liveRegion: 'polite',
       })}
     >
       <View className="px-4">
-        <View className={`flex-row ${isSmallScreen ? 'justify-between' : 'justify-around'} items-center`}>
-          {visibleResources.slice(0, isSmallScreen ? 3 : 5).map((resource) => (
-            <View 
-              key={resource.name} 
+        <View
+          className={`flex-row ${isSmallScreen ? 'justify-between' : 'justify-around'} items-center`}
+        >
+          {visibleResources.slice(0, isSmallScreen ? 3 : 5).map(resource => (
+            <View
+              key={resource.name}
               className="flex-row items-center"
               {...AccessibilityHelper.getAccessibilityProps({
                 role: AccessibilityRoles.TEXT,
-                label: `${resource.displayName}: ${resource.value}`
+                label: `${resource.displayName}: ${resource.value}`,
               })}
             >
               <View className="items-center">
-                <Text 
+                <Text
                   className="text-text/60 text-xs font-medium"
                   importantForAccessibility="no"
                 >
                   {resource.shortName}
                 </Text>
-                <Text 
+                <Text
                   className={`${resource.color} text-sm font-bold`}
                   importantForAccessibility="no"
                 >
@@ -188,22 +196,22 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               </View>
             </View>
           ))}
-          
+
           {visibleResources.length > (isSmallScreen ? 3 : 5) && (
-            <View 
+            <View
               className="items-center"
               {...AccessibilityHelper.getAccessibilityProps({
                 role: AccessibilityRoles.TEXT,
-                label: `${visibleResources.length - (isSmallScreen ? 3 : 5)} more resources available in detailed view`
+                label: `${visibleResources.length - (isSmallScreen ? 3 : 5)} more resources available in detailed view`,
               })}
             >
-              <Text 
+              <Text
                 className="text-text/60 text-xs font-medium"
                 importantForAccessibility="no"
               >
                 +{visibleResources.length - (isSmallScreen ? 3 : 5)}
               </Text>
-              <Text 
+              <Text
                 className="text-text/40 text-xs"
                 importantForAccessibility="no"
               >

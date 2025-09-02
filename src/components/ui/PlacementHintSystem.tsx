@@ -1,5 +1,11 @@
 import React, { memo, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -37,127 +43,138 @@ interface PlacementHintSystemProps {
   enableAnimations?: boolean;
 }
 
-export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(({
-  analysis,
-  isVisible,
-  maxHints = DEFAULT_PLACEMENT_HINT_CONFIG.maxHints,
-  onHintPress,
-  onSuggestionInteraction,
-  onClose,
-  position = 'top',
-  enableAnimations = true,
-}) => {
-  // Filter and prioritize suggestions (show all, no limit)
-  const displayedHints = useMemo(() => {
-    if (!analysis || !analysis.suggestedPositions) return [];
-    
-    return analysis.suggestedPositions
-      .filter(s => {
-        // Validate suggestion makes sense
-        const isValid = s.newBeaconsNeeded > 0 && 
-                       s.newBeaconsNeeded <= 3 && // Max 3 new beacons
-                       s.completionPercentage >= 0.3 && // At least 30% complete
-                       s.potentialBonus >= DEFAULT_PLACEMENT_HINT_CONFIG.minBonusThreshold;
-        
-        if (!isValid && process.env.NODE_ENV === 'development') {
-          console.warn('Filtered invalid suggestion:', s);
-        }
-        
-        return isValid;
-      })
-      .sort((a, b) => b.priority - a.priority);
-  }, [analysis]);
+export const PlacementHintSystem: React.FC<PlacementHintSystemProps> = memo(
+  ({
+    analysis,
+    isVisible,
+    maxHints = DEFAULT_PLACEMENT_HINT_CONFIG.maxHints,
+    onHintPress,
+    onSuggestionInteraction,
+    onClose,
+    position = 'top',
+    enableAnimations = true,
+  }) => {
+    // Filter and prioritize suggestions (show all, no limit)
+    const displayedHints = useMemo(() => {
+      if (!analysis || !analysis.suggestedPositions) return [];
 
-  // Animation value for container visibility
-  const containerAnimation = useSharedValue(0);
-  
-  // Convert React prop to shared value for worklet access
-  const positionShared = useDerivedValue(() => position);
+      return analysis.suggestedPositions
+        .filter(s => {
+          // Validate suggestion makes sense
+          const isValid =
+            s.newBeaconsNeeded > 0 &&
+            s.newBeaconsNeeded <= 3 && // Max 3 new beacons
+            s.completionPercentage >= 0.3 && // At least 30% complete
+            s.potentialBonus >= DEFAULT_PLACEMENT_HINT_CONFIG.minBonusThreshold;
 
-  useEffect(() => {
-    if (enableAnimations) {
-      containerAnimation.value = withTiming(isVisible ? 1 : 0, {
-        duration: SPATIAL_ANIMATION_CONFIG.HINT_CARD_SLIDE_DURATION,
-        easing: Easing.out(Easing.quad),
-      });
-    } else {
-      containerAnimation.value = isVisible ? 1 : 0;
+          if (!isValid && process.env.NODE_ENV === 'development') {
+            console.warn('Filtered invalid suggestion:', s);
+          }
+
+          return isValid;
+        })
+        .sort((a, b) => b.priority - a.priority);
+    }, [analysis]);
+
+    // Animation value for container visibility
+    const containerAnimation = useSharedValue(0);
+
+    // Convert React prop to shared value for worklet access
+    const positionShared = useDerivedValue(() => position);
+
+    useEffect(() => {
+      if (enableAnimations) {
+        containerAnimation.value = withTiming(isVisible ? 1 : 0, {
+          duration: SPATIAL_ANIMATION_CONFIG.HINT_CARD_SLIDE_DURATION,
+          easing: Easing.out(Easing.quad),
+        });
+      } else {
+        containerAnimation.value = isVisible ? 1 : 0;
+      }
+    }, [isVisible, enableAnimations, containerAnimation]);
+
+    // Container animation style
+    const containerAnimatedStyle = useAnimatedStyle(() => {
+      const translateY = interpolate(
+        containerAnimation.value,
+        [0, 1],
+        [
+          positionShared.value === 'top'
+            ? -100
+            : positionShared.value === 'bottom'
+              ? 100
+              : 0,
+          0,
+        ]
+      );
+
+      return {
+        opacity: containerAnimation.value,
+        transform: [{ translateY }],
+      };
+    });
+
+    if (!isVisible || displayedHints.length === 0) {
+      return null;
     }
-  }, [isVisible, enableAnimations, containerAnimation]);
 
-  // Container animation style
-  const containerAnimatedStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(
-      containerAnimation.value,
-      [0, 1],
-      [positionShared.value === 'top' ? -100 : positionShared.value === 'bottom' ? 100 : 0, 0]
-    );
-
-    return {
-      opacity: containerAnimation.value,
-      transform: [{ translateY }],
-    };
-  });
-
-  if (!isVisible || displayedHints.length === 0) {
-    return null;
-  }
-
-  return (
-    <Animated.View style={[
-      styles.container,
-      styles[`container_${position}`],
-      containerAnimatedStyle,
-    ]}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Pattern Opportunities</Text>
-            <Text style={styles.headerSubtitle}>
-              {analysis?.totalPotentialBonus ? 
-                `+${analysis.totalPotentialBonus.toFixed(1)}× total bonus potential` : 
-                'Complete patterns for bonus multipliers'
-              }
-            </Text>
-          </View>
-          {onClose && (
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text style={styles.closeButtonText}>×</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-      
-      <ScrollView 
-        style={styles.hintsContainer}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled={true}
+    return (
+      <Animated.View
+        style={[
+          styles.container,
+          styles[`container_${position}`],
+          containerAnimatedStyle,
+        ]}
       >
-        {displayedHints.map((hint, index) => (
-          <HintCard
-            key={hint.id}
-            suggestion={hint}
-            index={index}
-            enableAnimations={enableAnimations}
-            onPress={() => {
-              onHintPress?.(hint);
-              onSuggestionInteraction?.({
-                type: 'select',
-                suggestion: hint,
-                position: hint.suggestedPosition,
-                timestamp: Date.now(),
-              });
-            }}
-          />
-        ))}
-      </ScrollView>
-    </Animated.View>
-  );
-});
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerText}>
+              <Text style={styles.headerTitle}>Pattern Opportunities</Text>
+              <Text style={styles.headerSubtitle}>
+                {analysis?.totalPotentialBonus
+                  ? `+${analysis.totalPotentialBonus.toFixed(1)}× total bonus potential`
+                  : 'Complete patterns for bonus multipliers'}
+              </Text>
+            </View>
+            {onClose && (
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={onClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.hintsContainer}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+        >
+          {displayedHints.map((hint, index) => (
+            <HintCard
+              key={hint.id}
+              suggestion={hint}
+              index={index}
+              enableAnimations={enableAnimations}
+              onPress={() => {
+                onHintPress?.(hint);
+                onSuggestionInteraction?.({
+                  type: 'select',
+                  suggestion: hint,
+                  position: hint.suggestedPosition,
+                  timestamp: Date.now(),
+                });
+              }}
+            />
+          ))}
+        </ScrollView>
+      </Animated.View>
+    );
+  }
+);
 
 PlacementHintSystem.displayName = 'PlacementHintSystem';
 
@@ -171,104 +188,118 @@ interface HintCardProps {
   onPress: () => void;
 }
 
-const HintCard: React.FC<HintCardProps> = memo(({
-  suggestion,
-  index,
-  enableAnimations,
-  onPress,
-}) => {
-  const cardAnimation = useSharedValue(0);
-  const pressAnimation = useSharedValue(0);
+const HintCard: React.FC<HintCardProps> = memo(
+  ({ suggestion, index, enableAnimations, onPress }) => {
+    const cardAnimation = useSharedValue(0);
+    const pressAnimation = useSharedValue(0);
 
-  // Staggered entrance animation
-  useEffect(() => {
-    if (enableAnimations) {
-      const delay = index * 100; // Stagger by 100ms
-      cardAnimation.value = withDelay(delay, withSpring(1, {
-        damping: SPATIAL_ANIMATION_CONFIG.HINT_CARD_SPRING_CONFIG.damping,
-        stiffness: SPATIAL_ANIMATION_CONFIG.HINT_CARD_SPRING_CONFIG.stiffness,
-      }));
-    } else {
-      cardAnimation.value = 1;
-    }
-  }, [index, enableAnimations, cardAnimation]);
+    // Staggered entrance animation
+    useEffect(() => {
+      if (enableAnimations) {
+        const delay = index * 100; // Stagger by 100ms
+        cardAnimation.value = withDelay(
+          delay,
+          withSpring(1, {
+            damping: SPATIAL_ANIMATION_CONFIG.HINT_CARD_SPRING_CONFIG.damping,
+            stiffness:
+              SPATIAL_ANIMATION_CONFIG.HINT_CARD_SPRING_CONFIG.stiffness,
+          })
+        );
+      } else {
+        cardAnimation.value = 1;
+      }
+    }, [index, enableAnimations, cardAnimation]);
 
-  const cardAnimatedStyle = useAnimatedStyle(() => {
-    const scale = interpolate(cardAnimation.value, [0, 1], [0.8, 1]);
-    const pressScale = interpolate(pressAnimation.value, [0, 1], [1, 0.95]);
-    
-    return {
-      opacity: cardAnimation.value,
-      transform: [{ scale: scale * pressScale }],
-    };
-  });
+    const cardAnimatedStyle = useAnimatedStyle(() => {
+      const scale = interpolate(cardAnimation.value, [0, 1], [0.8, 1]);
+      const pressScale = interpolate(pressAnimation.value, [0, 1], [1, 0.95]);
 
-  const handlePressIn = useCallback(() => {
-    if (enableAnimations) {
-      pressAnimation.value = withTiming(1, { duration: 100 });
-    }
-  }, [enableAnimations, pressAnimation]);
+      return {
+        opacity: cardAnimation.value,
+        transform: [{ scale: scale * pressScale }],
+      };
+    });
 
-  const handlePressOut = useCallback(() => {
-    if (enableAnimations) {
-      pressAnimation.value = withTiming(0, { duration: 100 });
-    }
-  }, [enableAnimations, pressAnimation]);
+    const handlePressIn = useCallback(() => {
+      if (enableAnimations) {
+        pressAnimation.value = withTiming(1, { duration: 100 });
+      }
+    }, [enableAnimations, pressAnimation]);
 
-  const patternColor = PATTERN_COLORS[suggestion.type];
-  const patternName = getPatternDisplayName(suggestion.type);
+    const handlePressOut = useCallback(() => {
+      if (enableAnimations) {
+        pressAnimation.value = withTiming(0, { duration: 100 });
+      }
+    }, [enableAnimations, pressAnimation]);
 
-  return (
-    <Animated.View style={[styles.hintCard, cardAnimatedStyle]}>
-      <TouchableOpacity
-        style={[styles.hintCardTouchable, { borderLeftColor: patternColor.stroke }]}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={0.8}
-      >
-        <View style={styles.hintCardHeader}>
-          <View style={[styles.patternIcon, { backgroundColor: patternColor.fill }]}>
-            <Text style={styles.patternIconText}>{getPatternIcon(suggestion.type)}</Text>
+    const patternColor = PATTERN_COLORS[suggestion.type];
+    const patternName = getPatternDisplayName(suggestion.type);
+
+    return (
+      <Animated.View style={[styles.hintCard, cardAnimatedStyle]}>
+        <TouchableOpacity
+          style={[
+            styles.hintCardTouchable,
+            { borderLeftColor: patternColor.stroke },
+          ]}
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={0.8}
+        >
+          <View style={styles.hintCardHeader}>
+            <View
+              style={[
+                styles.patternIcon,
+                { backgroundColor: patternColor.fill },
+              ]}
+            >
+              <Text style={styles.patternIconText}>
+                {getPatternIcon(suggestion.type)}
+              </Text>
+            </View>
+
+            <View style={styles.hintCardInfo}>
+              <Text style={styles.hintCardTitle}>Complete {patternName}</Text>
+              <Text style={styles.hintCardSubtitle}>
+                {suggestion.newBeaconsNeeded} beacon
+                {suggestion.newBeaconsNeeded !== 1 ? 's' : ''} needed
+              </Text>
+            </View>
+
+            <View style={styles.bonusDisplay}>
+              <Text style={styles.bonusValue}>
+                +{suggestion.potentialBonus.toFixed(1)}×
+              </Text>
+              <Text style={styles.bonusLabel}>bonus</Text>
+            </View>
           </View>
-          
-          <View style={styles.hintCardInfo}>
-            <Text style={styles.hintCardTitle}>Complete {patternName}</Text>
-            <Text style={styles.hintCardSubtitle}>
-              {suggestion.newBeaconsNeeded} beacon{suggestion.newBeaconsNeeded !== 1 ? 's' : ''} needed
-            </Text>
+
+          <View style={styles.hintCardMetrics}>
+            <MetricBadge
+              label="Priority"
+              value={Math.round(suggestion.priority * 100)}
+              suffix="%"
+              color="#10B981"
+            />
+            <MetricBadge
+              label="Progress"
+              value={Math.round(suggestion.completionPercentage * 100)}
+              suffix="%"
+              color="#3B82F6"
+            />
+            <MetricBadge
+              label="Value"
+              value={suggestion.estimatedValue.toFixed(1)}
+              suffix="×"
+              color="#F59E0B"
+            />
           </View>
-          
-          <View style={styles.bonusDisplay}>
-            <Text style={styles.bonusValue}>+{suggestion.potentialBonus.toFixed(1)}×</Text>
-            <Text style={styles.bonusLabel}>bonus</Text>
-          </View>
-        </View>
-        
-        <View style={styles.hintCardMetrics}>
-          <MetricBadge
-            label="Priority"
-            value={Math.round(suggestion.priority * 100)}
-            suffix="%"
-            color="#10B981"
-          />
-          <MetricBadge
-            label="Progress"
-            value={Math.round(suggestion.completionPercentage * 100)}
-            suffix="%"
-            color="#3B82F6"
-          />
-          <MetricBadge
-            label="Value"
-            value={suggestion.estimatedValue.toFixed(1)}
-            suffix="×"
-            color="#F59E0B"
-          />
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-});
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+);
 
 HintCard.displayName = 'HintCard';
 
@@ -282,19 +313,17 @@ interface MetricBadgeProps {
   color: string;
 }
 
-const MetricBadge: React.FC<MetricBadgeProps> = memo(({
-  label,
-  value,
-  suffix = '',
-  color,
-}) => (
-  <View style={[styles.metricBadge, { borderColor: color }]}>
-    <Text style={styles.metricLabel}>{label}</Text>
-    <Text style={[styles.metricValue, { color }]}>
-      {value}{suffix}
-    </Text>
-  </View>
-));
+const MetricBadge: React.FC<MetricBadgeProps> = memo(
+  ({ label, value, suffix = '', color }) => (
+    <View style={[styles.metricBadge, { borderColor: color }]}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={[styles.metricValue, { color }]}>
+        {value}
+        {suffix}
+      </Text>
+    </View>
+  )
+);
 
 MetricBadge.displayName = 'MetricBadge';
 
@@ -303,21 +332,31 @@ MetricBadge.displayName = 'MetricBadge';
  */
 function getPatternDisplayName(type: PatternType): string {
   switch (type) {
-    case 'triangle': return 'Triangle';
-    case 'square': return 'Square';
-    case 'pentagon': return 'Pentagon';
-    case 'hexagon': return 'Hexagon';
-    default: return 'Pattern';
+    case 'triangle':
+      return 'Triangle';
+    case 'square':
+      return 'Square';
+    case 'pentagon':
+      return 'Pentagon';
+    case 'hexagon':
+      return 'Hexagon';
+    default:
+      return 'Pattern';
   }
 }
 
 function getPatternIcon(type: PatternType): string {
   switch (type) {
-    case 'triangle': return '△';
-    case 'square': return '□';
-    case 'pentagon': return '⬟';
-    case 'hexagon': return '⬡';
-    default: return '●';
+    case 'triangle':
+      return '△';
+    case 'square':
+      return '□';
+    case 'pentagon':
+      return '⬟';
+    case 'hexagon':
+      return '⬡';
+    default:
+      return '●';
   }
 }
 
