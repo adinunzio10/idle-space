@@ -637,8 +637,14 @@ export class GameController {
     // Clear connection manager
     this.beaconConnectionManager.clear();
 
-    // Reset quantum data to 0
-    this.resourceManager.setResource('quantumData', 0);
+    // Reset all resources to default starting amounts
+    const resetResources = { ...DEFAULT_RESOURCES, lastUpdated: Date.now() };
+    console.log('[GameController] Resetting resources to defaults:', resetResources);
+    this.resourceManager.loadFromGameState(resetResources);
+    
+    // Also update the game state resources to match
+    this.gameState.resources = resetResources;
+    console.log('[GameController] Game state resources after reset:', this.gameState.resources);
 
     // Update generation engine to reflect cleared state
     this.generationEngine.updateFromGameState(this.gameState);

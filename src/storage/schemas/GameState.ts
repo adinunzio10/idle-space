@@ -200,10 +200,10 @@ export const DEFAULT_PLAYER_STATISTICS: PlayerStatistics = {
 };
 
 export const DEFAULT_RESOURCES: Resources = {
-  quantumData: 100,
+  quantumData: 1000,
   stellarEssence: 0,
   voidFragments: 0,
   resonanceCrystals: 0,
   chronosParticles: 0,
-  lastUpdated: Date.now(),
+  lastUpdated: 0, // Use 0 for default timestamp to avoid timing issues
 };

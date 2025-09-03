@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { Resources } from '../storage/schemas/GameState';
+import { Resources, DEFAULT_RESOURCES } from '../storage/schemas/GameState';
 
 export interface ResourceState {
   quantumData: BigNumber;
@@ -42,11 +42,11 @@ export class ResourceManager {
 
   private constructor() {
     this.resources = {
-      quantumData: new BigNumber(100),
-      stellarEssence: new BigNumber(0),
-      voidFragments: new BigNumber(0),
-      resonanceCrystals: new BigNumber(0),
-      chronosParticles: new BigNumber(0),
+      quantumData: new BigNumber(DEFAULT_RESOURCES.quantumData),
+      stellarEssence: new BigNumber(DEFAULT_RESOURCES.stellarEssence),
+      voidFragments: new BigNumber(DEFAULT_RESOURCES.voidFragments),
+      resonanceCrystals: new BigNumber(DEFAULT_RESOURCES.resonanceCrystals),
+      chronosParticles: new BigNumber(DEFAULT_RESOURCES.chronosParticles),
       lastUpdated: Date.now(),
     };
   }

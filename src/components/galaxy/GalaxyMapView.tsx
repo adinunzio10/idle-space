@@ -314,7 +314,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       index.rebuild(beacons);
       return index;
     },
-    [beacons.length, beacons.map(b => b.id).join(',')],
+    [beacons.length, beacons.map(b => b.id).join(','), beaconUpdateTrigger],
     (prev, next) => {
       // Custom comparison to avoid rebuilding if beacons haven't actually changed
       return prev && next && prev.getStats().totalBeacons === next.getStats().totalBeacons;
@@ -362,6 +362,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   }, [
     beacons.length,
     beacons.map(b => `${b.id}-${b.position.x}-${b.position.y}`).join(','),
+    beaconUpdateTrigger,
   ]);
 
   // Pattern detector with optimized memoization
@@ -1864,6 +1865,20 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       })();
     }
   }, [beaconUpdateTrigger]);
+
+  // Immediately clear rendering state when beacons are cleared
+  React.useEffect(() => {
+    if (beacons.length === 0) {
+      console.log('[GalaxyMapView] Beacons cleared - immediately updating rendering state');
+      setRenderingState(prev => ({
+        ...prev,
+        visibleBeacons: [],
+        clusters: [],
+        connections: [],
+        patterns: [],
+      }));
+    }
+  }, [beacons.length]);
 
   return (
     <View

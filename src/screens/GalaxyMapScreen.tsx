@@ -76,6 +76,8 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
 
   // Track beacon count to detect external beacon changes (like reset)
   const [previousBeaconCount, setPreviousBeaconCount] = useState(0);
+  const [forceUpdateKey, setForceUpdateKey] = useState(0);
+  const [, forceRerender] = useState({});
 
   // Performance monitoring
   const performanceOverlay = usePerformanceOverlay();
@@ -100,13 +102,27 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
       const isSignificantChange = Math.abs(currentBeaconCount - previousBeaconCount) > 1 || currentBeaconCount === 0;
       
       if (isSignificantChange) {
-        console.log(`[GalaxyMapScreen] Significant beacon count change detected: ${previousBeaconCount} -> ${currentBeaconCount}`);
+        console.log(`[GalaxyMapScreen] Significant beacon count change detected: ${previousBeaconCount} -> ${currentBeaconCount}, forcing immediate update`);
         setBeaconVersion(prev => prev + 1); // Force map re-render
+        setForceUpdateKey(prev => prev + 1); // Additional force update
+        forceRerender({}); // Force component re-render
+        
+        // Force multiple updates to break through caching
+        setTimeout(() => {
+          setBeaconVersion(prev => prev + 1);
+          setForceUpdateKey(prev => prev + 1);
+          forceRerender({});
+        }, 10);
+        
+        setTimeout(() => {
+          setBeaconVersion(prev => prev + 1);
+          forceRerender({});
+        }, 100);
       }
       
       setPreviousBeaconCount(currentBeaconCount);
     }
-  }, [gameState?.beacons, previousBeaconCount]);
+  }, [gameState, previousBeaconCount]);
 
   // Handle probe launch from FAB
   const handleProbeLaunch = (type: ProbeType, launchPosition: Point2D) => {
@@ -211,9 +227,14 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
     }));
   };
 
+  // Create a memoized beacon list that updates when gameState changes
+  const beaconsForMap = React.useMemo(() => {
+    return getBeaconsForMap();
+  }, [gameState?.beacons, beaconVersion, forceUpdateKey]);
+
   const selectedBeacon =
     selectedBeaconId && gameState
-      ? getBeaconsForMap().find(b => b.id === selectedBeaconId) || null
+      ? beaconsForMap.find(b => b.id === selectedBeaconId) || null
       : null;
 
   if (showProbeManager) {
@@ -387,13 +408,13 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
           <GalaxyMapView
             width={screenData.width}
             height={screenData.height - headerHeight}
-            beacons={getBeaconsForMap()}
+            beacons={beaconsForMap}
             probes={probes}
             onBeaconSelect={handleBeaconSelect}
             onMapPress={handleMapPress}
             showDebugOverlay={showDebugOverlay}
             selectedBeacon={selectedBeacon}
-            beaconUpdateTrigger={beaconVersion}
+            beaconUpdateTrigger={beaconVersion + forceUpdateKey}
           />
 
           <StatusBar style="light" />
