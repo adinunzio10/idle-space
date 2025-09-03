@@ -317,7 +317,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     [beacons.length, beacons.map(b => b.id).join(',')],
     (prev, next) => {
       // Custom comparison to avoid rebuilding if beacons haven't actually changed
-      return prev && next && prev.size === next.size;
+      return prev && next && prev.getStats().totalBeacons === next.getStats().totalBeacons;
     }
   );
 

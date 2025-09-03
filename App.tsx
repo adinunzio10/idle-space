@@ -95,8 +95,8 @@ function GameApp() {
       // Mark probe as processed to prevent duplicates
       processedProbeIds.add(probe.id);
 
-      // Create beacon at probe's target position using the probe's type with smart fallback
-      const result = gameController.placeBeaconWithFallback(
+      // Create beacon at probe's target position using the probe's type (FREE - no cost for probe deployments)
+      const result = gameController.placeBeaconFromProbe(
         probe.targetPosition,
         probe.type
       );

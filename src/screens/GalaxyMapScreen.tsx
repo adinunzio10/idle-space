@@ -74,6 +74,9 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
     timestamp: number;
   }>({ position: null, timestamp: 0 });
 
+  // Track beacon count to detect external beacon changes (like reset)
+  const [previousBeaconCount, setPreviousBeaconCount] = useState(0);
+
   // Performance monitoring
   const performanceOverlay = usePerformanceOverlay();
 
@@ -84,6 +87,26 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
       fpsMonitor.stop();
     };
   }, []);
+
+  // Monitor beacon count changes to detect external beacon changes (like reset)
+  React.useEffect(() => {
+    if (!gameState) return;
+    
+    const currentBeaconCount = Object.keys(gameState.beacons).length;
+    
+    // If beacon count changed significantly (not just +1 from manual placement)
+    if (previousBeaconCount !== currentBeaconCount) {
+      // Check if it's a major change (like reset) vs normal placement
+      const isSignificantChange = Math.abs(currentBeaconCount - previousBeaconCount) > 1 || currentBeaconCount === 0;
+      
+      if (isSignificantChange) {
+        console.log(`[GalaxyMapScreen] Significant beacon count change detected: ${previousBeaconCount} -> ${currentBeaconCount}`);
+        setBeaconVersion(prev => prev + 1); // Force map re-render
+      }
+      
+      setPreviousBeaconCount(currentBeaconCount);
+    }
+  }, [gameState?.beacons, previousBeaconCount]);
 
   // Handle probe launch from FAB
   const handleProbeLaunch = (type: ProbeType, launchPosition: Point2D) => {
