@@ -2344,11 +2344,82 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 48,
+        "title": "Debug Galaxy Star Map Entropy Rendering Artifacts",
+        "description": "Investigate and resolve visual artifacting issues in the galaxy star map where entropy mechanics create large uneven squares that change color, likely caused by sector rendering or entropy visualization problems.",
+        "details": "Debug the galaxy star map entropy rendering system to eliminate visual artifacts: 1) **Artifact Investigation**: Examine SectorOverlayManager and entropy visualization components for rendering inconsistencies. Common causes include: improper SVG path generation for sector boundaries, incorrect opacity calculations during entropy transitions, z-index conflicts between entropy overlays and star systems, texture bleeding from sector state transitions. 2) **Sector Rendering Issues**: Review hexagonal sector grid generation in GalaxySectorManager, verify sector boundary calculations don't create overlapping regions, check for floating-point precision errors in coordinate transformations, validate sector state color interpolation functions. 3) **Entropy Visualization Fixes**: Debug EntropySystem's visual effects including particle systems, color gradients, and state transitions. Fix entropy spread animation timing to prevent abrupt color changes, implement proper alpha blending for overlapping entropy effects, optimize entropy particle rendering to avoid clustering artifacts. 4) **SVG Optimization**: Review react-native-svg usage for sector overlays, implement proper viewBox calculations, fix path data generation for consistent sector shapes, add proper clipping masks to prevent overflow artifacts. 5) **Performance Optimization**: Implement sector culling for off-screen regions, add entropy effect batching to reduce draw calls, optimize color transition calculations using GPU-friendly interpolation methods.",
+        "testStrategy": "Comprehensive testing of galaxy map visual integrity: 1) **Artifact Detection**: Load galaxy map with various entropy states and zoom levels, systematically scan for square artifacts or color bleeding, test entropy transitions over time to identify visual discontinuities. 2) **Sector Boundary Verification**: Zoom to different levels and verify hexagonal sector boundaries render consistently without gaps or overlaps, test sector state transitions (healthy->dying->dead) for smooth color changes. 3) **Entropy Animation Testing**: Observe entropy spread mechanics in real-time, verify particle effects flow smoothly between sectors without clustering, test entropy visualization with multiple simultaneous spreading events. 4) **Cross-Platform Validation**: Test on iOS, Android, and web platforms to identify platform-specific rendering differences, verify SVG rendering consistency across React Native implementations. 5) **Performance Impact**: Monitor frame rate during heavy entropy activity, test memory usage with extended entropy animations, verify rendering performance doesn't degrade with multiple active entropy sources.",
+        "status": "pending",
+        "dependencies": [
+          26,
+          38,
+          23
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Investigate Rendering System Components",
+            "description": "Analyze the GalaxyMapView rendering pipeline, SVG component usage, and identify visual artifacts in star map rendering. Examine react-native-svg usage patterns, transform calculations, and viewport state management for potential square artifact sources.",
+            "dependencies": [],
+            "details": "Examine the GalaxyMapView.tsx component (lines 159-2046) which uses react-native-svg for galaxy rendering. Focus on: SVG viewBox calculations and transformations, AnimatedSvg and AnimatedG component usage, viewport bounds calculations in calculateVisibleBounds(), transform prop generation in useAnimatedProps(). Look for improper SVG path generation, incorrect opacity calculations, z-index conflicts between overlays and star systems, and texture bleeding from state transitions that could manifest as square artifacts.",
+            "status": "pending",
+            "testStrategy": "Create test cases that load galaxy map at different zoom levels and entropy states. Systematically scan for square artifacts, color bleeding, and visual discontinuities. Test viewport transformations with various translation and scale values to identify rendering edge cases."
+          },
+          {
+            "id": 2,
+            "title": "Debug Sector Grid System Implementation",
+            "description": "Implement and debug the missing GalaxySectorManager and SectorOverlayManager components responsible for hexagonal sector grid generation and entropy visualization overlays.",
+            "dependencies": [
+              "48.1"
+            ],
+            "details": "Since the search reveals no existing SectorOverlayManager or GalaxySectorManager components, these need to be implemented based on task 26 requirements. Create GalaxySectorManager class for hexagonal sector grid using axial coordinate system. Implement SectorOverlayManager for entropy visualization overlays. Focus on: proper hexagonal grid generation algorithms, sector boundary calculations to prevent overlapping regions, floating-point precision in coordinate transformations, sector state color interpolation functions. Ensure SVG path generation for sector boundaries is mathematically correct.",
+            "status": "pending",
+            "testStrategy": "Test sector grid generation accuracy across different galaxy sizes. Verify hexagonal coordinate calculations don't create gaps or overlaps. Test sector boundary rendering at various zoom levels. Validate color interpolation functions produce smooth transitions without abrupt changes."
+          },
+          {
+            "id": 3,
+            "title": "Fix Entropy Visualization Effects",
+            "description": "Create and optimize the EntropySystem component for managing entropy spread mechanics and visual effects including particle systems, color gradients, and state transitions.",
+            "dependencies": [
+              "48.2"
+            ],
+            "details": "Implement EntropySystem class based on task 26 specifications for entropy spread mechanics. Create visual effects for entropy including: particle systems for entropy spread animation, color gradients for entropy intensity visualization, smooth state transitions between healthy/dying/dead star system states. Fix entropy spread animation timing to prevent abrupt color changes, implement proper alpha blending for overlapping entropy effects, optimize entropy particle rendering to avoid clustering artifacts. Integrate with sector system for proper entropy propagation between adjacent sectors.",
+            "status": "pending",
+            "testStrategy": "Test entropy spreading between adjacent sectors with various beacon network configurations. Verify entropy state transitions occur smoothly over time. Test entropy particle effects don't create visual clustering or performance issues. Validate color gradients display properly at different zoom levels."
+          },
+          {
+            "id": 4,
+            "title": "Optimize SVG Rendering Performance",
+            "description": "Review and optimize react-native-svg usage throughout the galaxy rendering system, implement proper viewBox calculations, fix path data generation, and add clipping masks to prevent overflow artifacts.",
+            "dependencies": [
+              "48.1",
+              "48.2",
+              "48.3"
+            ],
+            "details": "Optimize SVG rendering performance in the galaxy map system. Focus on: reviewing react-native-svg usage in GalaxyMapView and related components, implementing proper viewBox calculations for consistent scaling, fixing SVG path data generation for sector shapes and entropy effects, adding proper clipping masks to prevent visual overflow artifacts. Address potential issues in the AnimatedSvg and AnimatedG components where transform calculations might cause square artifacts. Ensure SVG coordinate systems align properly with galaxy coordinate system.",
+            "status": "pending",
+            "testStrategy": "Test SVG rendering performance with large numbers of sectors and entropy effects. Verify viewBox calculations maintain aspect ratios correctly. Test clipping masks prevent visual artifacts at viewport boundaries. Measure rendering performance improvements after optimizations."
+          },
+          {
+            "id": 5,
+            "title": "Implement Performance Optimizations",
+            "description": "Add sector culling for off-screen regions, implement entropy effect batching to reduce draw calls, and optimize color transition calculations using GPU-friendly interpolation methods.",
+            "dependencies": [
+              "48.4"
+            ],
+            "details": "Implement performance optimizations for the galaxy rendering system: sector culling to avoid rendering off-screen regions (integrate with existing spatial indexing system), entropy effect batching to reduce draw calls by grouping similar effects, optimize color transition calculations using GPU-friendly interpolation methods leveraging React Native Reanimated worklets. Build on existing performance monitoring system (lines 300, 537-543) and battery-aware performance settings (lines 188-194). Ensure optimizations work with existing LOD system and clustering mechanisms.",
+            "status": "pending",
+            "testStrategy": "Measure rendering performance improvements with sector culling enabled. Test entropy effect batching reduces draw calls without visual quality loss. Verify GPU-friendly color interpolation maintains smooth transitions. Test performance on mid-range devices to ensure 60fps target is maintained with optimizations active."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-02T20:22:16.583Z",
+      "updated": "2025-09-03T01:28:30.328Z",
       "description": "Tasks for master context"
     }
   }
