@@ -14,7 +14,8 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { GalaxyMapView } from '../components/galaxy/GalaxyMapView';
+import { GalaxyMapCore } from '../components/galaxy/GalaxyMapCore';
+import { GalaxyMapModular } from '../components/galaxy/GalaxyMapModular';
 import { GameHUD } from '../components/ui/GameHUD';
 import { BeaconSpecializationOverlay } from '../components/ui/BeaconSpecializationOverlay';
 import { useStrategicOverlays } from '../components/ui/OverlayManager';
@@ -31,8 +32,63 @@ import { Beacon } from '../types/galaxy';
 import { BeaconType, BeaconSpecialization } from '../types/beacon';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { ProbeType } from '../types/probe';
-import { Point2D } from '../types/galaxy';
+import { Point2D, StarSystem, GalacticSector } from '../types/galaxy';
 import { fpsMonitor } from '../utils/performance/FPSMonitor';
+
+// Test data generation for StarSystemModule and SectorModule
+function generateTestStarSystems(count: number): StarSystem[] {
+  const systems: StarSystem[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    systems.push({
+      id: `test-star-${i}`,
+      position: {
+        x: Math.random() * 2000,
+        y: Math.random() * 2000,
+      },
+      state: Math.random() > 0.8 ? 'dying' : Math.random() > 0.9 ? 'dead' : 'healthy',
+      radius: 0.5 + Math.random() * 2,
+      brightness: 0.3 + Math.random() * 0.7,
+      type: Math.random() > 0.7 ? 'background' : 'main',
+      entropy: Math.random() * 0.8,
+    });
+  }
+  
+  return systems;
+}
+
+function generateTestSectors(count: number): GalacticSector[] {
+  const sectors: GalacticSector[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const centerX = Math.random() * 1800 + 100;
+    const centerY = Math.random() * 1800 + 100;
+    const size = 50 + Math.random() * 100;
+    
+    sectors.push({
+      id: `test-sector-${i}`,
+      center: { x: centerX, y: centerY },
+      bounds: {
+        minX: centerX - size,
+        maxX: centerX + size,
+        minY: centerY - size,
+        maxY: centerY + size,
+      },
+      vertices: [
+        { x: centerX - size, y: centerY - size },
+        { x: centerX + size, y: centerY - size },
+        { x: centerX + size, y: centerY + size },
+        { x: centerX - size, y: centerY + size },
+      ],
+      entropy: Math.random(),
+      entropyLevel: Math.random(),
+      starSystemIds: [],
+      neighboringSectors: [],
+    });
+  }
+  
+  return sectors;
+}
 
 type GalaxyMapScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -50,7 +106,20 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   gameController,
   probes,
 }) => {
+  console.log('[GalaxyMapScreen] Component rendering...');
   const navigation = useNavigation<GalaxyMapScreenNavigationProp>();
+  
+  // Generate test data once and keep it stable
+  const [testStarSystems] = React.useState(() => {
+    const systems = generateTestStarSystems(150);
+    console.log(`[GalaxyMapScreen] Generated ${systems.length} test star systems`);
+    return systems;
+  });
+  const [testSectors] = React.useState(() => {
+    const sectors = generateTestSectors(30);
+    console.log(`[GalaxyMapScreen] Generated ${sectors.length} test sectors`);
+    return sectors;
+  });
   const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
   const headerHeight = 140 + insets.top;
@@ -66,6 +135,7 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
     string | null
   >(null);
   const [showDebugOverlay, setShowDebugOverlay] = useState(false);
+  const [useModularMap, setUseModularMap] = useState(false);
   const [selectedBeaconId, setSelectedBeaconId] = useState<string | null>(null);
   const [beaconVersion, setBeaconVersion] = useState(0);
   const [showProbeManager, setShowProbeManager] = useState(false);
@@ -314,6 +384,24 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
                         FPS
                       </Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setUseModularMap(!useModularMap)}
+                      className={`px-2 py-1 rounded border ${
+                        useModularMap
+                          ? 'bg-blue-500/20 border-blue-500'
+                          : 'bg-surface border-text/20'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-semibold ${
+                          useModularMap
+                            ? 'text-blue-400'
+                            : 'text-text/60'
+                        }`}
+                      >
+                        MOD
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 )}
               </View>
@@ -405,17 +493,36 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
             </View>
           </View>
 
-          <GalaxyMapView
-            width={screenData.width}
-            height={screenData.height - headerHeight}
-            beacons={beaconsForMap}
-            probes={probes}
-            onBeaconSelect={handleBeaconSelect}
-            onMapPress={handleMapPress}
-            showDebugOverlay={showDebugOverlay}
-            selectedBeacon={selectedBeacon}
-            beaconUpdateTrigger={beaconVersion + forceUpdateKey}
-          />
+          {useModularMap ? (
+            <GalaxyMapModular
+              width={screenData.width}
+              height={screenData.height - headerHeight}
+              beacons={beaconsForMap}
+              starSystems={(() => {
+                console.log(`[GalaxyMapScreen] Passing ${testStarSystems?.length || 0} star systems to GalaxyMapModular`);
+                return testStarSystems;
+              })()}
+              sectors={(() => {
+                console.log(`[GalaxyMapScreen] Passing ${testSectors?.length || 0} sectors to GalaxyMapModular`);
+                return testSectors;
+              })()}
+              onBeaconSelect={handleBeaconSelect}
+              onMapPress={handleMapPress}
+              selectedBeacon={selectedBeacon}
+              enabledModules={[]} // Enable all modules
+              performanceMode={false}
+              debugMode={showDebugOverlay}
+            />
+          ) : (
+            <GalaxyMapCore
+              width={screenData.width}
+              height={screenData.height - headerHeight}
+              beacons={beaconsForMap}
+              onBeaconSelect={handleBeaconSelect}
+              onMapPress={handleMapPress}
+              selectedBeacon={selectedBeacon}
+            />
+          )}
 
           <StatusBar style="light" />
 

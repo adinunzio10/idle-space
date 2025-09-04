@@ -12,6 +12,7 @@ export function screenToGalaxy(
   screenPoint: Point2D,
   viewport: ViewportState
 ): Point2D {
+  'worklet';
   return {
     x: (screenPoint.x - viewport.translateX) / viewport.scale,
     y: (screenPoint.y - viewport.translateY) / viewport.scale,
@@ -311,6 +312,7 @@ export function isVelocityInsignificant(
  * Calculate distance between two points
  */
 export function distanceBetweenPoints(p1: Point2D, p2: Point2D): number {
+  'worklet';
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
   return Math.sqrt(dx * dx + dy * dy);
@@ -324,6 +326,7 @@ export function isPointInHitArea(
   target: Point2D,
   radius: number
 ): boolean {
+  'worklet';
   return distanceBetweenPoints(point, target) <= radius;
 }
 

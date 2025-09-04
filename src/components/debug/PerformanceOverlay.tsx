@@ -4,6 +4,7 @@ import { useFPSMonitor } from '../../utils/performance/FPSMonitor';
 import { performanceMonitor } from '../../utils/performance/monitor';
 import { poolManager } from '../../utils/performance/ObjectPool';
 import { useBatteryOptimizationWithSettings } from '../../hooks/useBatteryOptimization';
+import { galaxyMapConfig, QualityLevel } from '../../utils/galaxy/GalaxyMapConfig';
 
 interface PerformanceOverlayProps {
   visible: boolean;
@@ -23,6 +24,8 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
     useBatteryOptimizationWithSettings();
   const [expanded, setExpanded] = useState(false);
   const [poolStats, setPoolStats] = useState<any>({});
+  const [configStats, setConfigStats] = useState<any>(null);
+  const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -30,6 +33,8 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
     const interval = setInterval(() => {
       // Update pool statistics
       setPoolStats(poolManager.getStats());
+      // Update config statistics
+      setConfigStats(galaxyMapConfig.getPerformanceStats());
     }, 1000);
 
     return () => clearInterval(interval);
@@ -233,6 +238,41 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
             )}
           </View>
 
+          {/* Galaxy Map Config Stats */}
+          {configStats && (
+            <View>
+              <Text className="text-white text-xs font-semibold mb-1">
+                Galaxy Config
+              </Text>
+              <Text className="text-xs font-mono text-gray-300">
+                Quality: {configStats.currentQuality.toUpperCase()}
+                {galaxyMapConfig.getState().qualityLocked && (
+                  <Text className="text-orange-400"> 🔒</Text>
+                )}
+              </Text>
+              <Text className="text-xs font-mono text-gray-300">
+                Mode: {configStats.performanceMode ? 'PERF' : 'NORMAL'}
+              </Text>
+              <Text className="text-xs font-mono text-gray-300">
+                Auto-Opt: {galaxyMapConfig.getState().autoOptimization ? 'ON' : 'OFF'}
+                {galaxyMapConfig.getState().qualityLocked && (
+                  <Text className="text-orange-400"> (LOCKED)</Text>
+                )}
+              </Text>
+              <Text className="text-xs font-mono text-gray-300">
+                Skip Ratio: {Math.round(configStats.skipRatio * 100)}%
+              </Text>
+              <Text className="text-xs font-mono text-gray-300">
+                Modules: {configStats.enabledModules.length} enabled
+              </Text>
+              {configStats.disabledModules.length > 0 && (
+                <Text className="text-xs font-mono text-red-400">
+                  Disabled: {configStats.disabledModules.join(', ')}
+                </Text>
+              )}
+            </View>
+          )}
+
           {/* Runtime */}
           <View>
             <Text className="text-white text-xs font-semibold mb-1">
@@ -249,8 +289,106 @@ export const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
           {/* Controls */}
           <View className="pt-2 border-t border-gray-600">
             <TouchableOpacity
+              onPress={() => setShowControls(!showControls)}
+              className="bg-blue-600 px-3 py-1 rounded mb-1"
+            >
+              <Text className="text-white text-xs font-semibold text-center">
+                Config Controls {showControls ? '▼' : '▶'}
+              </Text>
+            </TouchableOpacity>
+            
+            {showControls && (
+              <View className="space-y-1">
+                {/* Auto-Optimization Controls */}
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-white text-xs font-semibold">Auto-Opt:</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const currentState = galaxyMapConfig.getState();
+                      const newState = { ...currentState, autoOptimization: !currentState.autoOptimization };
+                      galaxyMapConfig.importConfig(newState);
+                    }}
+                    className={`px-2 py-1 rounded ${
+                      galaxyMapConfig.getState().autoOptimization
+                        ? 'bg-green-600'
+                        : 'bg-red-600'
+                    }`}
+                  >
+                    <Text className="text-white text-xs">
+                      {galaxyMapConfig.getState().autoOptimization ? 'ON' : 'OFF'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Quality Lock Control */}
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-white text-xs font-semibold">Lock Quality:</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const currentState = galaxyMapConfig.getState();
+                      const newState = { 
+                        ...currentState, 
+                        qualityLocked: !currentState.qualityLocked,
+                        lastManualQualityChange: currentState.qualityLocked ? 0 : Date.now()
+                      };
+                      galaxyMapConfig.importConfig(newState);
+                    }}
+                    className={`px-2 py-1 rounded ${
+                      galaxyMapConfig.getState().qualityLocked
+                        ? 'bg-orange-600'
+                        : 'bg-gray-600'
+                    }`}
+                  >
+                    <Text className="text-white text-xs">
+                      {galaxyMapConfig.getState().qualityLocked ? '🔒' : '🔓'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Quality Controls */}
+                <Text className="text-white text-xs font-semibold">Quality:</Text>
+                <View className="flex-row flex-wrap gap-1">
+                  {(['low', 'medium', 'high', 'ultra'] as QualityLevel[]).map(level => (
+                    <TouchableOpacity
+                      key={level}
+                      onPress={() => galaxyMapConfig.setQualityLevel(level, 'manual')}
+                      className={`px-2 py-1 rounded ${
+                        configStats?.currentQuality === level
+                          ? 'bg-blue-500'
+                          : 'bg-gray-600'
+                      }`}
+                    >
+                      <Text className="text-white text-xs">
+                        {level.charAt(0).toUpperCase()}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                
+                {/* Emergency Controls */}
+                <TouchableOpacity
+                  onPress={() => galaxyMapConfig.emergencyPoolCleanup()}
+                  className="bg-orange-600 px-2 py-1 rounded"
+                >
+                  <Text className="text-white text-xs font-semibold text-center">
+                    Pool Cleanup
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => galaxyMapConfig.emergencyReset()}
+                  className="bg-red-600 px-2 py-1 rounded"
+                >
+                  <Text className="text-white text-xs font-semibold text-center">
+                    Emergency Reset
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            <TouchableOpacity
               onPress={onToggle}
-              className="bg-gray-700 px-3 py-1 rounded"
+              className="bg-gray-700 px-3 py-1 rounded mt-1"
             >
               <Text className="text-white text-xs font-semibold text-center">
                 Toggle

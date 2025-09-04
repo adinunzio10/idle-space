@@ -75,7 +75,7 @@ export interface EntropyProgressionEvent {
  */
 export class GalacticEnvironmentController {
   private state: GalacticEnvironmentState;
-  private eventHistory: Array<ResourceHarvestEvent | StarSystemStateChangeEvent | EntropyProgressionEvent>;
+  private eventHistory: (ResourceHarvestEvent | StarSystemStateChangeEvent | EntropyProgressionEvent)[];
   private updateInterval: NodeJS.Timeout | null = null;
   private isRunning: boolean = false;
 
@@ -409,7 +409,7 @@ export class GalacticEnvironmentController {
   /**
    * Get recent events
    */
-  public getRecentEvents(timeWindowMs: number = 60000): Array<ResourceHarvestEvent | StarSystemStateChangeEvent | EntropyProgressionEvent> {
+  public getRecentEvents(timeWindowMs: number = 60000): (ResourceHarvestEvent | StarSystemStateChangeEvent | EntropyProgressionEvent)[] {
     const cutoff = Date.now() - timeWindowMs;
     return this.eventHistory.filter(event => event.timestamp > cutoff);
   }

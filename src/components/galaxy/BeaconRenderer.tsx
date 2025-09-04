@@ -59,6 +59,11 @@ const BeaconRendererComponent: React.FC<BeaconRendererProps> = ({
   // Convert galaxy coordinates to screen coordinates
   const screenPosition = galaxyToScreen(beacon.position, viewportState);
 
+  // DEBUG: Track beacon coordinate transformation for comparison with circular effects
+  React.useEffect(() => {
+    console.log(`[DEBUG:BeaconRenderer] ${beacon.id} - worldPos(${beacon.position.x.toFixed(1)}, ${beacon.position.y.toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenPos(${screenPosition.x.toFixed(1)}, ${screenPosition.y.toFixed(1)}) - ${Date.now()}`);
+  }, [beacon.position.x, beacon.position.y, viewportState.scale, viewportState.translateX, viewportState.translateY, screenPosition.x, screenPosition.y, beacon.id]);
+
   // Get color scheme for beacon type
   const colors = RENDERING_CONFIG.BEACON_COLORS[beacon.type];
 
@@ -159,6 +164,16 @@ const BeaconRendererComponent: React.FC<BeaconRendererProps> = ({
     lodInfo.showAnimations,
     enableGlowEffects,
   ]);
+
+  // CRITICAL FIX: Release pooled object on component unmount/cleanup
+  React.useEffect(() => {
+    return () => {
+      const pool = poolManager.getPool<PooledBeaconRenderData>('beaconRender');
+      if (pool && renderData) {
+        pool.release(renderData);
+      }
+    };
+  }, [renderData]);
 
   // Animated props for pulse effect
   const animatedGlowProps = useAnimatedProps(() => {
