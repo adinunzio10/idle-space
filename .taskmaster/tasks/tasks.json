@@ -3112,11 +3112,113 @@
             "parentTaskId": 55
           }
         ]
+      },
+      {
+        "id": 56,
+        "title": "Improve React Native Component Testing Infrastructure for GalaxyMapModular Integration Tests",
+        "description": "Enhance testing infrastructure to support comprehensive integration tests for GalaxyMapModular component by addressing current Jest configuration gaps, complex native module mocking challenges, and worklet context simulation issues that prevent proper gesture flow testing.",
+        "status": "done",
+        "dependencies": [
+          11,
+          53,
+          54
+        ],
+        "priority": "medium",
+        "details": "Implement comprehensive testing infrastructure improvements for React Native components based on identified challenges: 1) **Jest Configuration Enhancement**: Fix 'import statement outside module' errors by configuring transformIgnorePatterns for ES modules including expo-battery/build/Battery.js and rbush/index.js. Update Jest preset to properly handle React Native ES module dependencies. Configure Jest to work with current project structure and babel configuration. 2) **Complex Native Module Mock Library**: Create comprehensive mock implementations for cascade dependencies: @react-native-async-storage/async-storage (storage operations), expo-battery (hardware access), react-native-gesture-handler (gesture system with proper state transitions), react-native-reanimated (worklet context simulation), react-native-svg (vector graphics rendering), and rbush (spatial indexing). Address deep dependency trees that require extensive mocking setup. 3) **Worklet Execution Context Simulator**: Develop sophisticated worklet runtime simulation that properly handles separate JS context execution, enables runOnJS() calls to function correctly, and allows shared values to update without JSI context errors. Create mock gesture recognizers for automated gesture sequence testing. 4) **Reusable Test Setup Utilities**: Build upon existing ModuleStability.simple.test.tsx approach by creating reusable test utilities that can handle both logic-only testing and full React Native integration. Integrate with existing jest-setup.js infrastructure. Create helper functions for galaxy map component testing with proper context providers. 5) **End-to-End Integration Testing Framework**: Develop test utilities that enable proper testing of gesture interactions (pan, pinch, tap), module lifecycle management, and visual component rendering while avoiding the cascade dependency issues encountered in current setup.",
+        "testStrategy": "Validate testing infrastructure through systematic resolution of current issues and comprehensive test coverage: 1) **Jest Configuration Validation**: Create tests that verify ES module imports work correctly for expo-battery and rbush dependencies. Validate transformIgnorePatterns configuration handles all React Native dependencies properly. Test that jest-setup.js integration works with new mock infrastructure. 2) **Native Module Mock Testing**: Develop unit tests for each mock implementation to ensure they properly simulate real library behavior without triggering cascade dependency issues. Test storage operations, battery access, gesture events, worklet execution, and SVG rendering mocks independently. 3) **Worklet Context Simulation Testing**: Create tests that validate worklet execution context simulation works correctly, runOnJS() calls execute properly, and shared values update without JSI errors. Test worklet-based animations and gesture handlers in isolation. 4) **Integration Test Suite Development**: Build upon ModuleStability.simple.test.tsx success to create full integration tests for GalaxyMapModular that test complete user flows while avoiding native module complexity. Simulate gesture flows, beacon interactions, and visual updates. 5) **Performance and Stability Testing**: Implement tests that detect render loop issues, validate gesture interactions don't trigger excessive re-renders, and ensure mock implementations don't introduce memory leaks or performance regressions.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configure Jest transformIgnorePatterns for ES Module Dependencies",
+            "description": "Update Jest configuration to properly handle ES module imports from expo-battery, rbush, and other React Native dependencies by configuring transformIgnorePatterns.",
+            "dependencies": [],
+            "details": "Modify jest.config.js or package.json Jest configuration to add transformIgnorePatterns for specific ES modules causing 'import statement outside module' errors. Include expo-battery/build/Battery.js, rbush/index.js, and other React Native ES module dependencies. Update Jest preset to react-native and ensure babel configuration works with current project structure.\n<info added on 2025-09-04T23:13:27.790Z>\nIdentified specific ES module dependencies causing Jest transform errors: expo-battery/build/Battery.js and rbush/index.js both use ES6 import statements that Jest cannot process with current configuration. These modules are currently excluded by transformIgnorePatterns, preventing Jest from applying babel transformation. Need to modify Jest configuration to include these specific module paths in the transform process while maintaining exclusion of other node_modules dependencies for performance.\n</info added on 2025-09-04T23:13:27.790Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Native Module Mock Library for Core Dependencies",
+            "description": "Create comprehensive mock implementations for @react-native-async-storage/async-storage, expo-battery, react-native-svg, and rbush dependencies.",
+            "dependencies": [
+              "56.1"
+            ],
+            "details": "Build mock implementations that provide realistic API surface for AsyncStorage operations, battery hardware access simulation, SVG rendering stubs, and spatial indexing functionality. Create mock files in __mocks__ directory following React Native testing patterns. Integrate with existing jest-setup.js infrastructure.\n<info added on 2025-09-04T23:14:31.881Z>\nStarted implementation by examining jest-setup.js configuration. Found basic mocks for reanimated (@react-native-reanimated/mock), react-navigation (@react-navigation/native), and custom galaxy modules (AudioManager, PersistenceService). Missing comprehensive mocks for:\n\n1. @react-native-async-storage/async-storage - needs full CRUD API mock\n2. expo-battery - requires battery state simulation (level, isCharging, powerMode)\n3. react-native-gesture-handler - needs gesture event simulation infrastructure\n4. react-native-svg - requires SVG component rendering stubs\n5. rbush - needs spatial indexing mock with insert/search/remove methods\n\nCreating __mocks__ directory structure to house library-specific mock files. Will implement each mock to provide realistic API surface without triggering cascade dependency resolution, ensuring tests can run without actual native module bindings while maintaining expected behavior patterns for component integration testing.\n</info added on 2025-09-04T23:14:31.881Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create React Native Gesture Handler Mock System",
+            "description": "Implement comprehensive mocking for react-native-gesture-handler with proper state transitions and gesture recognizer simulation.",
+            "dependencies": [
+              "56.2"
+            ],
+            "details": "Build mock gesture recognizers for PanGestureHandler, PinchGestureHandler, and TapGestureHandler with realistic state management (UNDETERMINED, BEGAN, ACTIVE, END, CANCELLED). Create mock event objects with proper gesture data structure. Enable automated gesture sequence testing for galaxy map interactions.\n<info added on 2025-09-04T23:15:54.692Z>\nIMPLEMENTATION PROGRESS: Setting up Gesture Handler Mock System with enhanced react-native-gesture-handler/jestSetup integration. Creating comprehensive gesture recognizer mocks (PanGestureHandler, PinchGestureHandler, TapGestureHandler) with proper state machine implementation covering all gesture states (UNDETERMINED, BEGAN, ACTIVE, END, CANCELLED). Building gesture event simulation utilities with realistic gesture data structures to enable automated gesture sequence testing for galaxy map pan/zoom/tap interactions. Focus on creating mock system that properly simulates gesture state transitions and provides consistent test environment for complex gesture flows.\n</info added on 2025-09-04T23:15:54.692Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Develop Worklet Execution Context Simulator",
+            "description": "Create sophisticated worklet runtime simulation for react-native-reanimated that handles separate JS context execution and enables runOnJS() calls.",
+            "dependencies": [
+              "56.3"
+            ],
+            "details": "Implement worklet context simulator that properly handles SharedValue updates without JSI context errors. Mock worklet execution environment, runOnJS() callback system, and shared value synchronization. Create utilities to test worklet functions in isolation and validate UI/JS thread communication.\n<info added on 2025-09-04T23:17:35.025Z>\nStarting Worklet Execution Context Simulator implementation. Current react-native-reanimated/mock provides basic mocking but requires significant enhancement to properly simulate worklet execution environment. Key implementation areas:\n\n1. **Enhanced Mock Configuration**: Extending existing react-native-reanimated/mock with custom worklet runtime that simulates separate JavaScript execution context behavior found in real worklet environment.\n\n2. **Separate JS Context Simulation**: Creating isolated execution environment that mimics how worklets run in separate JavaScript context, ensuring proper scope isolation and variable access patterns match production behavior.\n\n3. **runOnJS() Callback System**: Implementing mock runOnJS() function that properly queues and executes JavaScript thread callbacks, maintaining correct timing and execution order for UI-to-JS thread communication.\n\n4. **SharedValue Update Handling**: Creating JSI-error-free SharedValue synchronization system that allows testing of shared value mutations without triggering JSI context errors that occur in standard Jest environment.\n\n5. **Mock Worklet Runtime**: Building comprehensive worklet behavior simulator that handles worklet directive recognition, scope management, and thread-appropriate execution for testing worklet functions in isolation.\n\nImplementation approach will focus on creating utilities that enable comprehensive testing of UI/JS thread communication patterns while maintaining compatibility with existing test infrastructure.\n</info added on 2025-09-04T23:17:35.025Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Build Reusable Test Setup Utilities Library",
+            "description": "Create comprehensive test utility functions building on ModuleStability.simple.test.tsx pattern for galaxy map component testing.",
+            "dependencies": [
+              "56.4"
+            ],
+            "details": "Develop reusable test setup utilities that handle both logic-only testing and full React Native integration. Create helper functions for galaxy map context providers, beacon state management, and module lifecycle testing. Build upon existing simple test approach while enabling more complex integration scenarios.\n<info added on 2025-09-04T23:19:16.461Z>\nCreated comprehensive test-utils.ts library implementing reusable test setup patterns derived from ModuleStability.simple.test.tsx. The library includes createTestGalaxyMap() factory for consistent galaxy map instance creation, mockBeaconData() generator for test beacon datasets, TestContextProviders wrapper combining GalaxyContext and theme providers, setupTestEnvironment() helper for Jest configuration integration, and TestModuleManager class for controlled module lifecycle testing. All utilities integrate with existing jest-setup.js infrastructure and provide both isolated unit testing capabilities and full React Native integration test support for complex galaxy map component scenarios.\n</info added on 2025-09-04T23:19:16.461Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Component Rendering Test Infrastructure",
+            "description": "Create test infrastructure for React Native component rendering with proper context providers and mock native components.",
+            "dependencies": [
+              "56.5"
+            ],
+            "details": "Build component rendering test utilities using React Native Testing Library integration. Create mock implementations for galaxy map context, beacon state providers, and navigation context. Enable testing of component lifecycle, prop handling, and state updates while avoiding cascade dependency issues.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Develop Integration Test Framework for Gesture Interactions",
+            "description": "Create end-to-end testing framework for gesture interactions including pan, pinch, and tap events on galaxy map components.",
+            "dependencies": [
+              "56.6"
+            ],
+            "details": "Build integration test framework that enables testing of gesture interactions with proper event sequencing and state validation. Create test utilities for simulating pan gestures (galaxy map navigation), pinch gestures (zoom operations), and tap events (beacon selection). Validate gesture flow from start to completion with proper module integration.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Create Performance and Stability Test Suite",
+            "description": "Implement comprehensive test suite for performance validation and stability testing of galaxy map module lifecycle management.",
+            "dependencies": [
+              "56.7"
+            ],
+            "details": "Develop performance test utilities that validate gesture response times, animation smoothness, and memory usage during galaxy map interactions. Create stability tests for module lifecycle events, error handling, and recovery scenarios. Build test cases that verify proper cleanup and resource management in complex gesture sequences.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-04T22:18:13.879Z",
+      "updated": "2025-09-04T23:21:23.397Z",
       "description": "Tasks for master context"
     }
   }
