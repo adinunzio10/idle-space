@@ -142,22 +142,15 @@ const createMockBeacon = (id: string, x: number, y: number): Beacon => ({
   position: { x, y },
   level: 1,
   type: 'pioneer',
-  isActive: true,
   connections: [],
-  lastUpdate: Date.now(),
-  signalStrength: 1,
-  patterns: [],
 });
 
 const createMockConnection = (id: string, sourceId: string, targetId: string): Connection => ({
   id,
   sourceId,
   targetId,
-  start: { x: 0, y: 0 },
-  end: { x: 100, y: 100 },
-  isActive: true,
-  type: 'quantum',
   strength: 1,
+  isActive: true,
   patterns: [],
 });
 
@@ -191,7 +184,6 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
           height={600}
           beacons={mockBeacons}
           connections={mockConnections}
-          testID="galaxy-map"
         />
       </GestureHandlerRootView>
     );
@@ -274,7 +266,6 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
           beacons={mockBeacons}
           connections={mockConnections}
           debugMode={true}
-          testID="galaxy-map"
         />
       </GestureHandlerRootView>
     );

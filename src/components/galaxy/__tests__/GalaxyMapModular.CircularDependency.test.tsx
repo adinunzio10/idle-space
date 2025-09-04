@@ -146,10 +146,11 @@ describe('GalaxyMapModular - Circular Dependency Prevention', () => {
         connections: [
           {
             id: 'conn-1',
-            fromBeaconId: 'beacon-0',
-            toBeaconId: 'beacon-1',
-            type: 'quantum',
+            sourceId: 'beacon-0',
+            targetId: 'beacon-1',
             strength: 1.0,
+            isActive: true,
+            patterns: [],
           }
         ],
         enabledModules: ['beacon-rendering', 'connection-rendering', 'environment-rendering'],
@@ -226,7 +227,7 @@ describe('GalaxyMapModular - Circular Dependency Prevention', () => {
       const originalSetState = React.useState;
       React.useState = jest.fn((initial) => {
         const [state, setState] = originalSetState(initial);
-        const trackedSetState = (newState) => {
+        const trackedSetState = (newState: any) => {
           stateUpdateCount++;
           if (stateUpdateCount > maxRenderCount) {
             throw new Error(`Excessive state updates detected (${stateUpdateCount}). This indicates a circular dependency causing infinite re-renders.`);
@@ -238,7 +239,7 @@ describe('GalaxyMapModular - Circular Dependency Prevention', () => {
 
       // Track component render cycles
       const OriginalComponent = GalaxyMapModular;
-      const TrackedComponent = (props) => {
+      const TrackedComponent = (props: any) => {
         renderCount++;
         if (renderCount > maxRenderCount) {
           throw new Error(`Excessive renders detected (${renderCount}). This indicates a circular dependency causing infinite re-renders.`);
@@ -299,10 +300,11 @@ describe('GalaxyMapModular - Circular Dependency Prevention', () => {
           ),
           connections: Array.from({ length: 3 }, (_, i) => ({
             id: `conn-${i}`,
-            fromBeaconId: `stress-beacon-${i}`,
-            toBeaconId: `stress-beacon-${i + 1}`,
-            type: 'quantum' as const,
+            sourceId: `stress-beacon-${i}`,
+            targetId: `stress-beacon-${i + 1}`,
             strength: 1.0,
+            isActive: true,
+            patterns: [],
           })),
           performanceMode: true,
           debugMode: true,
@@ -385,10 +387,11 @@ describe('Task 53 Regression Tests - Specific Fixes Validation', () => {
       connections: [
         {
           id: 'conn-1',
-          fromBeaconId: 'beacon-1',
-          toBeaconId: 'beacon-2',
-          type: 'quantum' as const,
+          sourceId: 'beacon-1',
+          targetId: 'beacon-2',
           strength: 1.0,
+          isActive: true,
+          patterns: [],
         }
       ],
     };
@@ -520,10 +523,11 @@ describe('GalaxyMapModular - Integration Stability Tests', () => {
       ),
       connections: Array.from({ length: 20 }, (_, i) => ({
         id: `max-conn-${i}`,
-        fromBeaconId: `max-beacon-${i}`,
-        toBeaconId: `max-beacon-${(i + 1) % 50}`,
-        type: 'quantum' as const,
+        sourceId: `max-beacon-${i}`,
+        targetId: `max-beacon-${(i + 1) % 50}`,
         strength: Math.random(),
+        isActive: true,
+        patterns: [],
       })),
       enabledModules: ['beacon-rendering', 'connection-rendering', 'environment-rendering'],
       performanceMode: true,
@@ -605,7 +609,7 @@ describe('GalaxyMapModular - Integration Stability Tests', () => {
       const [state, setState] = originalUseState(initial);
       
       // Track calls to setCachedModuleRender specifically
-      const trackedSetState = (newState) => {
+      const trackedSetState = (newState: any) => {
         // Check if this is the cachedModuleRender setter by examining the call stack
         const stackTrace = new Error().stack || '';
         if (stackTrace.includes('setCachedModuleRender') || 

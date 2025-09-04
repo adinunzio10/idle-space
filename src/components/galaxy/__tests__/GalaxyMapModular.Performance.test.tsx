@@ -149,10 +149,11 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
       const stableConnections = [
         {
           id: 'conn-1',
-          fromBeaconId: 'beacon-1',
-          toBeaconId: 'beacon-2',
-          type: 'quantum' as const,
+          sourceId: 'beacon-1',
+          targetId: 'beacon-2',
           strength: 1.0,
+          isActive: true,
+          patterns: [],
         }
       ];
 
@@ -520,8 +521,8 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
         ),
         connections: Array.from({ length: 25 }, (_, i) => ({
           id: `high-conn-${i}`,
-          fromBeaconId: `high-beacon-${i}`,
-          toBeaconId: `high-beacon-${(i + 1) % 50}`,
+          sourceId: `high-beacon-${i}`,
+          targetId: `high-beacon-${(i + 1) % 50}`,
           type: 'quantum' as const,
           strength: Math.random(),
         })),

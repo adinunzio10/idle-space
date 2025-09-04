@@ -12,6 +12,7 @@ import {
   ParticleEmitterType,
   particleManager,
 } from '../../utils/effects/ParticleSystem';
+import { PooledParticle } from '../../utils/performance/ObjectPool';
 import { ViewportState } from '../../types/galaxy';
 
 interface ParticleEffectsRendererProps {
@@ -220,7 +221,7 @@ export const ParticleEffectsRenderer: React.FC<ParticleEffectsRendererProps> =
       const particles: any[] = [];
       activeEffects.forEach(system => {
         const systemParticles = system.getParticles();
-        systemParticles.forEach(particle => {
+        systemParticles.forEach((particle: PooledParticle) => {
           // Convert galaxy coordinates to screen coordinates
           const screenX =
             (particle.x - viewportState.translateX) * viewportState.scale;

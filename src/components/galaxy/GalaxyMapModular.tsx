@@ -503,9 +503,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       screenDimensions: cloneScreenDimensions,
       beacons: stableBeacons.map(beacon => ({ ...beacon, position: { ...beacon.position } })),
       connections: stableConnections.map(connection => ({ 
-        ...connection, 
-        start: { ...connection.start }, 
-        end: { ...connection.end } 
+        ...connection
       })),
       patterns: stablePatterns.map(pattern => ({ ...pattern })),
       starSystems: stableStarSystems.map(system => ({ 

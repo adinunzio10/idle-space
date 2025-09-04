@@ -324,10 +324,11 @@ describe('GalaxyMapModular - Memory Leak Detection', () => {
         ),
         connections: Array.from({ length: 8 }, (_, i) => ({
           id: `stress-conn-${i}`,
-          fromBeaconId: `stress-beacon-${i}`,
-          toBeaconId: `stress-beacon-${i + 1}`,
-          type: 'quantum' as const,
+          sourceId: `stress-beacon-${i}`,
+          targetId: `stress-beacon-${i + 1}`,
           strength: 1.0,
+          isActive: true,
+          patterns: [],
         })),
         enabledModules: ['beacon-rendering', 'connection-rendering'],
         performanceMode: true,
@@ -562,10 +563,11 @@ describe('Task 53 Memory Leak Regression Tests', () => {
       connections: [
         {
           id: 'conn-1',
-          fromBeaconId: 'beacon-1',
-          toBeaconId: 'beacon-2',
-          type: 'quantum' as const,
+          sourceId: 'beacon-1',
+          targetId: 'beacon-2',
           strength: 1.0,
+          isActive: true,
+          patterns: [],
         }
       ],
       enabledModules: ['beacon-rendering', 'connection-rendering'],

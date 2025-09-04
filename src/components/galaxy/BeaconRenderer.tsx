@@ -181,7 +181,7 @@ const BeaconRendererComponent: React.FC<BeaconRendererProps> = ({
       glowSize: renderData.glowSize,
       glowOpacity: renderData.glowOpacity,
       level: renderData.level,
-      type: renderData.type,
+      type: renderData.type as 'pioneer' | 'harvester' | 'architect',
       active: renderData.active,
     }));
   }, [renderData]);
