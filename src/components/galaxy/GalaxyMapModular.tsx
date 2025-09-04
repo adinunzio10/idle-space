@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, InteractionManager } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, {
   useAnimatedProps,
   useSharedValue,
@@ -44,6 +44,13 @@ import { galaxyMapConfig } from '../../utils/galaxy/GalaxyMapConfig';
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
+// Stable default arrays to prevent infinite re-renders from default parameters
+const EMPTY_CONNECTIONS: Connection[] = [];
+const EMPTY_PATTERNS: GeometricPattern[] = [];
+const EMPTY_STAR_SYSTEMS: StarSystem[] = [];
+const EMPTY_SECTORS: GalacticSector[] = [];
+const EMPTY_MODULES: string[] = [];
+
 interface GalaxyMapModularProps {
   width: number;
   height: number;
@@ -65,15 +72,15 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
   width,
   height,
   beacons,
-  connections = [],
-  patterns = [],
-  starSystems = [],
-  sectors = [],
+  connections = EMPTY_CONNECTIONS,
+  patterns = EMPTY_PATTERNS,
+  starSystems = EMPTY_STAR_SYSTEMS,
+  sectors = EMPTY_SECTORS,
   onBeaconSelect,
   onMapPress,
   selectedBeacon = null,
   style,
-  enabledModules = [],
+  enabledModules = EMPTY_MODULES,
   performanceMode = false,
   debugMode = false,
 }) => {
@@ -89,15 +96,13 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
   const shouldSkipFrame = useRef(false);
   const lastSkipCheck = useRef(Date.now());
   
-  // Gesture performance optimization
-  const [isGestureActive, setIsGestureActive] = useState(false);
+  // Gesture performance optimization (simplified to use only ref)
   const isGestureActiveRef = useRef(false);
   const lastViewportUpdate = useRef(Date.now());
   
-  // Wrapper function to keep state and ref in sync without useEffect
+  // Simplified gesture state management
   const setGestureActiveState = useCallback((active: boolean) => {
     isGestureActiveRef.current = active;
-    setIsGestureActive(active);
   }, []);
   const pendingViewportUpdate = useRef<{
     translateX: number;
@@ -105,8 +110,9 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     scale: number;
   } | null>(null);
   
-  // Module render caching
-  const [cachedModuleRender, setCachedModuleRender] = useState<React.ReactNode[]>([]);
+  // Module render caching (simplified)
+  const cachedModuleRenderRef = useRef<React.ReactNode[]>([]);
+  const lastCacheTime = useRef(0);
 
   // Notifications
   const [notifications, setNotifications] = useState<{ 
@@ -287,7 +293,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       timeouts.forEach(timeoutId => clearTimeout(timeoutId));
       timeouts.clear();
     };
-  }, [performanceMode, debugMode, enabledModules, addNotification]);
+  }, [performanceMode, debugMode, enabledModules.join(',')]);
 
   // Performance monitoring with frame skipping
   const updatePerformanceMetrics = useCallback(() => {
@@ -322,8 +328,8 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         console.log(`[GalaxyMapModular] FPS: ${Math.round(newFps)}, Global FPS: ${Math.round(globalMetrics.averageFps)}, Quality: ${configStats.currentQuality}, Skip Ratio: ${(configStats.skipRatio * 100).toFixed(1)}%, Disabled Modules: ${globalMetrics.disabledModules.length}, Frame: ${frameCount.current}`);
       }
 
-      // Emergency mode detection - if FPS drops below 15 consistently
-      if (newFps < 15 && !emergencyModeRef.current) {
+      // Emergency mode detection - if FPS drops below 10 consistently (and not in initial frames)
+      if (newFps < 10 && !emergencyModeRef.current && frameCount.current > 60) {
         console.warn('[GalaxyMapModular] Emergency mode triggered due to low FPS');
         setEmergencyModeState(true);
         galaxyMapConfig.emergencyReset();
@@ -344,8 +350,8 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       };
       
       // Throttle updates during gestures (except immediate updates)
-      if (!immediate && isGestureActiveRef.current && now - lastViewportUpdate.current < 50) {
-        return; // Skip update, will be processed later
+      if (!immediate && isGestureActiveRef.current && now - lastViewportUpdate.current < 33) {
+        return; // Skip update, will be processed later (30fps during gestures)
       }
       
       lastViewportUpdate.current = now;
@@ -376,17 +382,16 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       // Clear pending update
       pendingViewportUpdate.current = null;
     },
-    [width, height] // Removed isGestureActive since we use it inside but don't need to recreate when it changes
+    [width, height] // Dependencies for calculateVisibleBounds
   );
   
-  // Process any pending viewport updates when gesture ends using InteractionManager
+  // Process pending viewport updates immediately after gesture ends (no InteractionManager delay)
   useEffect(() => {
-    if (!isGestureActive && pendingViewportUpdate.current) {
-      const pending = pendingViewportUpdate.current;
-      
-      // Defer expensive operations until after gesture animations complete
-      InteractionManager.runAfterInteractions(() => {
-        // Direct viewport state update without calling updateViewportState to avoid loops
+    const checkPendingUpdate = () => {
+      if (!isGestureActiveRef.current && pendingViewportUpdate.current) {
+        const pending = pendingViewportUpdate.current;
+        
+        // Process immediately after gesture ends
         const now = Date.now();
         lastViewportUpdate.current = now;
         
@@ -414,9 +419,13 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         
         // Clear pending update
         pendingViewportUpdate.current = null;
-      });
-    }
-  }, [isGestureActive, width, height]); // Added width and height since they're used in calculations
+      }
+    };
+    
+    // Check for pending updates periodically
+    const interval = setInterval(checkPendingUpdate, 16); // Check at 60fps
+    return () => clearInterval(interval);
+  }, [width, height]); // Only width/height dependency needed
 
   // Memoize screen dimensions to prevent unnecessary context recreation
   const screenDimensions = useMemo(() => ({ width, height }), [width, height]);
@@ -428,65 +437,124 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
   const stableStarSystems = useMemo(() => starSystems, [starSystems]);
   const stableSectors = useMemo(() => sectors, [sectors]);
   
-  // Create module context with more selective updates
+  // Throttled viewport for module context to reduce re-renders
+  const throttledViewportRef = useRef(viewportState);
+  const lastContextUpdate = useRef(0);
+  
+  // Update throttled viewport only when significant changes occur
+  const throttledViewport = useMemo(() => {
+    const now = Date.now();
+    const timeSinceUpdate = now - lastContextUpdate.current;
+    
+    // Always update immediately during initial render
+    if (lastContextUpdate.current === 0) {
+      lastContextUpdate.current = now;
+      throttledViewportRef.current = viewportState;
+      return viewportState;
+    }
+    
+    // During gestures, throttle more aggressively (every 100ms)
+    const throttleInterval = isGestureActiveRef.current ? 100 : 50;
+    
+    if (timeSinceUpdate >= throttleInterval) {
+      // Check if viewport has changed significantly
+      const prev = throttledViewportRef.current;
+      const scaleChanged = Math.abs(viewportState.scale - prev.scale) > 0.01;
+      const translateChanged = 
+        Math.abs(viewportState.translateX - prev.translateX) > 10 ||
+        Math.abs(viewportState.translateY - prev.translateY) > 10;
+      
+      if (scaleChanged || translateChanged) {
+        lastContextUpdate.current = now;
+        throttledViewportRef.current = viewportState;
+        return viewportState;
+      }
+    }
+    
+    // Return previous viewport if not enough change
+    return throttledViewportRef.current;
+  }, [viewportState.scale, viewportState.translateX, viewportState.translateY]);
+  
+  // Create module context with throttled viewport updates to prevent excessive re-renders
   const moduleContext = useMemo((): ModuleContext => {
     const now = Date.now();
     const deltaTime = lastFrameTime.current > 0 ? now - lastFrameTime.current : 16.67;
     
+    // Use throttled viewport instead of current one
+    const cloneViewport = {
+      translateX: throttledViewport.translateX,
+      translateY: throttledViewport.translateY,
+      scale: throttledViewport.scale,
+      bounds: {
+        minX: throttledViewport.bounds.minX,
+        maxX: throttledViewport.bounds.maxX,
+        minY: throttledViewport.bounds.minY,
+        maxY: throttledViewport.bounds.maxY,
+      },
+    };
+
+    const cloneScreenDimensions = {
+      width: screenDimensions.width,
+      height: screenDimensions.height,
+    };
+    
     return {
-      viewport: viewportState,
-      screenDimensions,
-      beacons: stableBeacons,
-      connections: stableConnections,
-      patterns: stablePatterns,
-      starSystems: stableStarSystems,
-      sectors: stableSectors,
+      viewport: cloneViewport,
+      screenDimensions: cloneScreenDimensions,
+      beacons: stableBeacons.map(beacon => ({ ...beacon, position: { ...beacon.position } })),
+      connections: stableConnections.map(connection => ({ 
+        ...connection, 
+        start: { ...connection.start }, 
+        end: { ...connection.end } 
+      })),
+      patterns: stablePatterns.map(pattern => ({ ...pattern })),
+      starSystems: stableStarSystems.map(system => ({ 
+        ...system, 
+        position: { ...system.position } 
+      })),
+      sectors: stableSectors.map(sector => ({ 
+        ...sector, 
+        center: { ...sector.center },
+        bounds: { ...sector.bounds }
+      })),
       deltaTime,
       frameCount: frameCount.current,
     };
-  }, [viewportState, screenDimensions, stableBeacons, stableConnections, stablePatterns, stableStarSystems, stableSectors]);
+  }, [throttledViewport, screenDimensions, stableBeacons, stableConnections, stablePatterns, stableStarSystems, stableSectors]);
 
-  // Render modules with caching during gestures
+
+  // Render modules with simplified caching for emergency performance only
   const moduleElements = useMemo(() => {
     if (!moduleManager.current || !modulesInitialized) {
       return [];
     }
 
-    // Skip rendering if frame skipping is enabled and should skip
-    if (shouldSkipFrame.current) {
-      return cachedModuleRender.length > 0 ? cachedModuleRender : []; // Use cached render
+    // Only use cache in emergency situations (severe performance degradation)
+    const now = Date.now();
+    if (shouldSkipFrame.current && cachedModuleRenderRef.current.length > 0) {
+      // Update cache timestamp to indicate it's being used
+      lastCacheTime.current = now;
+      return cachedModuleRenderRef.current;
     }
     
-    // Use cached render during active gestures to prevent flickering
-    if (isGestureActive) {
-      return cachedModuleRender;
-    }
-
-    // Full render when not in gesture
+    // Normal rendering path - no gesture-based caching
     try {
-      const renderedElements = moduleManager.current.renderModules(moduleContext);
+      const rendered = moduleManager.current.renderModules(moduleContext);
       
-      // Cache this render immediately without triggering additional effects
-      updateModuleCache(renderedElements);
+      // Update cache for emergency use (every 100ms maximum)
+      if (rendered.length > 0 && now - lastCacheTime.current > 100) {
+        cachedModuleRenderRef.current = rendered;
+        lastCacheTime.current = now;
+      }
       
-      return renderedElements;
+      return rendered;
     } catch (error) {
       console.error('[GalaxyMapModular] Error rendering modules:', error);
-      return cachedModuleRender.length > 0 ? cachedModuleRender : [];
+      // Fallback to cache only in error cases
+      return cachedModuleRenderRef.current.length > 0 ? cachedModuleRenderRef.current : [];
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modulesInitialized, moduleContext, isGestureActive]); // Removed cachedModuleRender to avoid circular dependency
+  }, [modulesInitialized, moduleContext]);
 
-  // Cache module elements using ref to avoid circular dependency
-  const moduleElementsRef = useRef<React.ReactNode[]>([]);
-  
-  // Update cache when not in gesture mode, but avoid triggering re-renders
-  const updateModuleCache = useCallback((elements: React.ReactNode[]) => {
-    if (!isGestureActiveRef.current && elements.length > 0) {
-      moduleElementsRef.current = elements;
-      setCachedModuleRender(elements);
-    }
-  }, []);
 
   // Handle tap interaction
   const handleTapInteraction = useCallback(
@@ -548,24 +616,29 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     [width, height, beacons, onBeaconSelect, onMapPress]
   );
 
-  // Optimized pan gesture with throttling
+  // Optimized pan gesture with improved throttling
+  const lastPanUpdate = useRef(0);
+  
   const panGesture = Gesture.Pan()
     .onStart(() => {
       lastTranslateX.value = translateX.value;
       lastTranslateY.value = translateY.value;
       runOnJS(setGestureActiveState)(true);
+      lastPanUpdate.current = 0; // Reset throttling
     })
     .onUpdate(event => {
       translateX.value = lastTranslateX.value + event.translationX;
       translateY.value = lastTranslateY.value + event.translationY;
       
-      // Throttle viewport updates during pan - only update every 50ms
-      if (Math.abs(event.translationX) % 25 < 2 || Math.abs(event.translationY) % 25 < 2) {
+      // Time-based throttling for smoother panning (16ms = ~60fps)
+      const now = Date.now();
+      if (now - lastPanUpdate.current >= 16) {
         runOnJS(updateViewportState)(
           translateX.value,
           translateY.value,
           scale.value
         );
+        lastPanUpdate.current = now;
       }
     })
     .onEnd(() => {
@@ -616,8 +689,8 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       translateX.value = constrainedTranslation.x;
       translateY.value = constrainedTranslation.y;
 
-      // Throttle JS updates during pinch
-      if (Math.abs(event.scale - 1) > 0.1) {
+      // Throttle pinch updates based on scale change (more responsive than time-based)
+      if (Math.abs(event.scale - 1) > 0.05) { // More sensitive than before (0.1 -> 0.05)
         runOnJS(updateViewportState)(
           constrainedTranslation.x,
           constrainedTranslation.y,

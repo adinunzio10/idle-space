@@ -39,9 +39,9 @@ export class ModuleManager {
       maxRenderTime: 16.67, // 60fps budget
       adaptivePerformance: true,
       performanceThresholds: {
-        autoDisableFps: 45, // Auto-disable modules below 45fps
-        performanceModeFps: 55, // Enable performance mode below 55fps
-        warningRenderTime: 20, // Warn if module takes more than 20ms
+        autoDisableFps: 30, // Auto-disable modules below 30fps (lowered from 45)
+        performanceModeFps: 40, // Enable performance mode below 40fps (lowered from 55)
+        warningRenderTime: 30, // Warn if module takes more than 30ms (increased from 20)
       },
       ...config,
     };
