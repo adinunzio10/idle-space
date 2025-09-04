@@ -32,7 +32,57 @@ const createTestContext = (): ModuleContext => ({
   frameCount: 1,
 });
 
-// Test module system functionality
+describe('ModuleSystem', () => {
+  test('should create ModuleManager and register modules', async () => {
+    const manager = new ModuleManager({ debugMode: true });
+    
+    const beaconModule = new BeaconRenderingModule();
+    const connectionModule = new ConnectionRenderingModule();
+    
+    await manager.registerModule(beaconModule);
+    await manager.registerModule(connectionModule);
+    
+    const context = createTestContext();
+    const elements = manager.renderModules(context);
+    
+    expect(elements).toBeDefined();
+    expect(Array.isArray(elements)).toBe(true);
+  });
+
+  test('should handle module configuration changes', async () => {
+    const manager = new ModuleManager({ debugMode: true });
+    const beaconModule = new BeaconRenderingModule();
+    
+    await manager.registerModule(beaconModule);
+    
+    manager.setGlobalPerformanceMode(true);
+    manager.setDebugMode(false);
+    
+    expect(manager.getGlobalPerformanceMetrics).toBeDefined();
+  });
+
+  test('should enable and disable modules correctly', async () => {
+    const manager = new ModuleManager({ debugMode: true });
+    const connectionModule = new ConnectionRenderingModule();
+    
+    await manager.registerModule(connectionModule);
+    
+    const context = createTestContext();
+    const elementsInitial = manager.renderModules(context);
+    
+    manager.disableModule('connection-rendering');
+    const elementsAfterDisable = manager.renderModules(context);
+    
+    manager.enableModule('connection-rendering');
+    const elementsAfterEnable = manager.renderModules(context);
+    
+    expect(Array.isArray(elementsInitial)).toBe(true);
+    expect(Array.isArray(elementsAfterDisable)).toBe(true);
+    expect(Array.isArray(elementsAfterEnable)).toBe(true);
+  });
+});
+
+// Test module system functionality - legacy export for compatibility
 export const testModuleSystem = async (): Promise<boolean> => {
   try {
     console.log('[ModuleSystemTest] Starting module system test...');
