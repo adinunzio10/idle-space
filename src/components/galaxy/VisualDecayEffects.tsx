@@ -18,6 +18,11 @@ import Animated, {
   Easing
 } from 'react-native-reanimated';
 import { GalacticSector, ViewportState, Point2D } from '../../types/galaxy';
+import { 
+  createWorkletSafeClone, 
+  freezeForWorklet 
+} from '../../utils/performance/WorkletDataIsolation';
+import { galaxyToScreen } from '../../utils/spatial/viewport';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -108,20 +113,17 @@ function generateDecayParticles(
       ? sector.vertices[Math.floor(Math.random() * sector.vertices.length)]
       : sector.center;
     
-    // Random offset from source point
+    // Random offset from source point in world coordinates
     const offsetX = (Math.random() - 0.5) * 100;
     const offsetY = (Math.random() - 0.5) * 100;
     
-    // Convert to screen coordinates
-    const screenX = (sourcePoint.x + offsetX) * viewportState.scale + viewportState.translateX;
-    const screenY = (sourcePoint.y + offsetY) * viewportState.scale + viewportState.translateY;
-    
-    // DEBUG: Track decay particle coordinate transformation
-    console.log(`[DEBUG:VisualDecayEffects] Sector ${sector.id} Particle ${i} - worldPos(${(sourcePoint.x + offsetX).toFixed(1)}, ${(sourcePoint.y + offsetY).toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenPos(${screenX.toFixed(1)}, ${screenY.toFixed(1)}) - ${Date.now()}`);
+    // Create world position then convert to screen coordinates using consistent method
+    const worldPosition = { x: sourcePoint.x + offsetX, y: sourcePoint.y + offsetY };
+    const screenPosition = galaxyToScreen(worldPosition, viewportState);
     
     particles.push({
       id: `particle_${sector.id}_${i}`,
-      position: { x: screenX, y: screenY },
+      position: screenPosition,
       velocity: {
         x: (Math.random() - 0.5) * DECAY_EFFECTS_CONFIG.particles.speed.max,
         y: (Math.random() - 0.5) * DECAY_EFFECTS_CONFIG.particles.speed.max
@@ -140,10 +142,15 @@ function generateDecayParticles(
  * Single particle component
  */
 const DecayParticle: React.FC<{ particle: DecayParticle; entropy: number }> = ({ particle, entropy }) => {
-  const animatedOpacity = useSharedValue(particle.opacity);
-  const animatedSize = useSharedValue(particle.size);
-  const animatedX = useSharedValue(particle.position.x);
-  const animatedY = useSharedValue(particle.position.y);
+  // Create worklet-safe particle data to prevent mutation warnings
+  const workletSafeParticle = useMemo(() => 
+    freezeForWorklet(createWorkletSafeClone(particle))
+  , [particle]);
+
+  const animatedOpacity = useSharedValue(workletSafeParticle.opacity);
+  const animatedSize = useSharedValue(workletSafeParticle.size);
+  const animatedX = useSharedValue(workletSafeParticle.position.x);
+  const animatedY = useSharedValue(workletSafeParticle.position.y);
 
   useEffect(() => {
     // Particle lifecycle animation
@@ -154,20 +161,20 @@ const DecayParticle: React.FC<{ particle: DecayParticle; entropy: number }> = ({
     
     // Size animation (grow then shrink)
     animatedSize.value = withSequence(
-      withTiming(particle.size * 1.5, { duration: lifetime * 0.3 }),
-      withTiming(particle.size * 0.5, { duration: lifetime * 0.7 })
+      withTiming(workletSafeParticle.size * 1.5, { duration: lifetime * 0.3 }),
+      withTiming(workletSafeParticle.size * 0.5, { duration: lifetime * 0.7 })
     );
     
     // Movement animation
     animatedX.value = withTiming(
-      particle.position.x + particle.velocity.x, 
+      workletSafeParticle.position.x + workletSafeParticle.velocity.x, 
       { duration: lifetime, easing: Easing.out(Easing.linear) }
     );
     animatedY.value = withTiming(
-      particle.position.y + particle.velocity.y, 
+      workletSafeParticle.position.y + workletSafeParticle.velocity.y, 
       { duration: lifetime, easing: Easing.out(Easing.linear) }
     );
-  }, [particle, animatedOpacity, animatedSize, animatedX, animatedY]);
+  }, [workletSafeParticle, animatedOpacity, animatedSize, animatedX, animatedY]);
 
   const animatedProps = useAnimatedProps(() => ({
     cx: animatedX.value,
@@ -178,7 +185,7 @@ const DecayParticle: React.FC<{ particle: DecayParticle; entropy: number }> = ({
 
   return (
     <AnimatedCircle
-      fill={particle.color}
+      fill={workletSafeParticle.color}
       animatedProps={animatedProps}
     />
   );
@@ -193,6 +200,15 @@ const EntropyWaveEffect: React.FC<{
   viewportState: ViewportState;
   intensity: number;
 }> = ({ fromSector, toSector, viewportState, intensity }) => {
+  // Create worklet-safe sector data to prevent mutation warnings
+  const workletSafeFromSector = useMemo(() => 
+    freezeForWorklet(createWorkletSafeClone(fromSector))
+  , [fromSector]);
+  
+  const workletSafeToSector = useMemo(() => 
+    freezeForWorklet(createWorkletSafeClone(toSector))
+  , [toSector]);
+
   const waveProgress = useSharedValue(0);
   const waveOpacity = useSharedValue(0.6);
 
@@ -211,37 +227,32 @@ const EntropyWaveEffect: React.FC<{
     );
   }, [waveProgress, waveOpacity]);
 
-  // Calculate wave path between sectors
+  // Calculate wave path between sectors using worklet-safe data and consistent coordinate transformation
   const wavePath = useMemo(() => {
-    const startX = fromSector.center.x * viewportState.scale + viewportState.translateX;
-    const startY = fromSector.center.y * viewportState.scale + viewportState.translateY;
-    const endX = toSector.center.x * viewportState.scale + viewportState.translateX;
-    const endY = toSector.center.y * viewportState.scale + viewportState.translateY;
-    
-    // DEBUG: Track wave path coordinate transformation
-    console.log(`[DEBUG:VisualDecayEffects] Wave ${fromSector.id}->${toSector.id} - worldStart(${fromSector.center.x.toFixed(1)}, ${fromSector.center.y.toFixed(1)}) worldEnd(${toSector.center.x.toFixed(1)}, ${toSector.center.y.toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenStart(${startX.toFixed(1)}, ${startY.toFixed(1)}) screenEnd(${endX.toFixed(1)}, ${endY.toFixed(1)}) - ${Date.now()}`);
+    const startScreen = galaxyToScreen(workletSafeFromSector.center, viewportState);
+    const endScreen = galaxyToScreen(workletSafeToSector.center, viewportState);
     
     // Create curved path with wave effect
-    const midX = (startX + endX) / 2;
-    const midY = (startY + endY) / 2;
+    const midX = (startScreen.x + endScreen.x) / 2;
+    const midY = (startScreen.y + endScreen.y) / 2;
     const amplitude = DECAY_EFFECTS_CONFIG.waves.amplitude * intensity;
     
     // Perpendicular offset for wave curve
-    const dx = endX - startX;
-    const dy = endY - startY;
+    const dx = endScreen.x - startScreen.x;
+    const dy = endScreen.y - startScreen.y;
     const length = Math.sqrt(dx * dx + dy * dy);
     const offsetX = (-dy / length) * amplitude;
     const offsetY = (dx / length) * amplitude;
     
-    return `M ${startX} ${startY} Q ${midX + offsetX} ${midY + offsetY} ${endX} ${endY}`;
-  }, [fromSector, toSector, viewportState, intensity]);
+    return `M ${startScreen.x} ${startScreen.y} Q ${midX + offsetX} ${midY + offsetY} ${endScreen.x} ${endScreen.y}`;
+  }, [workletSafeFromSector, workletSafeToSector, viewportState, intensity]);
 
   const animatedWaveProps = useAnimatedProps(() => ({
     opacity: waveOpacity.value,
     strokeDashoffset: -waveProgress.value * 50, // Animate dash pattern
   }));
 
-  const waveColor = getDecayColor(fromSector.entropy);
+  const waveColor = getDecayColor(workletSafeFromSector.entropy);
 
   return (
     <AnimatedPath
@@ -313,10 +324,10 @@ export const VisualDecayEffectsComponent: React.FC<VisualDecayEffectsProps> = ({
         <Defs>
           <LinearGradient
             id={creepGradientId}
-            x1={sector.vertices[0]?.x * viewportState.scale + viewportState.translateX || 0}
-            y1={sector.vertices[0]?.y * viewportState.scale + viewportState.translateY || 0}
-            x2={sector.vertices[sector.vertices.length - 1]?.x * viewportState.scale + viewportState.translateX || 0}
-            y2={sector.vertices[sector.vertices.length - 1]?.y * viewportState.scale + viewportState.translateY || 0}
+            x1={sector.vertices[0] ? galaxyToScreen(sector.vertices[0], viewportState).x : 0}
+            y1={sector.vertices[0] ? galaxyToScreen(sector.vertices[0], viewportState).y : 0}
+            x2={sector.vertices[sector.vertices.length - 1] ? galaxyToScreen(sector.vertices[sector.vertices.length - 1], viewportState).x : 0}
+            y2={sector.vertices[sector.vertices.length - 1] ? galaxyToScreen(sector.vertices[sector.vertices.length - 1], viewportState).y : 0}
             gradientUnits="userSpaceOnUse"
           >
             <Stop offset="0%" stopColor={creepColor} stopOpacity={creepOpacity} />
@@ -351,9 +362,10 @@ export const VisualDecayEffectsComponent: React.FC<VisualDecayEffectsProps> = ({
       {/* Creep overlay effect */}
       {creepOpacity > 0 && sector.vertices && sector.vertices.length >= 3 && (
         <AnimatedPath
-          d={`M ${sector.vertices.map(v => 
-            `${v.x * viewportState.scale + viewportState.translateX} ${v.y * viewportState.scale + viewportState.translateY}`
-          ).join(' L ')} Z`}
+          d={`M ${sector.vertices.map(v => {
+            const screenPos = galaxyToScreen(v, viewportState);
+            return `${screenPos.x} ${screenPos.y}`;
+          }).join(' L ')} Z`}
           fill={`url(#${creepGradientId})`}
           opacity={creepOpacity}
         />

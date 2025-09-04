@@ -7,6 +7,7 @@ import BeaconClusterRenderer from '../../../../components/galaxy/BeaconCluster';
 import { hierarchicalCluster, isPointInCluster } from '../../../rendering/clustering';
 import { shouldEnableClustering } from '../../../rendering/lod';
 import { SpatialIndex } from '../../../spatial/indexing';
+import { createWorkletSafeClone } from '../../../performance/WorkletDataIsolation';
 
 interface BeaconModuleConfig {
   maxVisibleBeacons: number;
@@ -131,10 +132,13 @@ export class BeaconRenderingModule extends RenderingModule {
       // Render clusters first (they're larger and should be behind individual beacons)
       if (this.beaconConfig.enableClustering) {
         this.beaconClusters.forEach(cluster => {
+          // Clone cluster data to prevent worklet mutation warnings
+          const clonedCluster = createWorkletSafeClone(cluster);
+          
           elements.push(
             React.createElement(BeaconClusterRenderer, {
               key: `cluster-${cluster.id}`,
-              cluster,
+              cluster: clonedCluster,
               viewportState: context.viewport,
               onPress: this.handleClusterPress.bind(this),
             })
@@ -150,10 +154,13 @@ export class BeaconRenderingModule extends RenderingModule {
         // Skip rendering very low LOD beacons to save performance
         if (lodLevel < 1 && this.config.performanceMode) return;
 
+        // Clone beacon data to prevent worklet mutation warnings
+        const clonedBeacon = createWorkletSafeClone(beacon);
+
         elements.push(
           React.createElement(BeaconRenderer, {
             key: `beacon-${beacon.id}`,
-            beacon,
+            beacon: clonedBeacon,
             lodInfo: {
               level: lodLevel,
               renderMode: lodLevel >= 2 ? 'full' as const : 'standard' as const,

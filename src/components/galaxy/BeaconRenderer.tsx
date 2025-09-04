@@ -32,6 +32,11 @@ import {
   useRenderTracker,
 } from '../../utils/performance/RenderOptimizations';
 import { useBatteryAwareVisualEffects } from '../../hooks/useBatteryOptimization';
+import {
+  cloneBeaconRenderData,
+  BeaconWorkletData,
+  freezeForWorklet,
+} from '../../utils/performance/WorkletDataIsolation';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -165,6 +170,22 @@ const BeaconRendererComponent: React.FC<BeaconRendererProps> = ({
     enableGlowEffects,
   ]);
 
+  // Create worklet-safe data clone to prevent Reanimated mutation warnings
+  const workletSafeData = useMemo((): BeaconWorkletData => {
+    return freezeForWorklet(cloneBeaconRenderData({
+      id: renderData.id,
+      x: renderData.x,
+      y: renderData.y,
+      size: renderData.size,
+      color: renderData.color,
+      glowSize: renderData.glowSize,
+      glowOpacity: renderData.glowOpacity,
+      level: renderData.level,
+      type: renderData.type,
+      active: renderData.active,
+    }));
+  }, [renderData]);
+
   // CRITICAL FIX: Release pooled object on component unmount/cleanup
   React.useEffect(() => {
     return () => {
@@ -175,18 +196,18 @@ const BeaconRendererComponent: React.FC<BeaconRendererProps> = ({
     };
   }, [renderData]);
 
-  // Animated props for pulse effect
+  // Animated props for pulse effect (using worklet-safe data to prevent mutation warnings)
   const animatedGlowProps = useAnimatedProps(() => {
     const opacity = interpolate(
       glowAnimation.value,
       [0, 1],
-      [renderData.glowOpacity * 0.5, renderData.glowOpacity]
+      [workletSafeData.glowOpacity * 0.5, workletSafeData.glowOpacity]
     );
     const scale = interpolate(pulseAnimation.value, [0, 1], [0.8, 1.2]);
 
     return {
-      opacity: lodInfo.showAnimations ? opacity : renderData.glowOpacity,
-      r: renderData.glowSize * (lodInfo.showAnimations ? scale : 1),
+      opacity: lodInfo.showAnimations ? opacity : workletSafeData.glowOpacity,
+      r: workletSafeData.glowSize * (lodInfo.showAnimations ? scale : 1),
     };
   });
 
@@ -263,8 +284,8 @@ const BeaconRendererComponent: React.FC<BeaconRendererProps> = ({
       {/* Enhanced glow effect with animation */}
       {lodInfo.showEffects && (
         <AnimatedCircle
-          cx={renderData.x}
-          cy={renderData.y}
+          cx={workletSafeData.x}
+          cy={workletSafeData.y}
           fill={`url(#glow-${beacon.id})`}
           animatedProps={animatedGlowProps}
         />
