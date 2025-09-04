@@ -149,3 +149,49 @@ export interface RenderingState {
   shouldCluster: boolean;
   performanceMode: boolean;
 }
+
+// Star System types for living galactic environment
+export type StarSystemState = 'healthy' | 'dying' | 'dead';
+
+export interface StarSystem {
+  id: string;
+  position: Point2D;
+  state: StarSystemState;
+  radius: number; // Base radius of the star system
+  brightness: number; // 0-1, affects visual appearance
+  resources?: {
+    stellarEssence?: number; // Available for dying stars
+    voidFragments?: number; // Available for dead stars
+  };
+  lastStateChange?: number; // Timestamp of last state change
+  entropy: number; // 0-1, affects state transitions
+}
+
+export interface StarSystemRenderInfo {
+  shouldRender: boolean;
+  screenSize: number; // Size in screen pixels
+  lodLevel: number; // Level of detail (0-3)
+  showAnimation: boolean; // Whether to show pulsing/effects
+  showResources: boolean; // Whether to show resource indicators
+  opacity: number; // Final opacity for rendering
+}
+
+// Galactic sector types for region-based organization
+export interface GalacticSector {
+  id: string;
+  center: Point2D;
+  bounds: ViewportBounds;
+  vertices: Point2D[]; // Voronoi cell vertices
+  entropy: number; // 0-1, affects visual appearance and star system states
+  starSystemIds: string[]; // Star systems within this sector
+  neighboringSectors: string[]; // Adjacent sector IDs for entropy spreading
+  lastEntropyUpdate?: number; // Timestamp of last entropy update
+}
+
+export interface SectorRenderInfo {
+  shouldRender: boolean;
+  shouldShowBoundary: boolean; // Whether to render boundary lines
+  boundaryOpacity: number; // 0-1, boundary line opacity based on zoom
+  entropyColor: string; // Background tint color based on entropy level
+  entropyOpacity: number; // Opacity of entropy tinting
+}

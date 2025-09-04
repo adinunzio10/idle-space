@@ -145,6 +145,7 @@ import {
 import { webGestureDebugger } from '../../utils/debugging/WebGestureDebugger';
 import StarField from './StarField';
 import { ProbeAnimationRenderer } from './ProbeAnimationRenderer';
+import { GalacticEnvironmentRenderer } from './GalacticEnvironmentRenderer';
 import { PatternSuggestionEngine } from '../../utils/patterns/PatternSuggestionEngine';
 import { SpatialPatternCache } from '../../utils/patterns/SpatialPatternCache';
 import { SpatialHashMap } from '../../utils/spatial/SpatialHashMap';
@@ -1923,6 +1924,27 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
             {/* Transformable galaxy content group */}
             <AnimatedG animatedProps={animatedProps}>
+              {/* Living Galactic Environment Layer */}
+              <GalacticEnvironmentRenderer
+                viewportState={viewportState}
+                config={{
+                  enableStarSystems: true,
+                  enableSectorBoundaries: viewportState.scale < 2, // Only show at low zoom
+                  enableEntropyVisualization: true,
+                  enableDecayEffects: viewportState.scale > 0.5,
+                  enableHarvestOverlay: viewportState.scale > 1,
+                  enableEntropySpread: true,
+                }}
+                onResourceHarvest={(starSystem, resourceType, amount) => {
+                  console.log(`Harvested ${amount} ${resourceType} from star ${starSystem.id}`);
+                  // TODO: Connect to game resource system
+                }}
+                onEnvironmentChange={(stats) => {
+                  console.log('Environment stats:', stats);
+                  // TODO: Update game statistics
+                }}
+              />
+
               {/* Debug: Show viewport bounds */}
               <Rect
                 x={0}

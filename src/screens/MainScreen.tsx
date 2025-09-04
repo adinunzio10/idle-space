@@ -14,19 +14,80 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { GalaxyMapView } from '../components/galaxy/GalaxyMapView';
+import { GalaxyMapCore } from '../components/galaxy/GalaxyMapCore';
+import { GalaxyMapModular } from '../components/galaxy/GalaxyMapModular';
 import { EnhancedGameHUD } from '../components/ui/FloatingResourceDisplay';
 import {
   ExpandableFloatingActionButton,
   FABAction,
 } from '../components/ui/ExpandableFloatingActionButton';
+import {
+  PerformanceOverlay,
+  usePerformanceOverlay,
+} from '../components/debug/PerformanceOverlay';
+import DebugOverlay from '../components/debug/DebugOverlay';
 import { GameState } from '../storage/schemas/GameState';
 import { ProbeInstance } from '../types/probe';
+import { Point2D, StarSystem, GalacticSector } from '../types/galaxy';
 import { Beacon } from '../types/galaxy';
 import { BeaconType } from '../types/beacon';
 import { ProbeType } from '../types/probe';
-import { Point2D } from '../types/galaxy';
 import { RootStackParamList } from '../navigation/AppNavigator';
+
+// Test data generation for StarSystemModule and SectorModule
+function generateTestStarSystems(count: number): StarSystem[] {
+  const systems: StarSystem[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    systems.push({
+      id: `test-star-${i}`,
+      position: {
+        x: Math.random() * 2000,
+        y: Math.random() * 2000,
+      },
+      state: Math.random() > 0.8 ? 'dying' : Math.random() > 0.9 ? 'dead' : 'healthy',
+      radius: 0.5 + Math.random() * 2,
+      brightness: 0.3 + Math.random() * 0.7,
+      type: Math.random() > 0.7 ? 'background' : 'main',
+      entropy: Math.random() * 0.8,
+    });
+  }
+  
+  return systems;
+}
+
+function generateTestSectors(count: number): GalacticSector[] {
+  const sectors: GalacticSector[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const centerX = Math.random() * 1800 + 100;
+    const centerY = Math.random() * 1800 + 100;
+    const size = 50 + Math.random() * 100;
+    
+    sectors.push({
+      id: `test-sector-${i}`,
+      center: { x: centerX, y: centerY },
+      bounds: {
+        minX: centerX - size,
+        maxX: centerX + size,
+        minY: centerY - size,
+        maxY: centerY + size,
+      },
+      vertices: [
+        { x: centerX - size, y: centerY - size },
+        { x: centerX + size, y: centerY - size },
+        { x: centerX + size, y: centerY + size },
+        { x: centerX - size, y: centerY + size },
+      ],
+      entropy: Math.random(),
+      entropyLevel: Math.random(),
+      starSystemIds: [],
+      neighboringSectors: [],
+    });
+  }
+  
+  return sectors;
+}
 
 type MainScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -49,6 +110,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   error,
 }) => {
   const navigation = useNavigation<MainScreenNavigationProp>();
+  
+  // Generate test data once and keep it stable
+  const [testStarSystems] = React.useState(() => generateTestStarSystems(150));
+  const [testSectors] = React.useState(() => generateTestSectors(30));
   const insets = useSafeAreaInsets();
   const screenData = Dimensions.get('window');
   
@@ -57,6 +122,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({
     useState<BeaconType>('pioneer');
   const [selectedBeaconId, setSelectedBeaconId] = useState<string | null>(null);
   const [beaconVersion, setBeaconVersion] = useState(0);
+  
+  // Debug controls
+  const [showDebugOverlay, setShowDebugOverlay] = useState(false);
+  const [useModularMap, setUseModularMap] = useState(false);
+  
+  // Performance monitoring hook
+  const performanceOverlay = usePerformanceOverlay();
   const [lastPlacement, setLastPlacement] = useState<{
     position: { x: number; y: number } | null;
     timestamp: number;
@@ -299,17 +371,30 @@ export const MainScreen: React.FC<MainScreenProps> = ({
           />
 
           {/* Full-screen Galaxy Map */}
-          <GalaxyMapView
-            width={screenData.width}
-            height={screenData.height}
-            beacons={getBeaconsForMap()}
-            probes={probes}
-            onBeaconSelect={handleBeaconSelect}
-            onMapPress={handleMapPress}
-            showDebugOverlay={false}
-            selectedBeacon={selectedBeacon}
-            beaconUpdateTrigger={beaconVersion}
-          />
+          {useModularMap ? (
+            <GalaxyMapModular
+              width={screenData.width}
+              height={screenData.height}
+              beacons={getBeaconsForMap()}
+              starSystems={testStarSystems}
+              sectors={testSectors}
+              onBeaconSelect={handleBeaconSelect}
+              onMapPress={handleMapPress}
+              selectedBeacon={selectedBeacon}
+              enabledModules={[]} // Enable all modules
+              performanceMode={false}
+              debugMode={showDebugOverlay}
+            />
+          ) : (
+            <GalaxyMapCore
+              width={screenData.width}
+              height={screenData.height}
+              beacons={getBeaconsForMap()}
+              onBeaconSelect={handleBeaconSelect}
+              onMapPress={handleMapPress}
+              selectedBeacon={selectedBeacon}
+            />
+          )}
 
           {/* Floating Beacon Type Selector */}
           <View
@@ -431,8 +516,199 @@ export const MainScreen: React.FC<MainScreenProps> = ({
             testID="navigation-fab"
           />
 
+          {/* Debug Controls - Top Right */}
+          {__DEV__ && (
+            <View className="absolute top-12 right-4 z-50">
+              <View className="flex-row space-x-2">
+                <TouchableOpacity
+                  onPress={performanceOverlay.toggle}
+                  className={`px-2 py-1 rounded border ${
+                    performanceOverlay.visible
+                      ? 'bg-green-500/20 border-green-500'
+                      : 'bg-black/50 border-white/20'
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      performanceOverlay.visible
+                        ? 'text-green-400'
+                        : 'text-white/60'
+                    }`}
+                  >
+                    FPS
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowDebugOverlay(!showDebugOverlay)}
+                  className={`px-2 py-1 rounded border ${
+                    showDebugOverlay
+                      ? 'bg-yellow-500/20 border-yellow-500'
+                      : 'bg-black/50 border-white/20'
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      showDebugOverlay
+                        ? 'text-yellow-400'
+                        : 'text-white/60'
+                    }`}
+                  >
+                    DEBUG
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setUseModularMap(!useModularMap)}
+                  className={`px-2 py-1 rounded border ${
+                    useModularMap
+                      ? 'bg-blue-500/20 border-blue-500'
+                      : 'bg-black/50 border-white/20'
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      useModularMap
+                        ? 'text-blue-400'
+                        : 'text-white/60'
+                    }`}
+                  >
+                    MOD
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           <StatusBar style="light" />
         </View>
+
+        {/* Performance overlay */}
+        <PerformanceOverlay
+          visible={performanceOverlay.visible}
+          position="top-left"  // Move to top-left to avoid blocking debug controls
+          compact={false}      // Allow expansion - starts compact but can expand
+          onToggle={performanceOverlay.toggle}
+        />
+
+        {/* Simple Debug Info - shows beacon count */}
+        {showDebugOverlay && (
+          <View 
+            className="absolute bottom-20 right-4 bg-black/80 rounded-lg p-3 z-50"
+            style={{ marginRight: 80 }} // Give space for right FAB
+          >
+            <Text className="text-white text-sm font-bold mb-2">Debug Info</Text>
+            <Text className="text-green-400 text-xs font-mono">
+              Beacons: {getBeaconsForMap().length}
+            </Text>
+            <Text className="text-blue-400 text-xs font-mono">
+              Mode: {useModularMap ? 'Modular' : 'Core'}
+            </Text>
+            {selectedBeacon && (
+              <Text className="text-yellow-400 text-xs font-mono">
+                Selected: {selectedBeacon.id}
+              </Text>
+            )}
+            
+            {/* Debug Actions */}
+            <View className="mt-3 space-y-2">
+              {/* Resource Controls */}
+              <View className="flex-row space-x-2">
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      const resourceManager = gameController.getResourceManager();
+                      resourceManager.addResource('quantumData', 1000000000000); // 1 trillion
+                      console.log('[Debug] Added 1T Quantum Data for testing');
+                    } catch (error) {
+                      console.error('[Debug] Failed to add quantum data:', error);
+                    }
+                  }}
+                  className="bg-green-600 px-3 py-1 rounded flex-1"
+                >
+                  <Text className="text-white text-xs font-bold text-center">+1T QD</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      const resourceManager = gameController.getResourceManager();
+                      // Set to JavaScript's max safe integer (way beyond any beacon cost)
+                      resourceManager.setResource('quantumData', Number.MAX_SAFE_INTEGER);
+                      console.log('[Debug] Set Quantum Data to MAX_SAFE_INTEGER:', Number.MAX_SAFE_INTEGER);
+                    } catch (error) {
+                      console.error('[Debug] Failed to set infinite resources:', error);
+                    }
+                  }}
+                  className="bg-red-600 px-3 py-1 rounded flex-1"
+                >
+                  <Text className="text-white text-xs font-bold text-center">∞ QD</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Beacon Controls */}
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    // Bypass cost system - create beacons directly in game state
+                    let successCount = 0;
+                    const currentGameState = gameController.getGameState();
+                    
+                    for (let i = 0; i < 20; i++) {
+                      const randomPos = {
+                        x: Math.random() * 1800 + 100,
+                        y: Math.random() * 1800 + 100,
+                      };
+                      
+                      // Generate a unique beacon ID
+                      const beaconId = `debug-beacon-${Date.now()}-${i}`;
+                      
+                      // Create beacon object directly
+                      const newBeacon = {
+                        id: beaconId,
+                        x: randomPos.x,
+                        y: randomPos.y,
+                        type: 'pioneer' as const,
+                        level: 1,
+                        connections: [] as string[],
+                        createdAt: Date.now(),
+                        lastResourceGeneration: Date.now(),
+                      };
+                      
+                      // Add directly to game state beacons
+                      currentGameState.beacons[beaconId] = newBeacon;
+                      successCount++;
+                    }
+                    
+                    // Force game state update
+                    setBeaconVersion(prev => prev + 1);
+                    console.log(`[Debug] Created ${successCount}/20 beacons directly (bypassing costs)`);
+                  } catch (error) {
+                    console.error('[Debug] Failed to create beacons:', error);
+                  }
+                }}
+                className="bg-purple-600 px-3 py-1 rounded"
+              >
+                <Text className="text-white text-xs font-bold text-center">+20 FREE Beacons</Text>
+              </TouchableOpacity>
+              
+              {/* Clear Controls */}
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    // Clear all beacons for performance testing
+                    gameController.clearAllBeacons();
+                    setBeaconVersion(prev => prev + 1);
+                    console.log('[Debug] Cleared all beacons - back to clean state');
+                  } catch (error) {
+                    console.error('[Debug] Failed to clear beacons:', error);
+                  }
+                }}
+                className="bg-red-800 px-3 py-1 rounded"
+              >
+                <Text className="text-white text-xs font-bold text-center">🗑️ Clear All Beacons</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
