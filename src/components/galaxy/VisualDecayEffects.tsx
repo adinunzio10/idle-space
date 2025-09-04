@@ -116,6 +116,9 @@ function generateDecayParticles(
     const screenX = (sourcePoint.x + offsetX) * viewportState.scale + viewportState.translateX;
     const screenY = (sourcePoint.y + offsetY) * viewportState.scale + viewportState.translateY;
     
+    // DEBUG: Track decay particle coordinate transformation
+    console.log(`[DEBUG:VisualDecayEffects] Sector ${sector.id} Particle ${i} - worldPos(${(sourcePoint.x + offsetX).toFixed(1)}, ${(sourcePoint.y + offsetY).toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenPos(${screenX.toFixed(1)}, ${screenY.toFixed(1)}) - ${Date.now()}`);
+    
     particles.push({
       id: `particle_${sector.id}_${i}`,
       position: { x: screenX, y: screenY },
@@ -196,7 +199,7 @@ const EntropyWaveEffect: React.FC<{
   useEffect(() => {
     // Wave animation
     waveProgress.value = withRepeat(
-      withTiming(1, { duration: DECAY_EFFECTS_CONFIG.waves.speed, easing: Easing.inOut(Easing.sine) }),
+      withTiming(1, { duration: DECAY_EFFECTS_CONFIG.waves.speed, easing: Easing.inOut(Easing.sin) }),
       -1,
       false
     );
@@ -214,6 +217,9 @@ const EntropyWaveEffect: React.FC<{
     const startY = fromSector.center.y * viewportState.scale + viewportState.translateY;
     const endX = toSector.center.x * viewportState.scale + viewportState.translateX;
     const endY = toSector.center.y * viewportState.scale + viewportState.translateY;
+    
+    // DEBUG: Track wave path coordinate transformation
+    console.log(`[DEBUG:VisualDecayEffects] Wave ${fromSector.id}->${toSector.id} - worldStart(${fromSector.center.x.toFixed(1)}, ${fromSector.center.y.toFixed(1)}) worldEnd(${toSector.center.x.toFixed(1)}, ${toSector.center.y.toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenStart(${startX.toFixed(1)}, ${startY.toFixed(1)}) screenEnd(${endX.toFixed(1)}, ${endY.toFixed(1)}) - ${Date.now()}`);
     
     // Create curved path with wave effect
     const midX = (startX + endX) / 2;
@@ -295,7 +301,9 @@ export const VisualDecayEffectsComponent: React.FC<VisualDecayEffectsProps> = ({
   }, [entropy, effectIntensity]);
 
   // Generate gradient for creep effect
-  const creepGradientId = `creep_gradient_${sector.id}`;
+  const creepGradientId = useMemo(() => 
+    `creep_gradient_${sector.id}_${viewportState.scale.toFixed(2)}_${viewportState.translateX.toFixed(0)}_${viewportState.translateY.toFixed(0)}`
+  , [sector.id, viewportState.scale, viewportState.translateX, viewportState.translateY]);
   const creepColor = getDecayColor(entropy);
 
   return (
@@ -305,10 +313,11 @@ export const VisualDecayEffectsComponent: React.FC<VisualDecayEffectsProps> = ({
         <Defs>
           <LinearGradient
             id={creepGradientId}
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="100%"
+            x1={sector.vertices[0]?.x * viewportState.scale + viewportState.translateX || 0}
+            y1={sector.vertices[0]?.y * viewportState.scale + viewportState.translateY || 0}
+            x2={sector.vertices[sector.vertices.length - 1]?.x * viewportState.scale + viewportState.translateX || 0}
+            y2={sector.vertices[sector.vertices.length - 1]?.y * viewportState.scale + viewportState.translateY || 0}
+            gradientUnits="userSpaceOnUse"
           >
             <Stop offset="0%" stopColor={creepColor} stopOpacity={creepOpacity} />
             <Stop offset="50%" stopColor={creepColor} stopOpacity={creepOpacity * 0.5} />

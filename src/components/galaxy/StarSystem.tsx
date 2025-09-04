@@ -45,10 +45,17 @@ export const StarSystemComponent: React.FC<StarSystemComponentProps> = ({
   }
 
   // Calculate screen position based on viewport
-  const screenPosition = useMemo(() => ({
-    x: starSystem.position.x * viewportState.scale + viewportState.translateX,
-    y: starSystem.position.y * viewportState.scale + viewportState.translateY,
-  }), [starSystem.position, viewportState]);
+  const screenPosition = useMemo(() => {
+    const screenPos = {
+      x: starSystem.position.x * viewportState.scale + viewportState.translateX,
+      y: starSystem.position.y * viewportState.scale + viewportState.translateY,
+    };
+    
+    // DEBUG: Track coordinate transformation during panning
+    console.log(`[DEBUG:StarSystem] ${starSystem.id} - worldPos(${starSystem.position.x.toFixed(1)}, ${starSystem.position.y.toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenPos(${screenPos.x.toFixed(1)}, ${screenPos.y.toFixed(1)}) - ${Date.now()}`);
+    
+    return screenPos;
+  }, [starSystem.position, viewportState, starSystem.id]);
 
   // Calculate effective radius based on zoom and LOD
   const effectiveRadius = useMemo(() => {
@@ -145,7 +152,9 @@ export const StarSystemComponent: React.FC<StarSystemComponentProps> = ({
   };
 
   const colors = getStarSystemColors();
-  const gradientId = `starSystem_${starSystem.id}_${starSystem.state}`;
+  const gradientId = useMemo(() => 
+    `starSystem_${starSystem.id}_${starSystem.state}_${viewportState.scale.toFixed(2)}_${viewportState.translateX.toFixed(0)}_${viewportState.translateY.toFixed(0)}`
+  , [starSystem.id, starSystem.state, viewportState.scale, viewportState.translateX, viewportState.translateY]);
 
   // Handle press events
   const handlePress = () => {
@@ -161,9 +170,10 @@ export const StarSystemComponent: React.FC<StarSystemComponentProps> = ({
         <Defs>
           <RadialGradient
             id={gradientId}
-            cx="50%"
-            cy="50%"
-            r="50%"
+            cx={screenPosition.x}
+            cy={screenPosition.y}
+            r={effectiveRadius}
+            gradientUnits="userSpaceOnUse"
           >
             <Stop offset="0%" stopColor={colors.primary} stopOpacity={starSystem.brightness} />
             <Stop offset="70%" stopColor={colors.secondary} stopOpacity={starSystem.brightness * 0.6} />

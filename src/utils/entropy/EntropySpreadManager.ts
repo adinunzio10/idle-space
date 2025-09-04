@@ -162,7 +162,9 @@ export class EntropySpreadManager {
     config?: Partial<EntropySpreadConfig>,
     customRules: CellularAutomataRule[] = []
   ) {
-    this.sectors = new Map(sectors.map(s => [s.id, { ...s }]));
+    // Handle undefined or null sectors array safely
+    const safeSectors = sectors || [];
+    this.sectors = new Map(safeSectors.map(s => [s.id, { ...s }]));
     this.config = {
       baseSpreadRate: 0.002,
       spreadThreshold: 0.1,
@@ -518,6 +520,42 @@ export class EntropySpreadManager {
     }
     
     return predictions;
+  }
+
+  /**
+   * Update sectors with new sector data while preserving existing entropy values
+   */
+  public updateSectors(newSectors: GalacticSector[]): void {
+    if (!newSectors || !Array.isArray(newSectors)) {
+      return;
+    }
+
+    // Create a new Map to track updated sectors
+    const updatedSectors = new Map<string, GalacticSector>();
+    
+    // Process each new sector
+    newSectors.forEach(newSector => {
+      const existingSector = this.sectors.get(newSector.id);
+      
+      if (existingSector) {
+        // Preserve entropy and update other properties
+        const updatedSector: GalacticSector = {
+          ...newSector,
+          entropy: existingSector.entropy, // Preserve existing entropy
+          lastEntropyUpdate: existingSector.lastEntropyUpdate // Preserve entropy timestamp
+        };
+        updatedSectors.set(newSector.id, updatedSector);
+      } else {
+        // New sector - use its initial entropy value
+        updatedSectors.set(newSector.id, { ...newSector });
+      }
+    });
+
+    // Replace the sectors Map
+    this.sectors = updatedSectors;
+    
+    // Recalculate statistics
+    this.statistics = this.calculateStatistics();
   }
 
   /**

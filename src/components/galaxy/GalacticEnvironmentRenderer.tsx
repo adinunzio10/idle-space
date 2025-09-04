@@ -294,6 +294,9 @@ export const GalacticEnvironmentRenderer: React.FC<GalacticEnvironmentProps> = (
 
   // Create sector lookup map for decay effects
   const sectorMap = useMemo(() => {
+    if (!sectors || !Array.isArray(sectors)) {
+      return new Map();
+    }
     return new Map(sectors.map(s => [s.id, s]));
   }, [sectors]);
 
@@ -324,6 +327,11 @@ export const GalacticEnvironmentRenderer: React.FC<GalacticEnvironmentProps> = (
       onTouchEnd();
     }
   };
+
+  // DEBUG: Track viewport state consistency in GalacticEnvironmentRenderer
+  React.useEffect(() => {
+    console.log(`[DEBUG:GalacticEnvironmentRenderer] Viewport state - scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)} | visibleSectors:${visibleSectors.length}, visibleStars:${visibleStarSystems.length} - ${Date.now()}`);
+  }, [viewportState.scale, viewportState.translateX, viewportState.translateY, visibleSectors.length, visibleStarSystems.length]);
 
   return (
     <G>
@@ -358,6 +366,7 @@ export const GalacticEnvironmentRenderer: React.FC<GalacticEnvironmentProps> = (
             showAnimation: viewportState.scale > 0.3,
             showResources: viewportState.scale > 0.5,
             opacity: 1,
+            parallaxOffset: { x: 0, y: 0 },
           }}
           viewportState={viewportState}
           onPress={config.enableHarvestOverlay ? (star) => {
@@ -407,12 +416,12 @@ export function useGalacticEnvironment(
   config?: Partial<GalacticEnvironmentConfig>
 ) {
   const [environmentStats, setEnvironmentStats] = useState<any>(null);
-  const [harvestLog, setHarvestLog] = useState<Array<{
+  const [harvestLog, setHarvestLog] = useState<{
     starSystemId: string;
     resourceType: string;
     amount: number;
     timestamp: number;
-  }>>([]);
+  }[]>([]);
 
   const handleEnvironmentChange = (stats: any) => {
     setEnvironmentStats(stats);

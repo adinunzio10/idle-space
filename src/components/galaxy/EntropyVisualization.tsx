@@ -1,23 +1,65 @@
 /**
- * EntropyVisualization Component - Sector Entropy Color Tinting System
+ * EntropyVisualization Component - Enhanced Sector Entropy Visualization with Particle Systems
  * 
- * Provides visual representation of entropy levels across galactic sectors
- * using background color tinting from blue (low entropy) to red (high entropy).
- * Integrates with SectorBoundary component for cohesive visual experience.
+ * Provides visual representation of entropy levels using background tinting, particle effects,
+ * and animated entropy spread visualization between adjacent sectors. Features flowing dark
+ * particles that represent entropy spreading through the galactic environment.
  */
 
-import React, { useMemo } from 'react';
-import { Path, G, Defs, LinearGradient, Stop, RadialGradient } from 'react-native-svg';
-import Animated, { useAnimatedProps } from 'react-native-reanimated';
+import React, { useMemo, useEffect } from 'react';
+import { Path, G, Defs, LinearGradient, Stop, RadialGradient, Circle } from 'react-native-svg';
+import Animated, { 
+  useAnimatedProps, 
+  useSharedValue, 
+  withTiming, 
+  withRepeat,
+  useFrameCallback,
+} from 'react-native-reanimated';
 import { GalacticSector, ViewportState } from '../../types/galaxy';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface EntropyVisualizationProps {
   sector: GalacticSector;
   viewportState: ViewportState;
   isVisible: boolean;
   showIntensiveEffects?: boolean; // For high entropy sectors
+  enableParticleSystem?: boolean;
+  neighboringSectors?: GalacticSector[]; // For particle flow between sectors
+}
+
+interface EntropyParticle {
+  id: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  progress: number; // 0-1
+  size: number;
+  opacity: number;
+  speed: number; // particles per second
+  color: string;
+  lifespan: number; // milliseconds
+  createdAt: number;
+}
+
+interface EntropyFlowProps {
+  fromSector: GalacticSector;
+  toSector: GalacticSector;
+  viewportState: ViewportState;
+  intensity: number; // 0-1
+  particleCount: number;
+  enableAnimation?: boolean;
+}
+
+interface ParticleSystemProps {
+  sector: GalacticSector;
+  neighboringSectors: GalacticSector[];
+  viewportState: ViewportState;
+  entropy: number;
+  enableAnimation?: boolean;
+  particleQuality?: number; // 0-1, affects particle count
 }
 
 interface MultiSectorEntropyProps {
@@ -25,15 +67,21 @@ interface MultiSectorEntropyProps {
   viewportState: ViewportState;
   entropyThreshold?: number; // Only show entropy above this level
   maxRenderCount?: number;
+  enableParticleSystem?: boolean;
+  particleQuality?: number;
 }
 
-// Configuration for entropy visualization
+// Enhanced configuration for entropy visualization with particle systems
 const ENTROPY_CONFIG = {
   colors: {
     lowEntropy: '#3B82F6',    // Blue for low entropy (0.0-0.3)
     mediumEntropy: '#8B5CF6', // Purple for medium entropy (0.3-0.6)  
     highEntropy: '#EF4444',   // Red for high entropy (0.6-1.0)
     criticalEntropy: '#DC2626', // Dark red for critical entropy (0.9+)
+    // Particle colors
+    particleLow: '#4338CA',   // Dark blue particles
+    particleMedium: '#7C3AED', // Dark purple particles
+    particleHigh: '#DC2626',  // Dark red particles
   },
   opacity: {
     base: 0.15 as const,      // Base tinting opacity
@@ -43,9 +91,21 @@ const ENTROPY_CONFIG = {
   effects: {
     pulseThreshold: 0.7,      // Entropy level where pulsing starts
     waveThreshold: 0.8,       // Entropy level where wave effects start
-    particleThreshold: 0.9,   // Entropy level where particle effects start
+    particleThreshold: 0.5,   // Entropy level where particle effects start (lowered)
   },
   gradientSteps: 5,           // Number of gradient stops for smooth transitions
+  // Particle system configuration
+  particles: {
+    baseCount: 5,             // Base particle count per sector
+    maxCount: 20,             // Maximum particles per sector
+    baseSize: 1.5,            // Base particle size
+    maxSize: 4,               // Maximum particle size
+    baseSpeed: 0.3,           // Base particle speed (progress per second)
+    maxSpeed: 1.2,            // Maximum particle speed
+    lifespan: 3000,           // Particle lifespan in milliseconds
+    spawnRate: 2,             // Particles spawned per second
+    flowDistance: 100,        // Maximum flow distance between sectors
+  },
 } as const;
 
 /**
@@ -104,7 +164,7 @@ function getEntropyColor(entropy: number): string {
 function getEntropyOpacity(entropy: number, showIntensiveEffects: boolean = false): number {
   const { opacity } = ENTROPY_CONFIG;
   
-  let baseOpacity = opacity.base;
+  let baseOpacity: number = opacity.base;
   
   if (entropy > 0.6) {
     baseOpacity = opacity.highEntropy;
@@ -129,7 +189,7 @@ function getEntropyOpacity(entropy: number, showIntensiveEffects: boolean = fals
 /**
  * Generate SVG path for sector polygon
  */
-function generateSectorPath(vertices: Array<{x: number, y: number}>): string {
+function generateSectorPath(vertices: {x: number, y: number}[]): string {
   if (vertices.length < 3) return '';
   
   let path = `M ${vertices[0].x} ${vertices[0].y}`;
@@ -143,22 +203,246 @@ function generateSectorPath(vertices: Array<{x: number, y: number}>): string {
 }
 
 /**
- * Single sector entropy visualization
+ * Get particle color based on entropy level
+ */
+function getParticleColor(entropy: number): string {
+  const { colors } = ENTROPY_CONFIG;
+  
+  if (entropy <= 0.3) {
+    return colors.particleLow;
+  } else if (entropy <= 0.6) {
+    return colors.particleMedium;
+  } else {
+    return colors.particleHigh;
+  }
+}
+
+/**
+ * Calculate entropy flow intensity between two sectors
+ */
+function calculateEntropyFlowIntensity(fromSector: GalacticSector, toSector: GalacticSector): number {
+  const entropyDifference = Math.abs(fromSector.entropy - toSector.entropy);
+  const flowDirection = fromSector.entropy > toSector.entropy ? 1 : 0.3; // Stronger flow from high to low
+  
+  return Math.min(1, entropyDifference * 2) * flowDirection;
+}
+
+/**
+ * Generate particle path between two sectors
+ */
+function generateParticlePath(fromSector: GalacticSector, toSector: GalacticSector): {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  controlX: number;
+  controlY: number;
+} {
+  const startX = fromSector.center.x;
+  const startY = fromSector.center.y;
+  const endX = toSector.center.x;
+  const endY = toSector.center.y;
+  
+  // Add slight curve to particle path
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+  const perpX = -(endY - startY) / 10; // Perpendicular offset for curve
+  const perpY = (endX - startX) / 10;
+  
+  return {
+    startX,
+    startY,
+    endX,
+    endY,
+    controlX: midX + perpX,
+    controlY: midY + perpY,
+  };
+}
+
+/**
+ * Calculate particle position along curved path
+ */
+function getParticlePosition(path: ReturnType<typeof generateParticlePath>, progress: number): {
+  x: number;
+  y: number;
+} {
+  // Quadratic Bezier curve calculation
+  const t = Math.max(0, Math.min(1, progress));
+  const oneMinusT = 1 - t;
+  
+  const x = oneMinusT * oneMinusT * path.startX + 
+           2 * oneMinusT * t * path.controlX + 
+           t * t * path.endX;
+           
+  const y = oneMinusT * oneMinusT * path.startY + 
+           2 * oneMinusT * t * path.controlY + 
+           t * t * path.endY;
+  
+  return { x, y };
+}
+
+/**
+ * Entropy Flow Component - Renders particle flow between sectors
+ */
+const EntropyFlowComponent: React.FC<EntropyFlowProps> = ({
+  fromSector,
+  toSector,
+  viewportState,
+  intensity,
+  particleCount,
+  enableAnimation = true,
+}) => {
+  const particles = useMemo(() => {
+    const particleArray: EntropyParticle[] = [];
+    const path = generateParticlePath(fromSector, toSector);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const id = `particle_${fromSector.id}_${toSector.id}_${i}`;
+      const progress = (i / particleCount) * 0.8; // Spread particles along path
+      const size = ENTROPY_CONFIG.particles.baseSize + Math.random() * 2;
+      const speed = ENTROPY_CONFIG.particles.baseSpeed + Math.random() * 0.3;
+      
+      particleArray.push({
+        id,
+        startX: path.startX,
+        startY: path.startY,
+        endX: path.endX,
+        endY: path.endY,
+        progress,
+        size,
+        opacity: intensity * 0.6 + Math.random() * 0.4,
+        speed,
+        color: getParticleColor(Math.max(fromSector.entropy, toSector.entropy)),
+        lifespan: ENTROPY_CONFIG.particles.lifespan,
+        createdAt: Date.now() - Math.random() * 2000, // Stagger creation times
+      });
+    }
+    
+    return particleArray;
+  }, [fromSector, toSector, intensity, particleCount]);
+
+  if (!enableAnimation || intensity < 0.1) return null;
+
+  const path = generateParticlePath(fromSector, toSector);
+
+  return (
+    <G>
+      {particles.map((particle) => {
+        const position = getParticlePosition(path, particle.progress);
+        const screenX = position.x * viewportState.scale + viewportState.translateX;
+        const screenY = position.y * viewportState.scale + viewportState.translateY;
+        const screenSize = particle.size * Math.max(0.5, viewportState.scale);
+        
+        // DEBUG: Track entropy particle coordinate transformation
+        console.log(`[DEBUG:EntropyVisualization] ${particle.id} - worldPos(${position.x.toFixed(1)}, ${position.y.toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenPos(${screenX.toFixed(1)}, ${screenY.toFixed(1)}) size:${screenSize.toFixed(1)} - ${Date.now()}`);
+        
+        return (
+          <Circle
+            key={particle.id}
+            cx={screenX}
+            cy={screenY}
+            r={screenSize}
+            fill={particle.color}
+            opacity={particle.opacity * intensity}
+          />
+        );
+      })}
+    </G>
+  );
+};
+
+/**
+ * Particle System Component - Manages particles for a single sector
+ */
+const ParticleSystemComponent: React.FC<ParticleSystemProps> = ({
+  sector,
+  neighboringSectors,
+  viewportState,
+  entropy,
+  enableAnimation = true,
+  particleQuality = 1.0,
+}) => {
+  // Calculate particle flows to neighboring sectors
+  const particleFlows = useMemo(() => {
+    // Only show particles above threshold
+    if (entropy < ENTROPY_CONFIG.effects.particleThreshold || !enableAnimation) {
+      return [];
+    }
+
+    return neighboringSectors
+      .map(neighbor => ({
+        neighbor,
+        intensity: calculateEntropyFlowIntensity(sector, neighbor),
+        distance: Math.hypot(
+          sector.center.x - neighbor.center.x,
+          sector.center.y - neighbor.center.y
+        ),
+      }))
+      .filter(flow => 
+        flow.intensity > 0.2 && 
+        flow.distance < ENTROPY_CONFIG.particles.flowDistance
+      )
+      .sort((a, b) => b.intensity - a.intensity)
+      .slice(0, Math.ceil(3 * particleQuality)); // Limit flows for performance
+  }, [sector, neighboringSectors, particleQuality, entropy, enableAnimation]);
+
+  // Early return after hooks if no particles to show
+  if (particleFlows.length === 0) {
+    return null;
+  }
+
+  return (
+    <G>
+      {particleFlows.map(({ neighbor, intensity }) => {
+        const particleCount = Math.ceil(
+          (ENTROPY_CONFIG.particles.baseCount + 
+           entropy * ENTROPY_CONFIG.particles.maxCount) * 
+          particleQuality * 
+          intensity
+        );
+
+        return (
+          <EntropyFlowComponent
+            key={`flow_${sector.id}_${neighbor.id}`}
+            fromSector={sector}
+            toSector={neighbor}
+            viewportState={viewportState}
+            intensity={intensity}
+            particleCount={particleCount}
+            enableAnimation={enableAnimation}
+          />
+        );
+      })}
+    </G>
+  );
+};
+
+/**
+ * Single sector entropy visualization with improved clipping and reduced artifacts
  */
 export const EntropyVisualizationComponent: React.FC<EntropyVisualizationProps> = ({
   sector,
   viewportState,
   isVisible,
   showIntensiveEffects = false,
+  enableParticleSystem = true,
+  neighboringSectors = [],
 }) => {
   // Transform sector vertices to screen coordinates (always run hook)
   const screenVertices = useMemo(() => {
     if (!sector.vertices || sector.vertices.length === 0) return [];
-    return sector.vertices.map(vertex => ({
+    const transformed = sector.vertices.map(vertex => ({
       x: vertex.x * viewportState.scale + viewportState.translateX,
       y: vertex.y * viewportState.scale + viewportState.translateY,
     }));
-  }, [sector.vertices, viewportState]);
+    
+    // DEBUG: Track sector polygon coordinate transformation
+    if (sector.vertices.length > 0) {
+      console.log(`[DEBUG:EntropyVisualization] Sector ${sector.id} polygon - worldVertex0(${sector.vertices[0].x.toFixed(1)}, ${sector.vertices[0].y.toFixed(1)}) | viewport(scale:${viewportState.scale.toFixed(2)}, translate:${viewportState.translateX.toFixed(1)},${viewportState.translateY.toFixed(1)}) | screenVertex0(${transformed[0].x.toFixed(1)}, ${transformed[0].y.toFixed(1)}) entropy:${sector.entropy.toFixed(2)} - ${Date.now()}`);
+    }
+    
+    return transformed;
+  }, [sector.vertices, viewportState, sector.id, sector.entropy]);
 
   // Generate path for the sector (always run hook)
   const sectorPath = useMemo(() => {
@@ -181,62 +465,59 @@ export const EntropyVisualizationComponent: React.FC<EntropyVisualizationProps> 
     return { x: centerX, y: centerY };
   }, [sector.center, viewportState]);
 
+  // Calculate bounding box for proper gradient sizing
+  const boundingBox = useMemo(() => {
+    if (screenVertices.length === 0) return { minX: 0, minY: 0, width: 0, height: 0 };
+    
+    const xs = screenVertices.map(v => v.x);
+    const ys = screenVertices.map(v => v.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    
+    return {
+      minX,
+      minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  }, [screenVertices]);
+
   // Early return AFTER all hooks
   if (!isVisible || sector.entropy < 0.05 || !sector.vertices || sector.vertices.length === 0) {
     return null;
   }
 
-  // Gradient ID for this sector
+  // Unique IDs for this sector's elements to prevent conflicts
   const gradientId = `entropy_gradient_${sector.id}`;
   
   // Special effects for high entropy sectors
   const hasSpecialEffects = showIntensiveEffects && sector.entropy > ENTROPY_CONFIG.effects.pulseThreshold;
   
+  // More aggressive simple rendering to reduce artifacts
+  const useSimpleRendering = viewportState.scale < 0.8 || sector.entropy < 0.2;
+  
   return (
     <G>
-      {/* Gradient definition for entropy visualization */}
-      <Defs>
-        <RadialGradient
-          id={gradientId}
-          cx="50%"
-          cy="50%"
-          r="70%"
-        >
-          <Stop
-            offset="0%"
-            stopColor={entropyColor}
-            stopOpacity={entropyOpacity * 1.5} // Stronger at center
-          />
-          <Stop
-            offset="50%"
-            stopColor={entropyColor}
-            stopOpacity={entropyOpacity}
-          />
-          <Stop
-            offset="100%"
-            stopColor={entropyColor}
-            stopOpacity={entropyOpacity * 0.3} // Fade at edges
-          />
-        </RadialGradient>
-      </Defs>
-
-      {/* Main entropy fill */}
+      {/* Completely simplified entropy rendering - no gradients, no layers */}
       <AnimatedPath
         d={sectorPath}
-        fill={hasSpecialEffects ? `url(#${gradientId})` : entropyColor}
-        opacity={entropyOpacity}
+        fill={entropyColor}
+        opacity={entropyOpacity * 0.6} // Reduced opacity to make subtle
         stroke="none"
+        fillRule="evenodd"
       />
 
-      {/* High entropy pulse effect */}
-      {hasSpecialEffects && sector.entropy > ENTROPY_CONFIG.effects.waveThreshold && (
-        <AnimatedPath
-          d={sectorPath}
-          fill="none"
-          stroke={entropyColor}
-          strokeWidth={Math.max(1, 2 / viewportState.scale)}
-          strokeOpacity={entropyOpacity * 0.7}
-          strokeDasharray={`${10 / viewportState.scale},${5 / viewportState.scale}`}
+      {/* Particle system temporarily disabled to debug artifacts */}
+      {false && enableParticleSystem && neighboringSectors.length > 0 && !useSimpleRendering && (
+        <ParticleSystemComponent
+          sector={sector}
+          neighboringSectors={neighboringSectors}
+          viewportState={viewportState}
+          entropy={sector.entropy}
+          enableAnimation={showIntensiveEffects}
+          particleQuality={showIntensiveEffects ? 0.8 : 0.4} // Reduced particle quality
         />
       )}
     </G>
@@ -244,36 +525,55 @@ export const EntropyVisualizationComponent: React.FC<EntropyVisualizationProps> 
 };
 
 /**
- * Multiple sector entropy visualization with performance optimization
+ * Multiple sector entropy visualization with improved performance and artifact reduction
  */
 export const MultiSectorEntropyVisualization: React.FC<MultiSectorEntropyProps> = ({
   sectors,
   viewportState,
   entropyThreshold = 0.05,
-  maxRenderCount = 30,
+  maxRenderCount = 25, // Reduced for better performance
+  enableParticleSystem = true,
+  particleQuality = 0.6, // Reduced default particle quality
 }) => {
-  // Filter and prioritize sectors for rendering
+  // Create sector lookup map for neighbor finding
+  const sectorMap = useMemo(() => {
+    if (!sectors || !Array.isArray(sectors)) {
+      return new Map();
+    }
+    return new Map(sectors.map(sector => [sector.id, sector]));
+  }, [sectors]);
+
+  // Determine performance mode based on zoom and sector count
+  const performanceMode = useMemo(() => {
+    const sectorCount = sectors?.length || 0;
+    return viewportState.scale < 0.4 || sectorCount > 100;
+  }, [viewportState.scale, sectors]);
+
+  // Filter and prioritize sectors for rendering with improved culling
   const visibleSectors = useMemo(() => {
     const viewportBounds = {
-      minX: -viewportState.translateX / viewportState.scale,
-      maxX: (-viewportState.translateX + 800) / viewportState.scale, // Assuming 800px width
-      minY: -viewportState.translateY / viewportState.scale,
-      maxY: (-viewportState.translateY + 600) / viewportState.scale, // Assuming 600px height
+      minX: -viewportState.translateX / viewportState.scale - 50, // Add padding for smooth transitions
+      maxX: (-viewportState.translateX + 800) / viewportState.scale + 50,
+      minY: -viewportState.translateY / viewportState.scale - 50,
+      maxY: (-viewportState.translateY + 600) / viewportState.scale + 50,
     };
+
+    const effectiveMaxRenderCount = performanceMode ? Math.floor(maxRenderCount * 0.6) : maxRenderCount;
+    const effectiveThreshold = performanceMode ? entropyThreshold * 1.5 : entropyThreshold;
 
     return sectors
       .filter(sector => {
         // Filter by entropy threshold
-        if (sector.entropy < entropyThreshold) return false;
+        if (sector.entropy < effectiveThreshold) return false;
         
-        // Check if sector bounds intersect with viewport
+        // Check if sector bounds intersect with viewport (with padding)
         return sector.bounds.minX < viewportBounds.maxX &&
                sector.bounds.maxX > viewportBounds.minX &&
                sector.bounds.minY < viewportBounds.maxY &&
                sector.bounds.maxY > viewportBounds.minY;
       })
       .sort((a, b) => {
-        // Sort by entropy level (higher entropy = higher priority)
+        // Primary sort by entropy level (higher entropy = higher priority)
         const entropyPriority = b.entropy - a.entropy;
         
         // Secondary sort by distance from viewport center
@@ -283,21 +583,62 @@ export const MultiSectorEntropyVisualization: React.FC<MultiSectorEntropyProps> 
         const distanceA = Math.hypot(a.center.x - viewportCenterX, a.center.y - viewportCenterY);
         const distanceB = Math.hypot(b.center.x - viewportCenterX, b.center.y - viewportCenterY);
         
-        return entropyPriority !== 0 ? entropyPriority : distanceA - distanceB;
+        // Weight entropy more heavily for sorting
+        return entropyPriority * 1000 + (distanceA - distanceB);
       })
-      .slice(0, maxRenderCount);
-  }, [sectors, viewportState, entropyThreshold, maxRenderCount]);
+      .slice(0, effectiveMaxRenderCount);
+  }, [sectors, viewportState, entropyThreshold, maxRenderCount, performanceMode]);
+
+  // Split sectors into layers to reduce overlap conflicts
+  const sectorLayers = useMemo(() => {
+    const layers: GalacticSector[][] = [[], [], []]; // Low, medium, high entropy layers
+    
+    visibleSectors.forEach(sector => {
+      if (sector.entropy < 0.3) {
+        layers[0].push(sector); // Low entropy
+      } else if (sector.entropy < 0.7) {
+        layers[1].push(sector); // Medium entropy
+      } else {
+        layers[2].push(sector); // High entropy
+      }
+    });
+    
+    return layers;
+  }, [visibleSectors]);
 
   return (
     <G>
-      {visibleSectors.map(sector => (
-        <EntropyVisualizationComponent
-          key={sector.id}
-          sector={sector}
-          viewportState={viewportState}
-          isVisible={true}
-          showIntensiveEffects={sector.entropy > ENTROPY_CONFIG.effects.pulseThreshold}
-        />
+      {/* Render sectors in layers to reduce overlap artifacts */}
+      {sectorLayers.map((layer, layerIndex) => (
+        <G key={`entropy_layer_${layerIndex}`}>
+          {layer.map(sector => {
+            // Find neighboring sectors for this sector
+            const neighboringSectors = enableParticleSystem && !performanceMode
+              ? sector.neighboringSectors
+                  .map(neighborId => sectorMap.get(neighborId))
+                  .filter((neighbor): neighbor is GalacticSector => 
+                    neighbor !== undefined && neighbor.entropy > entropyThreshold
+                  )
+                  .slice(0, performanceMode ? 2 : 3) // Limit neighbors based on performance mode
+              : [];
+
+            const effectiveParticleQuality = performanceMode 
+              ? particleQuality * 0.5 
+              : particleQuality;
+
+            return (
+              <EntropyVisualizationComponent
+                key={sector.id}
+                sector={sector}
+                viewportState={viewportState}
+                isVisible={true}
+                showIntensiveEffects={sector.entropy > ENTROPY_CONFIG.effects.pulseThreshold && !performanceMode}
+                enableParticleSystem={enableParticleSystem && !performanceMode}
+                neighboringSectors={neighboringSectors}
+              />
+            );
+          })}
+        </G>
       ))}
     </G>
   );
@@ -313,6 +654,16 @@ export function analyzeEntropyDistribution(sectors: GalacticSector[]): {
   entropyHotspots: GalacticSector[];
   entropyColdSpots: GalacticSector[];
 } {
+  if (!sectors || !Array.isArray(sectors) || sectors.length === 0) {
+    return {
+      averageEntropy: 0,
+      highEntropySectors: 0,
+      criticalEntropySectors: 0,
+      entropyHotspots: [],
+      entropyColdSpots: [],
+    };
+  }
+
   const totalEntropy = sectors.reduce((sum, sector) => sum + sector.entropy, 0);
   const averageEntropy = totalEntropy / sectors.length;
   
@@ -352,6 +703,15 @@ export function generateEntropyRenderData(
   highEntropyCount: number;
   renderingLoad: number; // 0-1 scale
 } {
+  if (!sectors || !Array.isArray(sectors)) {
+    return {
+      visibleEntropyCount: 0,
+      averageVisibleEntropy: 0,
+      highEntropyCount: 0,
+      renderingLoad: 0,
+    };
+  }
+
   const visibleSectors = sectors.filter(sector => {
     const viewportBounds = {
       minX: -viewportState.translateX / viewportState.scale,
