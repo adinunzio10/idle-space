@@ -58,6 +58,8 @@ const mockModuleManager = {
     performanceMode: false,
   })),
   getAllModules: jest.fn(() => []),
+  registerModule: jest.fn(() => Promise.resolve()),
+  disableModule: jest.fn(),
 };
 
 // Track ModuleManager constructor calls
@@ -145,6 +147,9 @@ describe('GalaxyMapModular Module Stability', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     moduleInitializationCalls.length = 0;
+    
+    // Reset the mockModuleManager calls
+    mockModuleManager.renderModules.mockClear();
   });
 
   describe('Module Initialization Stability', () => {
@@ -296,7 +301,7 @@ describe('GalaxyMapModular Module Stability', () => {
     it('should render modules consistently without flickering', async () => {
       const modulesMock = require('../../../utils/galaxy/modules');
       
-      render(
+      const { rerender } = render(
         <GalaxyMapModular
           width={800}
           height={600}
@@ -310,8 +315,8 @@ describe('GalaxyMapModular Module Stability', () => {
         expect(modulesMock.ModuleManager).toHaveBeenCalled();
       });
 
-      // Get the actual mock instance created by the component
-      const mockInstance = modulesMock.ModuleManager.mock.results[modulesMock.ModuleManager.mock.results.length - 1].value;
+      // Use the mockModuleManager directly since it's what the jest.fn returns
+      const mockInstance = mockModuleManager;
 
       // Wait for renderModules to be called
       await waitFor(() => {
@@ -321,29 +326,25 @@ describe('GalaxyMapModular Module Stability', () => {
       // Get initial call count
       const initialCallCount = mockInstance.renderModules.mock.calls.length;
 
-      // Simulate multiple renders (as would happen during panning)
-      for (let i = 0; i < 5; i++) {
-        // Force re-render by changing a prop that shouldn't affect modules
-        render(
+      // Force multiple re-renders by changing props that affect moduleContext (beacons)
+      for (let i = 0; i < 3; i++) {
+        const newBeacons = [...mockBeacons, createMockBeacon(`beacon-${i}`, 100 + i * 10, 100 + i * 10)];
+        rerender(
           <GalaxyMapModular
             width={800}
             height={600}
-            beacons={mockBeacons}
+            beacons={newBeacons}
             connections={mockConnections}
-            key={i} // Force new component instance
           />
         );
       }
 
-      // Should have called renderModules for each render
-      // Since we're creating new component instances with key prop, we need to check the total calls across all instances
-      const totalCalls = modulesMock.ModuleManager.mock.results.reduce((total: number, result: any) => {
-        return total + (result.value.renderModules.mock.calls?.length || 0);
-      }, 0);
-      expect(totalCalls).toBeGreaterThan(initialCallCount);
+      // Should have called renderModules multiple times (once for initial + once per beacon change)
+      const currentCallCount = mockInstance.renderModules.mock.calls.length;
+      expect(currentCallCount).toBeGreaterThan(initialCallCount);
       
-      // But should NOT have re-initialized modules
-      expect(moduleInitializationCalls.length).toBeLessThanOrEqual(5); // One per component instance
+      // Should not have excessive re-initializations during normal re-renders
+      expect(moduleInitializationCalls.length).toBe(1); // Only the initial initialization
     });
 
     it('should maintain module context stability during prop changes', () => {
