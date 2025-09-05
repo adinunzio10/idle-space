@@ -56,7 +56,7 @@ interface ResourceStats {
 }
 
 // Helper components
-const StatCard: React.FC<StatCard & { onPress?: () => void }> = ({
+const StatCardComponent: React.FC<StatCard & { onPress?: () => void }> = ({
   title,
   value,
   description,
@@ -272,7 +272,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
             <StatSection title="Overview" icon="🎯">
               <View className="flex-row space-x-3">
                 <View className="flex-1">
-                  <StatCard
+                  <StatCardComponentComponentComponent
                     title="Play Time"
                     value={gameStats.playTime.formatted}
                     description={`${gameStats.saves} saves`}
@@ -281,7 +281,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                   />
                 </View>
                 <View className="flex-1">
-                  <StatCard
+                  <StatCardComponentComponentComponent
                     title="Network Size"
                     value={beaconStats.total}
                     description={`Avg level ${beaconStats.averageLevel.toFixed(1)}`}
@@ -295,25 +295,25 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
             {/* Resource Statistics */}
             <StatSection title="Resources" icon="💎">
               <View className="grid grid-cols-2 gap-3">
-                <StatCard
+                <StatCardComponentComponent
                   title="Quantum Data"
                   value={resourceStats.total.quantumData}
                   description="Primary currency"
                   color="text-primary"
                 />
-                <StatCard
+                <StatCardComponentComponent
                   title="Stellar Essence"
                   value={resourceStats.total.stellarEssence}
                   description="Advanced material"
                   color="text-secondary"
                 />
-                <StatCard
+                <StatCardComponentComponent
                   title="Void Fragments"
                   value={resourceStats.total.voidFragments}
                   description="Rare resource"
                   color="text-accent"
                 />
-                <StatCard
+                <StatCardComponentComponent
                   title="Resonance Crystals"
                   value={resourceStats.total.resonanceCrystals}
                   description="Pattern enhancer"
@@ -322,7 +322,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
               </View>
 
               {resourceStats.total.chronosParticles > 0 && (
-                <StatCard
+                <StatCardComponentComponent
                   title="Chronos Particles"
                   value={resourceStats.total.chronosParticles}
                   description="Premium currency"
@@ -336,7 +336,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
             <StatSection title="Beacon Network" icon="📡">
               <View className="flex-row space-x-3 mb-3">
                 <View className="flex-1">
-                  <StatCard
+                  <StatCardComponentComponentComponent
                     title="Total Beacons"
                     value={beaconStats.total}
                     description={`${beaconStats.totalLevels} total levels`}
@@ -344,7 +344,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                   />
                 </View>
                 <View className="flex-1">
-                  <StatCard
+                  <StatCardComponentComponentComponent
                     title="Highest Level"
                     value={beaconStats.maxLevel}
                     description="Maximum beacon level"
@@ -354,21 +354,21 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
               </View>
 
               <View className="grid grid-cols-3 gap-2">
-                <StatCard
+                <StatCardComponentComponent
                   title="Pioneer"
                   value={beaconStats.byType.pioneer}
                   description="Exploration beacons"
                   color="text-primary"
                   icon="🔍"
                 />
-                <StatCard
+                <StatCardComponentComponent
                   title="Harvester"
                   value={beaconStats.byType.harvester}
                   description="Resource generators"
                   color="text-secondary"
                   icon="⛏️"
                 />
-                <StatCard
+                <StatCardComponentComponent
                   title="Architect"
                   value={beaconStats.byType.architect}
                   description="Pattern builders"
@@ -380,7 +380,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
 
             {/* Performance Metrics */}
             <StatSection title="Performance" icon="📈">
-              <StatCard
+              <StatCardComponent
                 title="Network Efficiency"
                 value={gameStats.efficiency.toFixed(2)}
                 description="QD per beacon ratio"
@@ -388,7 +388,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
                 icon="⚡"
               />
 
-              <StatCard
+              <StatCardComponent
                 title="Session Statistics"
                 value="Coming Soon"
                 description="Detailed session analytics"
@@ -399,7 +399,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
 
             {/* Achievements Preview */}
             <StatSection title="Achievements" icon="🏆">
-              <StatCard
+              <StatCardComponent
                 title="Progress Tracking"
                 value="Coming Soon"
                 description="Achievement system in development"
