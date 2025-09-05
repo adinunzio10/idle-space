@@ -13,7 +13,7 @@ import {
  */
 export interface EffectConfig {
   duration: number;
-  easing: (value: number) => number;
+  easing: any;
   repeat?: boolean;
   delay?: number;
 }

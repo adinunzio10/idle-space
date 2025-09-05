@@ -141,8 +141,8 @@ export function useSmartMemo<T>(
   deps: React.DependencyList,
   compareFunction?: (prev: T, next: T) => boolean
 ): T {
-  const prevDepsRef = useRef<React.DependencyList>();
-  const prevValueRef = useRef<T>();
+  const prevDepsRef = useRef<React.DependencyList | undefined>(undefined);
+  const prevValueRef = useRef<T | undefined>(undefined);
   const hasInitializedRef = useRef(false);
 
   return useMemo(() => {

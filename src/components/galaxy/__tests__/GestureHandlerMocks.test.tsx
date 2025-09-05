@@ -269,9 +269,9 @@ describe('Gesture Handler Mocks Validation', () => {
   describe('Global Gesture Test Utils', () => {
     it('should have GestureTestUtils available globally', () => {
       expect(global.GestureTestUtils).toBeDefined();
-      expect(global.GestureTestUtils.simulatePanGesture).toBeDefined();
-      expect(global.GestureTestUtils.simulatePinchGesture).toBeDefined();
-      expect(global.GestureTestUtils.simulateTapGesture).toBeDefined();
+      expect(global.GestureTestUtils?.simulatePanGesture).toBeDefined();
+      expect(global.GestureTestUtils?.simulatePinchGesture).toBeDefined();
+      expect(global.GestureTestUtils?.simulateTapGesture).toBeDefined();
     });
   });
 });

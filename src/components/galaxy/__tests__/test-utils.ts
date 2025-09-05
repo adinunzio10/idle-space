@@ -7,14 +7,15 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import type { Beacon, ViewportState, ModuleContext } from '../../../types/galaxy';
+import type { Beacon, ViewportState, Connection } from '../../../types/galaxy';
+import type { ModuleContext } from '../../../utils/galaxy/modules/types';
 
 // Re-export global test utilities for convenience
 export const {
   createMockBeacon: globalCreateMockBeacon,
   createMockViewportState: globalCreateMockViewportState,
   createMockModuleContext: globalCreateMockModuleContext,
-} = global;
+} = global || {};
 
 /**
  * Enhanced beacon creation with more options
@@ -60,14 +61,18 @@ export function createMockBeaconGrid(
 /**
  * Creates mock connections between beacons
  */
-export function createMockConnections(beacons: Beacon[]): Array<{ from: string; to: string }> {
-  const connections: Array<{ from: string; to: string }> = [];
+export function createMockConnections(beacons: Beacon[]): Connection[] {
+  const connections: Connection[] = [];
   
   for (let i = 0; i < beacons.length - 1; i++) {
     if (Math.random() > 0.5) { // 50% chance of connection
       connections.push({
-        from: beacons[i].id,
-        to: beacons[i + 1].id,
+        id: `connection-${beacons[i].id}-${beacons[i + 1].id}`,
+        sourceId: beacons[i].id,
+        targetId: beacons[i + 1].id,
+        strength: Math.floor(Math.random() * 5) + 1, // 1-5
+        isActive: Math.random() > 0.3, // 70% chance of being active
+        patterns: [], // Empty array for basic mock
       });
     }
   }
@@ -110,7 +115,7 @@ export function createMockModuleContext(overrides: Partial<ModuleContext> = {}):
  * Mock Module Manager for testing module lifecycle
  */
 export class TestModuleManager {
-  private modules: Array<{ id: string; enabled: boolean }> = [];
+  private modules: { id: string; enabled: boolean }[] = [];
   private eventBus: any;
   
   constructor() {

@@ -73,8 +73,12 @@ describe('Test Utilities Library Validation', () => {
         
         expect(Array.isArray(connections)).toBe(true);
         connections.forEach(connection => {
-          expect(typeof connection.from).toBe('string');
-          expect(typeof connection.to).toBe('string');
+          expect(typeof connection.sourceId).toBe('string');
+          expect(typeof connection.targetId).toBe('string');
+          expect(typeof connection.id).toBe('string');
+          expect(typeof connection.strength).toBe('number');
+          expect(typeof connection.isActive).toBe('boolean');
+          expect(Array.isArray(connection.patterns)).toBe(true);
         });
       });
     });

@@ -216,8 +216,7 @@ export class OverlayModule extends BaseModule {
                 key: `harvest-${starSystem.id}`,
                 starSystem: starSystem,
                 viewportState: context.viewport,
-                isOverlayActive: context.viewport.scale > 0.5,
-                showResourceValues: !this.config.performanceMode,
+                isActive: context.viewport.scale > 0.5,
                 enableGlowEffects: this.overlayConfig.harvestOverlayConfig.enableGlowEffects && !this.config.performanceMode,
                 enableAnimations: !this.config.performanceMode,
                 onHarvest: this.handleResourceHarvestTwoParam.bind(this),
@@ -328,9 +327,16 @@ export class OverlayModule extends BaseModule {
           y: beacon.position.y + 100 + Math.random() * 50,
         },
         requiredBeacons: [beacon.id],
+        newBeaconsNeeded: 2,
+        allMissingPositions: [{
+          x: beacon.position.x + 100 + Math.random() * 50,
+          y: beacon.position.y + 100 + Math.random() * 50,
+        }],
         potentialBonus: 1.5 + Math.random() * 2,
         completionPercentage: Math.random() * 0.8 + 0.2,
         priority: Math.random(),
+        estimatedValue: Math.random() * 5 + 1,
+        conflictingPatterns: [],
       });
     }
 
@@ -495,7 +501,7 @@ export class OverlayModule extends BaseModule {
     }
 
     if (this.config.debugMode) {
-      this.logDebug('Pattern suggestion interaction:', event.type, event.suggestion.id);
+      this.logDebug('Pattern suggestion interaction:', { eventType: event.type, suggestionId: event.suggestion.id });
     }
   }
 

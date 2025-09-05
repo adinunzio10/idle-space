@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 export class WebCompatibleHaptics {
-  static async impactAsync(style: any): Promise<void> {
+  static async impactAsync(style: Haptics.ImpactFeedbackStyle): Promise<void> {
     if (Platform.OS !== 'web') {
       return Haptics.impactAsync(style);
     }
@@ -17,7 +17,7 @@ export class WebCompatibleHaptics {
           [Haptics.ImpactFeedbackStyle.Heavy]: 50,
         };
 
-        const duration = vibrationMap[style] || 25;
+        const duration = vibrationMap[style as keyof typeof vibrationMap] || 25;
         navigator.vibrate(duration);
       } catch (_error) {
         // Silently fail if vibration isn't supported
@@ -25,7 +25,7 @@ export class WebCompatibleHaptics {
     }
   }
 
-  static async notificationAsync(type: any): Promise<void> {
+  static async notificationAsync(type: Haptics.NotificationFeedbackType): Promise<void> {
     if (Platform.OS !== 'web') {
       return Haptics.notificationAsync(type);
     }
@@ -39,7 +39,7 @@ export class WebCompatibleHaptics {
           [Haptics.NotificationFeedbackType.Error]: [200, 100, 200],
         };
 
-        const pattern = vibrationMap[type] || [50];
+        const pattern = vibrationMap[type as keyof typeof vibrationMap] || [50];
         navigator.vibrate(pattern);
       } catch (error) {
         // Silently fail if vibration isn't supported

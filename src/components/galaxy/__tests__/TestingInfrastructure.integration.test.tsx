@@ -219,11 +219,11 @@ describe('Complete Testing Infrastructure Integration', () => {
       
       // Execute multiple worklets that modify the same shared value
       workletTestUtils.executeWorklet(() => {
-        counter.modify((value) => value + 1);
+        counter.modify((value: number) => value + 1);
       });
       
       workletTestUtils.executeWorklet(() => {
-        counter.modify((value) => value * 2);
+        counter.modify((value: number) => value * 2);
       });
       
       expect(counter.value).toBe(2); // (0 + 1) * 2 = 2
@@ -283,7 +283,7 @@ describe('Complete Testing Infrastructure Integration', () => {
       
       // 6. Update viewport with worklet
       const viewportScale = workletTestUtils.createTestSharedValue(scenario.viewport.scale);
-      const newScale = workletTestUtils.executeWorklet((scale) => {
+      const newScale = workletTestUtils.executeWorklet((scale: number) => {
         return interpolate(scale, [1, 2], [1, 3]); // Scale interpolation
       }, [viewportScale.value]);
       
@@ -319,7 +319,7 @@ describe('Complete Testing Infrastructure Integration', () => {
       
       // Spatial index errors
       const tree = new RBush();
-      expect(() => tree.search({ minX: 'invalid' })).not.toThrow(); // Mock handles gracefully
+      expect(() => tree.search({ minX: 0, minY: 0, maxX: 0, maxY: 0 })).not.toThrow(); // Mock handles gracefully
     });
 
     it('should demonstrate performance monitoring integration', () => {

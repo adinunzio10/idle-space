@@ -23,12 +23,11 @@ export interface ProfilerInteraction {
  */
 export interface RenderPhaseData {
   id: string;
-  phase: 'mount' | 'update';
+  phase: 'mount' | 'update' | 'nested-update';
   actualDuration: number;
   baseDuration: number;
   startTime: number;
   commitTime: number;
-  interactions: Set<ProfilerInteraction>;
 }
 
 /**
@@ -107,17 +106,16 @@ export function useReactProfilerIntegration() {
   const [isProfilerActive, setIsProfilerActive] = useState(false);
   const [profilerResults, setProfilerResults] = useState<ProfilerResults | null>(null);
   const renderDataRef = useRef(new Map<string, ComponentRenderData>());
-  const analysisIntervalRef = useRef<NodeJS.Timeout>();
+  const analysisIntervalRef = useRef<any>(null);
   
   // Track renders across all profiled components
   const onRenderCallback: ProfilerOnRenderCallback = React.useCallback((
-    id,
-    phase,
-    actualDuration,
-    baseDuration,
-    startTime,
-    commitTime,
-    interactions
+    id: string,
+    phase: "mount" | "update" | "nested-update",
+    actualDuration: number,
+    baseDuration: number,
+    startTime: number,
+    commitTime: number
   ) => {
     if (!isProfilerActive) return;
 
@@ -128,7 +126,6 @@ export function useReactProfilerIntegration() {
       baseDuration,
       startTime,
       commitTime,
-      interactions,
     };
 
     // Track component render data

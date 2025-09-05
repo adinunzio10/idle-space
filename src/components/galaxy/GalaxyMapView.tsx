@@ -306,7 +306,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   >(null);
 
   // Web gesture container ref for event prevention
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<any>(null);
 
   // Optimized spatial indexing for efficient beacon queries - now using R-tree with smart memoization
   const spatialIndex = useSmartMemo(

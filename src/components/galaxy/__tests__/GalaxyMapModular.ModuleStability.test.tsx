@@ -49,7 +49,7 @@ jest.mock('../../../hooks/useBatteryOptimization', () => ({
 }));
 
 // Mock module manager to track initialization calls
-const moduleInitializationCalls: Array<{ timestamp: number; reason: string }> = [];
+const moduleInitializationCalls: { timestamp: number; reason: string }[] = [];
 const mockModuleManager = {
   renderModules: jest.fn(() => ['mock-module-1', 'mock-module-2']),
   getEventBus: jest.fn(() => ({

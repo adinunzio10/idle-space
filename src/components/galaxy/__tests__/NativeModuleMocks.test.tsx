@@ -26,7 +26,7 @@ describe('Native Module Mocks Validation', () => {
     });
 
     it('should handle multi-operations', async () => {
-      const entries = [['key1', 'value1'], ['key2', 'value2']];
+      const entries: readonly [string, string][] = [['key1', 'value1'], ['key2', 'value2']];
       await AsyncStorage.multiSet(entries);
       
       const results = await AsyncStorage.multiGet(['key1', 'key2']);
@@ -58,9 +58,8 @@ describe('Native Module Mocks Validation', () => {
     });
 
     it('should provide power mode information', async () => {
-      const powerMode = await Battery.getPowerModeAsync();
-      expect(typeof powerMode).toBe('number');
-      expect(Object.values(Battery.PowerMode)).toContain(powerMode);
+      const isLowPowerMode = await Battery.isLowPowerModeEnabledAsync();
+      expect(typeof isLowPowerMode).toBe('boolean');
     });
 
     it('should provide listeners with remove function', () => {

@@ -135,7 +135,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
         const result = originalUseMemo(factory, deps);
         
         // Detect moduleContext creation (object with viewport, beacons, etc.)
-        if (typeof result === 'object' && result?.viewport && result?.beacons) {
+        if (typeof result === 'object' && result && 'viewport' in result && 'beacons' in result) {
           contextCreationCount++;
         }
         
@@ -523,8 +523,9 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
           id: `high-conn-${i}`,
           sourceId: `high-beacon-${i}`,
           targetId: `high-beacon-${(i + 1) % 50}`,
-          type: 'quantum' as const,
           strength: Math.random(),
+          isActive: true,
+          patterns: [],
         })),
         enabledModules: ['beacon-rendering', 'connection-rendering'],
         performanceMode: true,

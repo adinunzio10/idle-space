@@ -874,23 +874,23 @@ export class WebTouchEventManager {
 
     const events = [
       {
-        type: 'touchstart',
-        handler: this.handleTouchStart,
+        type: 'touchstart' as keyof HTMLElementEventMap,
+        handler: this.handleTouchStart as EventListener,
         options: { passive: false },
       }, // Needs preventDefault
       {
-        type: 'touchmove',
-        handler: this.handleTouchMove,
+        type: 'touchmove' as keyof HTMLElementEventMap,
+        handler: this.handleTouchMove as EventListener,
         options: { passive: false },
       }, // Needs preventDefault
       {
-        type: 'touchend',
-        handler: this.handleTouchEnd,
+        type: 'touchend' as keyof HTMLElementEventMap,
+        handler: this.handleTouchEnd as EventListener,
         options: { passive: true },
       }, // No preventDefault needed
       {
-        type: 'touchcancel',
-        handler: this.handleTouchCancel,
+        type: 'touchcancel' as keyof HTMLElementEventMap,
+        handler: this.handleTouchCancel as EventListener,
         options: { passive: true },
       }, // No preventDefault needed
     ];

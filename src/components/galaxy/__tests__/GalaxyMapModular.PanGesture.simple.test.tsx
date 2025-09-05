@@ -144,7 +144,7 @@ describe('GalaxyMapModular Pan Gesture Performance Logic', () => {
 
   describe('Coordinate transformation consistency', () => {
     it('should use galaxyToScreen for consistent coordinate transformations', () => {
-      const galaxyToScreenCalls: Array<{ point: any; viewport: any }> = [];
+      const galaxyToScreenCalls: { point: any; viewport: any }[] = [];
       
       // Mock galaxyToScreen function
       const mockGalaxyToScreen = (point: any, viewport: any) => {
@@ -195,7 +195,7 @@ describe('GalaxyMapModular Pan Gesture Performance Logic', () => {
     });
 
     it('should process viewport updates without InteractionManager delays', () => {
-      const processedUpdates: Array<{ immediate: boolean; timestamp: number }> = [];
+      const processedUpdates: { immediate: boolean; timestamp: number }[] = [];
       
       // Simulate immediate processing without InteractionManager.runAfterInteractions
       const processViewportUpdate = (viewport: any, immediate = false) => {

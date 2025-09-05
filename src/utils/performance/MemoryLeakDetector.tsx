@@ -269,7 +269,7 @@ export class MemoryLeakDetector {
                             type === 'timer' ? 'timers' :
                             type === 'observer' ? 'observers' : 'refs';
         
-        lifecycle.resources[resourceType].push(resourceId);
+        (lifecycle.resources as any)[resourceType].push(resourceId);
       }
     }
   }
@@ -291,7 +291,7 @@ export class MemoryLeakDetector {
                             type === 'timer' ? 'timers' :
                             type === 'observer' ? 'observers' : 'refs';
         
-        const index = lifecycle.resources[resourceType].indexOf(resourceId);
+        const index = (lifecycle.resources as any)[resourceType].indexOf(resourceId);
         if (index !== -1) {
           lifecycle.resources[resourceType].splice(index, 1);
         }
@@ -408,7 +408,7 @@ export class MemoryLeakDetector {
     const detector = this;
     
     // Intercept setTimeout
-    global.setTimeout = function(callback: Function, delay?: number, ...args: any[]): number {
+    (global as any).setTimeout = function(callback: Function, delay?: number, ...args: any[]): number {
       const timerId = detector.originalSetTimeout!(callback, delay, ...args);
       const stackTrace = detector.captureStackTrace();
       
@@ -427,14 +427,14 @@ export class MemoryLeakDetector {
     };
 
     // Intercept setInterval
-    global.setInterval = function(callback: Function, delay?: number, ...args: any[]): number {
+    (global as any).setInterval = function(callback: any, delay?: number, ...args: any[]): number {
       const timerId = detector.originalSetInterval!(callback, delay, ...args);
       const stackTrace = detector.captureStackTrace();
       
       detector.trackedTimers.set(timerId, {
         id: timerId,
         type: 'interval',
-        callback,
+        callback: callback as Function,
         delay,
         createdAt: Date.now(),
         stackTrace,
@@ -446,7 +446,7 @@ export class MemoryLeakDetector {
     };
 
     // Intercept clearTimeout
-    global.clearTimeout = function(timerId?: number): void {
+    (global as any).clearTimeout = function(timerId: string | number | any | undefined): void {
       if (timerId) {
         detector.trackedTimers.delete(timerId);
         detector.trackResourceDeallocation('timer', timerId.toString());
@@ -455,7 +455,7 @@ export class MemoryLeakDetector {
     };
 
     // Intercept clearInterval
-    global.clearInterval = function(timerId?: number): void {
+    (global as any).clearInterval = function(timerId: string | number | any | undefined): void {
       if (timerId) {
         detector.trackedTimers.delete(timerId);
         detector.trackResourceDeallocation('timer', timerId.toString());
@@ -631,8 +631,7 @@ export class MemoryLeakDetector {
 
     // Check for remaining timers
     lifecycle.resources.timers.forEach(timerId => {
-      const timerIdNum = parseInt(timerId);
-      if (this.trackedTimers.has(timerIdNum)) {
+      if (this.trackedTimers.has(timerId)) {
         leaks.push(`Timer: ${timerId}`);
       }
     });
@@ -797,7 +796,7 @@ export class MemoryLeakDetector {
       activeEventListeners: this.trackedEventListeners.size,
       activeTimers: this.trackedTimers.size,
       activeObservers: this.trackedObservers.size,
-      unmountedComponentsWithResources,
+      unmountedComponentsWithResources: unmountedWithResources,
     };
   }
 

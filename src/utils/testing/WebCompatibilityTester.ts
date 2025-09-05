@@ -198,7 +198,7 @@ export class WebCompatibilityTester {
   private testPassiveEventListeners(): boolean {
     try {
       let supported = false;
-      const options = {
+      const options: AddEventListenerOptions = {
         get passive() {
           supported = true;
           return false;

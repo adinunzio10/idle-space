@@ -2,7 +2,7 @@ import { Migration } from './Migration';
 import { GameState, DEFAULT_PLAYER_SETTINGS } from '../GameState';
 
 // Example migration from version 1 to 2 (for future use)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const migration_v2: Migration = {
   version: 2,
   description: 'Add new player settings and fix legacy data',

@@ -3130,11 +3130,216 @@
             }
           ]
         }
+      },
+      {
+        "id": 74,
+        "title": "Resolve TypeScript Type Errors from typecheck.txt Report",
+        "description": "Analyze and fix all TypeScript compilation errors identified in the typecheck.txt file to achieve clean type checking across the codebase.",
+        "details": "Systematically resolve TypeScript compilation errors by: 1) **Error Analysis**: Parse typecheck.txt to categorize errors by type (missing types, interface mismatches, strict null checks, unused variables, import/export issues). Group errors by file and severity to prioritize fixes. 2) **Interface and Type Fixes**: Resolve interface mismatches by updating type definitions, adding missing properties, or creating proper type unions. Update component prop interfaces to match actual usage patterns. Fix generic type constraints and extend proper base interfaces. 3) **Import/Export Resolution**: Fix module resolution errors by updating import paths, adding proper type-only imports using 'import type', and ensuring proper re-exports from index files. Address circular dependency issues if present. 4) **Strict Mode Compliance**: Add proper null checks and optional chaining where needed. Initialize variables with proper default values. Add explicit return type annotations for functions where TypeScript cannot infer types. 5) **React Native Specific**: Fix React Native component typing issues, ensure proper View/Text component prop typing, and resolve any navigation type issues. Update gesture handler and animation library typings if needed. Use incremental compilation with --noEmit flag during fixes to verify progress without generating output files.",
+        "testStrategy": "Run 'npm run type-check' after each batch of fixes to verify error reduction and ensure no new errors are introduced. Test that all fixed components render correctly without runtime errors. Verify that IDE intellisense works properly for newly typed components and functions. Run a full build process to ensure type fixes don't break compilation. Use TypeScript's --strict flag to catch any remaining edge cases. Test critical user flows (beacon placement, resource generation) to ensure type safety doesn't impact core functionality.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze and categorize TypeScript errors from typecheck.txt",
+            "description": "Parse typecheck.txt file to identify, count, and categorize all TypeScript compilation errors by type (missing types, interface mismatches, strict null checks, unused variables, import/export issues) and group by file and severity for prioritized fixing strategy.",
+            "dependencies": [],
+            "details": "Read typecheck.txt file and create a systematic breakdown of 120+ errors. Categorize into: interface mismatches, missing type definitions, strict null check violations, unused variables/imports, module resolution issues, React Native specific type issues. Group errors by affected files and assign priority levels (critical/high/medium/low) based on impact on compilation and runtime functionality.\n<info added on 2025-09-05T01:36:26.150Z>\nANALYSIS COMPLETE:\n\nIdentified 122 TypeScript compilation errors categorized as follows:\n\n**Test File Errors (50 errors, Lines 5-62)**: Global test utilities undefined, missing Connection type properties, parameter type annotations missing, incorrect function signatures, React Native Reanimated worklet import issues.\n\n**Component Type Errors (5 errors, Lines 63-68)**: GalaxyMapView ref type mismatch (HTMLDivElement vs React Native View), AudioManager missing Audio export from expo-audio module.\n\n**Utility Type Errors (20 errors, Lines 69-90)**: WebGestureDebugger undefined data properties, VisualEffects EasingFunctionFactory signature mismatches, OverlayModule missing component props and pattern suggestions.\n\n**Web/Gesture Handler Errors (20 errors, Lines 91-110)**: Missing webkit CSS properties in CSSStyleDeclaration, event listener type mismatches for touch events.\n\n**Performance Module Errors (11 errors, Lines 111-121)**: MemoryLeakDetector timer type issues and missing promisify property, ReactProfilerIntegration missing function arguments, WebCompatibilityTester unknown EventListenerOptions properties.\n\nPrimary error patterns: strict null checks, missing type annotations, interface mismatches. Test files contain highest concentration of errors requiring immediate attention for build stability.\n</info added on 2025-09-05T01:36:26.150Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Fix interface and type definition errors",
+            "description": "Resolve interface mismatches and missing type definitions by updating component prop interfaces, adding missing properties, creating proper type unions, and fixing generic type constraints throughout the codebase.",
+            "dependencies": [
+              "74.1"
+            ],
+            "details": "Address interface-related errors identified in analysis phase. Update component prop interfaces to match actual usage patterns, add missing properties to existing interfaces, create type unions for flexible prop types, fix generic type constraints, and ensure proper inheritance from base interfaces. Focus on React Native component interfaces and custom component prop types.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Resolve import/export and module resolution issues",
+            "description": "Fix module resolution errors by updating import paths, adding proper type-only imports, ensuring correct re-exports from index files, and resolving any circular dependency issues.",
+            "dependencies": [
+              "74.1"
+            ],
+            "details": "Address module-related errors from analysis. Fix broken import paths, add 'import type' statements for type-only imports, update re-exports in index files, resolve circular dependencies between modules, and ensure proper module structure. Pay special attention to React Native and third-party library imports.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement strict mode compliance and null safety",
+            "description": "Add proper null checks, optional chaining, variable initialization with default values, and explicit return type annotations to achieve full TypeScript strict mode compliance.",
+            "dependencies": [
+              "74.2",
+              "74.3"
+            ],
+            "details": "Address strict mode violations by adding null checks where variables might be undefined/null, implement optional chaining for safe property access, initialize variables with proper default values, add explicit return type annotations for functions where TypeScript cannot infer types, and ensure all code paths have proper return statements.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Fix React Native specific typing issues and validate fixes",
+            "description": "Resolve React Native component typing issues, gesture handler types, animation library typings, and run comprehensive validation to ensure all TypeScript errors are resolved without introducing new issues.",
+            "dependencies": [
+              "74.4"
+            ],
+            "details": "Address React Native specific type errors including View/Text component prop typing, navigation type issues, react-native-reanimated typing, react-native-gesture-handler types, and Expo SDK type compatibility. Run 'npm run type-check' after fixes to verify zero compilation errors. Test component rendering and ensure IDE intellisense works properly for all newly typed components.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 75,
+        "title": "Resolve ESLint Configuration and Code Quality Issues",
+        "description": "Review and systematically resolve all ESLint errors and warnings identified in eslint.txt, focusing on React Native, TypeScript, and project-specific linting issues while maintaining code quality standards.",
+        "details": "Analyze eslint.txt output to categorize and prioritize linting issues: 1) **Critical Errors**: Fix TypeScript compilation errors, undefined variables, and import resolution issues that prevent builds. Address React Native specific linting rules including react-native/no-unused-styles, react-native/no-inline-styles, and react-native/no-color-literals. 2) **Code Quality Issues**: Resolve @typescript-eslint warnings including prefer-const, no-unused-vars, explicit-function-return-type, and strict-boolean-expressions. Fix React hooks dependencies and effect cleanup warnings. 3) **Style and Formatting**: Address prettier/prettier conflicts, consistent import ordering, and naming conventions. Update ESLint configuration if needed to align with NativeWind and React Native Reanimated worklet requirements. 4) **Suppression Management**: Create eslint-suppressions.json for legitimate exceptions while documenting rationale. Use eslint-disable comments sparingly and only for unavoidable platform-specific code. 5) **Configuration Updates**: Review .eslintrc.js for React Native 0.79, TypeScript strict mode, and Expo SDK 53 compatibility. Ensure proper parser options and plugin configurations.",
+        "testStrategy": "Run npm run lint after each batch of fixes to verify error reduction and ensure no new issues introduced. Test that all fixed files still compile with npm run type-check and build successfully with expo build. Validate that React Native animations and gesture handlers continue working properly after worklet-related fixes. Use git diff to review each change before committing, ensuring fixes don't alter intended functionality. Run app on both iOS and Android simulators to verify cross-platform compatibility of linting fixes. Create test commits for each major category of fixes to enable easy rollback if issues arise.",
+        "status": "pending",
+        "dependencies": [
+          11
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze and Categorize ESLint Errors from eslint.txt",
+            "description": "Parse the eslint.txt file to categorize all errors by type, severity, and file location to create a systematic remediation plan.",
+            "dependencies": [],
+            "details": "Review eslint.txt output to identify: 1) Critical errors that prevent compilation (undefined variables, import issues, TypeScript errors), 2) React Native specific violations (no-unused-styles, no-inline-styles, no-color-literals), 3) TypeScript quality issues (prefer-const, no-unused-vars, explicit-return-types), 4) React hooks violations (missing dependencies, effect cleanup), 5) Style/formatting conflicts (prettier, import ordering). Create priority matrix and estimate fix complexity for each category.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Fix Critical ESLint Errors and Compilation Issues",
+            "description": "Resolve all critical ESLint errors that prevent builds including TypeScript compilation errors, undefined variables, and import resolution issues.",
+            "dependencies": [
+              "75.1"
+            ],
+            "details": "Address highest priority issues first: 1) Fix undefined variable references and missing imports, 2) Resolve TypeScript compilation errors affecting build process, 3) Fix React Native specific rule violations that cause runtime issues, 4) Ensure all import paths are correct and modules are properly exported/imported, 5) Test that fixes don't break existing functionality. Run npm run type-check between fixes to verify progress.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Resolve TypeScript and Code Quality Warnings",
+            "description": "Fix @typescript-eslint warnings including prefer-const, no-unused-vars, explicit-function-return-type, and React hooks dependency issues.",
+            "dependencies": [
+              "75.2"
+            ],
+            "details": "Systematically address code quality issues: 1) Convert let to const where variables aren't reassigned, 2) Remove or prefix unused variables with underscore, 3) Add explicit return types to functions missing them, 4) Fix React hooks dependencies and add proper cleanup functions, 5) Address strict-boolean-expressions violations, 6) Ensure proper TypeScript strict mode compliance. Verify each fix maintains code functionality.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Address Style, Formatting, and Import Ordering Issues",
+            "description": "Resolve prettier/prettier conflicts, standardize import ordering, and ensure consistent code formatting throughout the codebase.",
+            "dependencies": [
+              "75.3"
+            ],
+            "details": "Standardize code style and formatting: 1) Run prettier on all files to resolve formatting conflicts, 2) Organize imports according to project conventions (external libraries first, internal modules, relative imports), 3) Fix naming convention violations for variables and functions, 4) Address any remaining style-related ESLint rules, 5) Ensure consistent indentation and spacing. Use npm run format to apply automated fixes where possible.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Update ESLint Configuration and Create Suppression Strategy",
+            "description": "Review and update .eslintrc.js for React Native 0.79 compatibility and create eslint-suppressions.json for legitimate exceptions.",
+            "dependencies": [
+              "75.4"
+            ],
+            "details": "Finalize ESLint configuration: 1) Review .eslintrc.js for React Native 0.79, TypeScript strict mode, and Expo SDK 53 compatibility, 2) Update parser options and plugin configurations for NativeWind and Reanimated worklets, 3) Create eslint-suppressions.json with documented rationale for unavoidable platform-specific exceptions, 4) Add minimal eslint-disable comments only where absolutely necessary, 5) Run final npm run lint to verify all issues resolved and configuration works properly.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 76,
+        "title": "Create Comprehensive Tech Debt Analysis for Signal Garden Mobile Game",
+        "description": "Conduct thorough technical debt analysis across the entire Signal Garden codebase, identifying performance bottlenecks, code quality issues, architectural problems, and maintenance risks with prioritized remediation recommendations.",
+        "details": "Create comprehensive TechDebtAnalyzer system with the following components: 1) **Code Quality Assessment**: Analyze TypeScript files for complexity metrics, cyclomatic complexity, code duplication, and adherence to project conventions. Scan for TODO comments, console.log statements, and unused imports. Generate code quality scores per component and module. 2) **Performance Analysis**: Identify React Native performance anti-patterns including unnecessary re-renders, memory leaks, inefficient animations, and heavy computation in render cycles. Analyze Reanimated usage for proper worklet implementation and gesture handler optimization. Review galaxy map rendering performance with beacon clustering efficiency. 3) **Architecture Debt**: Evaluate component coupling, prop drilling patterns, state management complexity, and separation of concerns. Identify circular dependencies and architectural inconsistencies. Review file organization and import structure optimization opportunities. 4) **Mobile-Specific Issues**: Assess battery usage patterns, memory consumption, bundle size optimization opportunities, and platform-specific performance issues. Review gesture handling implementation and touch target accessibility compliance. 5) **Testing Coverage Gaps**: Identify untested critical paths, missing edge case coverage, and integration testing opportunities. Analyze test setup configuration and testing infrastructure requirements. 6) **Documentation Debt**: Catalog missing TypeScript type definitions, inadequate component documentation, and unclear business logic comments. Identify areas requiring architectural decision records (ADRs). 7) **Security Analysis**: Review data persistence security, local storage encryption, and potential information disclosure vulnerabilities. Assess third-party dependency security status and update requirements. 8) **Prioritized Remediation Plan**: Generate actionable task list with effort estimates, risk assessments, and implementation order recommendations based on impact vs effort matrix.",
+        "testStrategy": "Validate TechDebtAnalyzer accuracy by running analysis on known problematic code sections and verifying identified issues match manual code review findings. Test performance metrics collection by comparing against React DevTools Profiler and Flipper performance monitoring results. Verify architectural analysis by cross-referencing dependency graphs with actual import relationships using dependency-cruiser. Test mobile-specific analysis accuracy by comparing bundle size reports with Metro bundler output and memory usage with Xcode Instruments. Validate remediation plan prioritization by implementing highest-priority fixes and measuring actual impact on performance metrics, code maintainability scores, and development velocity improvements.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          41,
+          34
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Code Quality Assessment Analyzer",
+            "description": "Create comprehensive code quality analysis system that evaluates TypeScript files for complexity metrics, cyclomatic complexity, code duplication, and project convention adherence. Scan for TODO/FIXME comments, console.log statements, unused imports, and generate quality scores per component and module.",
+            "dependencies": [],
+            "details": "Build CodeQualityAnalyzer with the following features: 1) **Complexity Metrics Calculator**: Implement cyclomatic complexity analysis for TypeScript functions and methods, code duplication detection using AST comparison, and maintainability index calculations. 2) **Convention Compliance Checker**: Verify adherence to NativeWind utility class patterns, React functional component conventions, TypeScript strict mode compliance, and file naming conventions. 3) **Code Debt Scanner**: Search for TODO/FIXME/HACK/XXX comments (currently 304+ instances found), console.log statements, unused imports, and debugger statements across the codebase. 4) **Quality Scoring System**: Generate component-level quality scores based on complexity, convention adherence, and debt indicators, with module-level aggregation and trend tracking capabilities.",
+            "status": "pending",
+            "testStrategy": "Validate complexity calculations against known problematic functions in GalaxyMapView.tsx and other performance-critical components. Test convention compliance checking against existing NativeWind patterns and React hook usage. Verify debt scanning accuracy by manually confirming a sample of the 304+ TODO/console.log instances found across 64 files."
+          },
+          {
+            "id": 2,
+            "title": "Build React Native Performance Analysis System",
+            "description": "Develop performance analyzer to identify React Native anti-patterns including unnecessary re-renders, memory leaks, inefficient animations, heavy computation in render cycles, and React Native Reanimated worklet optimization opportunities specific to the galaxy map rendering system.",
+            "dependencies": [
+              "76.1"
+            ],
+            "details": "Create PerformanceAnalyzer with the following modules: 1) **Re-render Detection**: Analyze React.memo, useMemo, useCallback usage patterns (289+ instances found across 42 files), identify unnecessary re-renders in component trees, and detect expensive computations in render functions. 2) **Memory Leak Analyzer**: Scan for potential memory leaks in useEffect cleanup functions, event listener management, and React Native Reanimated shared value subscriptions. 3) **Animation Performance Auditor**: Review React Native Reanimated v3 worklet implementations for UI thread violations, analyze gesture handler patterns for performance bottlenecks, and evaluate galaxy map rendering performance with large beacon counts. 4) **Bundle Size Optimizer**: Identify opportunities for code splitting, analyze dependency tree for optimization, and review asset loading strategies for the space-themed UI.",
+            "status": "pending",
+            "testStrategy": "Test re-render detection by creating components with known performance issues and verifying analyzer identifies them correctly. Validate memory leak detection using controlled scenarios with intentional leaks. Test animation performance analysis against the GalaxyMapView.tsx worklet patterns and gesture handling implementation."
+          },
+          {
+            "id": 3,
+            "title": "Create Architecture Debt Assessment Framework",
+            "description": "Build comprehensive architecture analysis system to evaluate component coupling, prop drilling patterns, state management complexity, separation of concerns, circular dependencies, and file organization optimization opportunities across the modular galaxy map system and React Native app structure.",
+            "dependencies": [
+              "76.1"
+            ],
+            "details": "Develop ArchitectureAnalyzer with the following capabilities: 1) **Coupling Analysis**: Evaluate component interdependencies, identify prop drilling anti-patterns through component trees, and analyze state management complexity across React Context providers. 2) **Dependency Graph Analyzer**: Detect circular dependencies in module imports, analyze file organization patterns against feature-based structure, and identify architectural inconsistencies in the galaxy map modular system. 3) **Separation of Concerns Auditor**: Review business logic separation between core managers (ProbeManager, SaveManager, UpgradeManager), UI component responsibility boundaries, and service layer organization. 4) **Import Structure Optimizer**: Analyze import paths for optimization opportunities, identify unused dependencies in package.json, and review absolute vs relative import patterns consistency.",
+            "status": "pending",
+            "testStrategy": "Test coupling analysis by examining the galaxy map module system dependencies and verifying accurate complexity scoring. Validate circular dependency detection against known module relationships in the codebase. Test separation of concerns analysis by reviewing the core manager classes and their responsibilities."
+          },
+          {
+            "id": 4,
+            "title": "Implement Mobile-Specific Debt Analysis Tools",
+            "description": "Develop mobile-focused technical debt analyzer covering battery usage patterns, memory consumption analysis, bundle size optimization, platform-specific performance issues, gesture handling implementation review, and touch target accessibility compliance for the React Native/Expo-based Signal Garden app.",
+            "dependencies": [
+              "76.2"
+            ],
+            "details": "Create MobileDebtAnalyzer with specialized modules: 1) **Battery Usage Analyzer**: Review background processing patterns in ProbeBackgroundService, analyze React Native Reanimated animation efficiency, and identify power-intensive operations in the galaxy rendering system. 2) **Memory Consumption Auditor**: Monitor JavaScript heap usage during gameplay sessions, analyze asset loading and caching strategies, and review SQLite database query optimization. 3) **Bundle Size Optimizer**: Analyze Expo bundle composition, identify code splitting opportunities for features like pattern detection and probe management, and review dependency inclusion efficiency. 4) **Platform Performance Checker**: Evaluate iOS/Android-specific performance patterns, analyze gesture handling implementation across platforms, and review React Native bridge usage optimization. 5) **Accessibility Compliance Checker**: Verify touch target minimum sizes (44px requirement), analyze screen reader compatibility, and review haptic feedback implementation patterns.",
+            "status": "pending",
+            "testStrategy": "Test battery analysis by monitoring actual device power consumption during galaxy map interactions. Validate memory analysis using React Native performance monitoring tools. Test bundle size analysis against actual Expo build outputs and verify accessibility compliance using iOS/Android accessibility testing tools."
+          },
+          {
+            "id": 5,
+            "title": "Generate Prioritized Technical Debt Remediation Plan",
+            "description": "Synthesize findings from all analysis modules to create actionable technical debt remediation plan with effort estimates, risk assessments, implementation order recommendations, and impact vs effort matrix for the Signal Garden mobile game codebase.",
+            "dependencies": [
+              "76.1",
+              "76.2",
+              "76.3",
+              "76.4"
+            ],
+            "details": "Create TechDebtRemediationPlanner with comprehensive output: 1) **Risk Assessment Matrix**: Categorize identified issues by impact (critical/high/medium/low) and effort (1-5 story points), prioritize based on performance impact and maintenance burden. 2) **Implementation Roadmap**: Generate phased remediation plan with dependencies, timeline estimates, and resource allocation recommendations. 3) **Quick Win Identification**: Highlight low-effort, high-impact improvements like removing the 304+ TODO/console.log instances, optimizing unused imports, and basic code cleanup. 4) **Architectural Improvement Strategy**: Long-term recommendations for modular system enhancement, performance optimization, and maintainability improvements. 5) **Automated Remediation Suggestions**: Identify issues that can be auto-fixed through ESLint rules, Prettier formatting, and TypeScript compiler optimizations. 6) **Progress Tracking Framework**: Establish metrics and KPIs for measuring technical debt reduction progress over time.",
+            "status": "pending",
+            "testStrategy": "Validate remediation plan accuracy by implementing a sample of quick wins and measuring actual impact on code quality metrics. Test effort estimates against actual development time for similar tasks. Verify priority rankings align with actual performance bottlenecks and maintenance pain points."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-05T00:59:17.438Z",
+      "updated": "2025-09-05T01:55:55.313Z",
       "description": "Tasks for master context"
     }
   },

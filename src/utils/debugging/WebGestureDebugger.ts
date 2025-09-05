@@ -321,27 +321,35 @@ export class WebGestureDebugger {
         x: e.touches[0].clientX,
         y: e.touches[0].clientY,
       };
-      eventData.data.touchCount = e.touches.length;
+      if (eventData.data) {
+        eventData.data.touchCount = e.touches.length;
+      }
     } else if (e instanceof MouseEvent) {
       eventData.coordinates = {
         x: e.clientX,
         y: e.clientY,
       };
-      eventData.data.buttons = e.buttons;
+      if (eventData.data) {
+        eventData.data.buttons = e.buttons;
+      }
     } else if (e instanceof PointerEvent) {
       eventData.coordinates = {
         x: e.clientX,
         y: e.clientY,
       };
-      eventData.data.pointerId = e.pointerId;
-      eventData.data.pointerType = e.pointerType;
+      if (eventData.data) {
+        eventData.data.pointerId = e.pointerId;
+        eventData.data.pointerType = e.pointerType;
+      }
     } else if (e instanceof WheelEvent) {
       eventData.coordinates = {
         x: e.clientX,
         y: e.clientY,
       };
-      eventData.data.deltaX = e.deltaX;
-      eventData.data.deltaY = e.deltaY;
+      if (eventData.data) {
+        eventData.data.deltaX = e.deltaX;
+        eventData.data.deltaY = e.deltaY;
+      }
     }
 
     this.recordEvent(eventData);
