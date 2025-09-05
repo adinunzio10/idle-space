@@ -289,11 +289,12 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       }
       
       // Clear all notification timeouts - copy ref to avoid stale closure
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       const timeouts = notificationTimeouts.current;
       timeouts.forEach(timeoutId => clearTimeout(timeoutId));
       timeouts.clear();
     };
-  }, [performanceMode, debugMode, enabledModules.join(',')]);
+  }, [performanceMode, debugMode, enabledModules, addNotification]);
 
   // Performance monitoring with frame skipping
   const updatePerformanceMetrics = useCallback(() => {
@@ -473,7 +474,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     
     // Return previous viewport if not enough change
     return throttledViewportRef.current;
-  }, [viewportState.scale, viewportState.translateX, viewportState.translateY]);
+  }, [viewportState]);
   
   // Create module context with throttled viewport updates to prevent excessive re-renders
   const moduleContext = useMemo((): ModuleContext => {

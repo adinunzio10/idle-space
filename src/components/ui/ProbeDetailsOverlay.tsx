@@ -60,7 +60,7 @@ export const ProbeDetailsOverlay: React.FC<ProbeDetailsOverlayProps> = ({
       efficiency: Math.min(100, 85 + Math.random() * 15),
       signalStrength: Math.max(20, 100 - (deployedTime / 1000) * 0.1),
     };
-  }, [probe, refreshTime]);
+  }, [probe]);
 
   const getProbeTypeInfo = (type: string) => {
     switch (type) {

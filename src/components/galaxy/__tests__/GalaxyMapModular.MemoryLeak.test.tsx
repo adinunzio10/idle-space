@@ -9,6 +9,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import GalaxyMapModular from '../GalaxyMapModular';
 import { createMockBeacon } from './test-utils';
+import { galaxyMapConfig } from '../../../utils/galaxy/GalaxyMapConfig';
 
 describe('GalaxyMapModular - Memory Leak Detection', () => {
   const defaultProps = {
@@ -292,7 +293,7 @@ describe('GalaxyMapModular - Memory Leak Detection', () => {
     });
 
     test('should handle galaxy config performance integration', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       
       const props = {
         ...defaultProps,

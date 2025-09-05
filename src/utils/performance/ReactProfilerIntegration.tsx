@@ -186,7 +186,7 @@ export function useReactProfilerIntegration() {
     
     // Set up React DevTools integration if available
     setupReactDevToolsIntegration();
-  }, []);
+  }, [analyzeRenderData]);
 
   /**
    * Stop profiler analysis and generate report
@@ -208,7 +208,7 @@ export function useReactProfilerIntegration() {
     
     console.log('[ReactProfilerIntegration] Profiler analysis complete', results);
     return results;
-  }, []);
+  }, [generateProfilerResults]);
 
   /**
    * Analyze render data for patterns and issues

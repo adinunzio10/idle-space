@@ -272,7 +272,7 @@ export const GalaxyOverlaySystem: React.FC<GalaxyOverlaySystemProps> = ({
   const renderData = useMemo(() => {
     if (!isInitialized) return null;
     return overlayManager.current.generateRenderData(viewportState);
-  }, [viewportState, isInitialized, currentConfig]);
+  }, [viewportState, isInitialized]);
 
   // Get overlay controls
   const overlayControls = useMemo(() => {

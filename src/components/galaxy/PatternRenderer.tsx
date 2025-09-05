@@ -52,7 +52,7 @@ export const PatternRenderer: React.FC<PatternRendererProps> = memo(
       } else {
         return 1; // Hidden
       }
-    }, [viewportState.scale]);
+    }, [viewportState]);
 
     // Get current LOD settings
     const lodSettings = useMemo(() => {

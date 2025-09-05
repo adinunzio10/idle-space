@@ -57,7 +57,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = React.m
     if (visible && autoStart && enableAdvancedAnalysis && !isAnalyzing) {
       handleStartAnalysis();
     }
-  }, [visible, autoStart, enableAdvancedAnalysis]);
+  }, [visible, autoStart, enableAdvancedAnalysis, handleStartAnalysis, isAnalyzing]);
 
   // Periodic advanced metrics update during analysis
   useEffect(() => {
@@ -164,7 +164,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = React.m
         setRefreshInterval(null);
       }
     }
-  }, [visible, updateStats]);
+  }, [visible, updateStats, refreshInterval]);
 
   // Quality level controls
   const handleQualityChange = useCallback((level: 'low' | 'medium' | 'high' | 'ultra') => {

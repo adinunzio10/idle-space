@@ -110,7 +110,7 @@ export const BaseOverlay: React.FC<BaseOverlayProps> = ({
             }),
       ]).start();
     }
-  }, [isVisible, animationType, animationDuration]);
+  }, [isVisible, animationType, animationDuration, fadeAnim, slideAnim, scaleAnim, screenData.height]);
 
   const handleClose = () => {
     // Haptic feedback on close

@@ -42,7 +42,7 @@ export const FloatingResourceDisplay: React.FC<FloatingResourceDisplayProps> = (
       damping: 15,
       stiffness: 300,
     });
-  }, [visible, position]);
+  }, [visible, position, opacity, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {

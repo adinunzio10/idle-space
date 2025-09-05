@@ -83,7 +83,7 @@ const AnimatedProbe: React.FC<AnimatedProbeProps> = React.memo(
           easing: Easing.inOut(Easing.ease),
         });
       }
-    }, [probe.travelProgress, probe.status, deltaX, deltaY, probeX, probeY]);
+    }, [probe.travelProgress, probe.status, deltaX, deltaY, probeX, probeY, probe.startPosition.x, probe.startPosition.y]);
 
     useEffect(() => {
       // Arrival animation when probe reaches destination

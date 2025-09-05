@@ -166,7 +166,7 @@ const HexagonalGridOverlay: React.FC<HexagonalGridProps> = ({
     const hexRadius = (gridSpacing * 0.4) * Math.min(1, Math.max(0.25, viewportState.scale));
     
     return { points: visiblePoints, hexRadius };
-  }, [viewportState.scale, viewportState.translateX, viewportState.translateY, gridSpacing]);
+  }, [viewportState, gridSpacing]);
 
   // Animated opacity for smooth transitions
   const animatedOpacity = useSharedValue(opacity);
@@ -232,23 +232,9 @@ export const SectorBoundaryComponent: React.FC<SectorBoundaryProps> = ({
   const animatedOpacity = useSharedValue(renderInfo.boundaryOpacity);
   const animatedStrokeWidth = useSharedValue(BOUNDARY_CONFIG.strokeWidth);
 
-  useEffect(() => {
-    if (enableTransitions && !performanceMode) {
-      animatedOpacity.value = withSpring(renderInfo.boundaryOpacity, {
-        damping: 20,
-        stiffness: 300,
-      });
-    } else {
-      animatedOpacity.value = renderInfo.boundaryOpacity;
-    }
-  }, [renderInfo.boundaryOpacity, enableTransitions, performanceMode, animatedOpacity]);
-
-  // Don't render if not visible or below zoom threshold
-  if (!renderInfo.shouldRender || !renderInfo.shouldShowBoundary) {
-    return null;
-  }
-
-  // Transform sector vertices to screen coordinates
+  // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
+  
+  // Transform sector vertices to screen coordinates - MUST be before early return
   const screenVertices = useMemo(() => {
     return sector.vertices.map(vertex => ({
       x: vertex.x * viewportState.scale + viewportState.translateX,
@@ -256,7 +242,7 @@ export const SectorBoundaryComponent: React.FC<SectorBoundaryProps> = ({
     }));
   }, [sector.vertices, viewportState]);
 
-  // Generate SVG path for the sector boundary
+  // Generate SVG path for the sector boundary - MUST be before early return
   const boundaryPath = useMemo(() => {
     if (screenVertices.length < 3) return '';
     
@@ -271,14 +257,14 @@ export const SectorBoundaryComponent: React.FC<SectorBoundaryProps> = ({
     return path;
   }, [screenVertices]);
 
-  // Calculate effective stroke width based on zoom
+  // Calculate effective stroke width based on zoom - MUST be before early return
   const effectiveStrokeWidth = useMemo(() => {
     const baseWidth = BOUNDARY_CONFIG.strokeWidth;
     const zoomFactor = Math.max(0.5, Math.min(2, 1 / viewportState.scale));
     return baseWidth * zoomFactor;
   }, [viewportState.scale]);
 
-  // Determine boundary color based on entropy (if enabled)
+  // Determine boundary color based on entropy (if enabled) - MUST be before early return
   const boundaryColor = useMemo(() => {
     if (!showEntropyTinting || !BOUNDARY_CONFIG.entropyTintingEnabled) {
       return BOUNDARY_CONFIG.defaultColor;
@@ -289,18 +275,46 @@ export const SectorBoundaryComponent: React.FC<SectorBoundaryProps> = ({
     return renderInfo.entropyColor || BOUNDARY_CONFIG.defaultColor;
   }, [showEntropyTinting, renderInfo.entropyColor]);
 
-  // Calculate final opacity
+  // Calculate final opacity - MUST be before early return
   const finalOpacity = useMemo(() => {
     return renderInfo.boundaryOpacity * BOUNDARY_CONFIG.defaultOpacity;
   }, [renderInfo.boundaryOpacity]);
 
-  // Animated props for smooth transitions
+  // Animated props for smooth transitions - MUST be before early return
   const animatedProps = useAnimatedProps(() => ({
     opacity: enableTransitions ? animatedOpacity.value * BOUNDARY_CONFIG.defaultOpacity : finalOpacity,
     strokeWidth: animatedStrokeWidth.value,
   }));
 
-  // Update stroke width based on zoom and performance mode
+  // Background fill for entropy visualization (very subtle) - MUST be before early return
+  const entropyBackground = useMemo(() => {
+    if (!showEntropyTinting || renderInfo.entropyOpacity <= 0) {
+      return null;
+    }
+
+    return (
+      <AnimatedPath
+        d={boundaryPath}
+        fill={renderInfo.entropyColor}
+        opacity={renderInfo.entropyOpacity}
+        stroke="none"
+      />
+    );
+  }, [boundaryPath, renderInfo.entropyColor, renderInfo.entropyOpacity, showEntropyTinting]);
+
+  // Effects - MUST be before early return
+  useEffect(() => {
+    if (enableTransitions && !performanceMode) {
+      animatedOpacity.value = withSpring(renderInfo.boundaryOpacity, {
+        damping: 20,
+        stiffness: 300,
+      });
+    } else {
+      animatedOpacity.value = renderInfo.boundaryOpacity;
+    }
+  }, [renderInfo.boundaryOpacity, enableTransitions, performanceMode, animatedOpacity]);
+
+  // Update stroke width based on zoom and performance mode - MUST be before early return
   useEffect(() => {
     const baseWidth = BOUNDARY_CONFIG.strokeWidth;
     const zoomFactor = performanceMode ? 1 : Math.max(0.5, Math.min(2, 1 / viewportState.scale));
@@ -316,21 +330,10 @@ export const SectorBoundaryComponent: React.FC<SectorBoundaryProps> = ({
     }
   }, [viewportState.scale, performanceMode, enableTransitions, animatedStrokeWidth]);
 
-  // Background fill for entropy visualization (very subtle)
-  const entropyBackground = useMemo(() => {
-    if (!showEntropyTinting || renderInfo.entropyOpacity <= 0) {
-      return null;
-    }
-
-    return (
-      <AnimatedPath
-        d={boundaryPath}
-        fill={renderInfo.entropyColor}
-        opacity={renderInfo.entropyOpacity}
-        stroke="none"
-      />
-    );
-  }, [boundaryPath, renderInfo.entropyColor, renderInfo.entropyOpacity, showEntropyTinting]);
+  // Don't render if not visible or below zoom threshold - AFTER all hooks
+  if (!renderInfo.shouldRender || !renderInfo.shouldShowBoundary) {
+    return null;
+  }
 
   return (
     <G>

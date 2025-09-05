@@ -418,7 +418,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
   const { settings } = useSettings();
 
   // Create suggestionState object for backward compatibility
-  const suggestionState = {
+  const suggestionState = useMemo(() => ({
     popupVisible,
     mapVisualizationsVisible,
     selectedSuggestion,
@@ -426,7 +426,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     dismissedSuggestions,
     displayMode,
     autoHideTimer: null, // Not used in context, but needed for interface compatibility
-  };
+  }), [popupVisible, mapVisualizationsVisible, selectedSuggestion, hoveredSuggestion, dismissedSuggestions, displayMode]);
 
   // Debounced pattern analysis to prevent excessive calculations during pan/zoom
   const analyzePatternOpportunitiesDebounced = useMemo(
@@ -570,8 +570,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
     updateBeacons,
     analyzePatternOpportunitiesDebounced,
     viewportState,
-    suggestionState.popupVisible,
-    suggestionState.mapVisualizationsVisible,
+    suggestionState,
     suggestionEngine,
   ]);
   // Pattern analysis trigger when beacons change (completely async now)
@@ -814,6 +813,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
 
       endFrame(); // End performance monitoring
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       width,
       height,
@@ -829,6 +829,8 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
       backgroundPatterns,
       detectPatternsAsync,
       isWorkerAvailable,
+      enableLOD,
+      lodDistance,
     ]
   );
 
@@ -911,7 +913,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         cleanupWheelHandler();
       }
     };
-  }, [width, height, updateViewportState]);
+  }, [width, height, updateViewportState, scale, translateX, translateY]);
 
   // Advanced Pan gesture with state machine integration and web optimizations
 
@@ -1066,7 +1068,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         cleanupWheelHandler();
       }
     };
-  }, [width, height, updateViewportState]);
+  }, [width, height, updateViewportState, scale, translateX, translateY]);
 
   // Advanced Pan gesture with state machine integration and web optimizations
   const panThresholds = gestureConfig.getPanThresholds();
@@ -1865,7 +1867,7 @@ export const GalaxyMapView: React.FC<GalaxyMapViewProps> = ({
         runOnJS(updateFn)(x, y, s);
       })();
     }
-  }, [beaconUpdateTrigger]);
+  }, [beaconUpdateTrigger, scale, translateX, translateY]);
 
   // Immediately clear rendering state when beacons are cleared
   React.useEffect(() => {

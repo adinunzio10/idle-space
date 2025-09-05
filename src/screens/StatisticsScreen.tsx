@@ -139,7 +139,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
       averageLevel: total > 0 ? totalLevels / total : 0,
       maxLevel,
     };
-  }, [gameState.beacons, refreshTime]);
+  }, [gameState.beacons]);
 
   const resourceStats = useMemo((): ResourceStats => {
     const resourceManager = gameController.getResourceManager();
@@ -164,7 +164,7 @@ export const StatisticsScreen: React.FC<StatisticsScreenProps> = ({
         voidFragments: resources.voidFragments.toNumber(),
       },
     };
-  }, [gameState, gameController, refreshTime]);
+  }, [gameController]);
 
   const gameStats = useMemo(() => {
     const playTimeHours = gameState.gameTime / 3600;

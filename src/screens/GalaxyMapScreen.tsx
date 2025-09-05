@@ -300,7 +300,8 @@ export const GalaxyMapScreen: React.FC<GalaxyMapScreenProps> = ({
   // Create a memoized beacon list that updates when gameState changes
   const beaconsForMap = React.useMemo(() => {
     return getBeaconsForMap();
-  }, [gameState?.beacons, beaconVersion, forceUpdateKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.beacons, beaconVersion, forceUpdateKey, getBeaconsForMap]);
 
   const selectedBeacon =
     selectedBeaconId && gameState

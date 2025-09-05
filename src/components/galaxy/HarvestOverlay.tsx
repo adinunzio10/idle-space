@@ -364,17 +364,7 @@ export const HarvestOverlayComponent: React.FC<HarvestOverlayProps> = ({
   performanceMode = false,
   onHarvest,
 }) => {
-  // Don't render if overlay is not active or star system has no resources
-  if (!isActive || !starSystem.resources || viewportState.scale < HARVEST_CONFIG.minZoomForOverlay) {
-    return null;
-  }
-
-  // Only show for dying (stellar essence) and dead (void fragments) stars
-  if (starSystem.state === 'healthy') {
-    return null;
-  }
-
-  // Calculate screen position
+  // Calculate screen position (must be called before any early returns)
   const screenPosition = useMemo(() => {
     const screenPos = {
       x: starSystem.position.x * viewportState.scale + viewportState.translateX,
@@ -387,7 +377,7 @@ export const HarvestOverlayComponent: React.FC<HarvestOverlayProps> = ({
     return screenPos;
   }, [starSystem.position, viewportState, starSystem.id]);
 
-  // Animation values for pulsing highlight
+  // Animation values for pulsing highlight (must be called before any early returns)
   const pulseScale = useSharedValue(1);
   const pulseOpacity = useSharedValue(0.6);
 
@@ -410,20 +400,13 @@ export const HarvestOverlayComponent: React.FC<HarvestOverlayProps> = ({
     );
   }, [pulseScale, pulseOpacity]);
 
-  // Animated props for highlight circle
+  // Animated props for highlight circle (must be called before any early returns)
   const animatedHighlightProps = useAnimatedProps(() => ({
     r: HARVEST_CONFIG.highlightRadius * pulseScale.value,
     opacity: pulseOpacity.value,
   }));
 
-  // Handle resource harvesting
-  const handleHarvest = (resourceType: 'stellarEssence' | 'voidFragments') => {
-    if (onHarvest && starSystem.resources?.[resourceType]) {
-      onHarvest(starSystem, resourceType);
-    }
-  };
-
-  // Calculate glow intensity based on priority and state
+  // Calculate glow intensity based on priority and state (must be called before any early returns)
   const glowIntensity = useMemo(() => {
     const baseIntensity = starSystem.state === 'dying' 
       ? HARVEST_CONFIG.glow.intensity.medium
@@ -431,6 +414,23 @@ export const HarvestOverlayComponent: React.FC<HarvestOverlayProps> = ({
     
     return baseIntensity * priority;
   }, [starSystem.state, priority]);
+
+  // Don't render if overlay is not active or star system has no resources
+  if (!isActive || !starSystem.resources || viewportState.scale < HARVEST_CONFIG.minZoomForOverlay) {
+    return null;
+  }
+
+  // Only show for dying (stellar essence) and dead (void fragments) stars
+  if (starSystem.state === 'healthy') {
+    return null;
+  }
+
+  // Handle resource harvesting
+  const handleHarvest = (resourceType: 'stellarEssence' | 'voidFragments') => {
+    if (onHarvest && starSystem.resources?.[resourceType]) {
+      onHarvest(starSystem, resourceType);
+    }
+  };
 
   // Determine glow color
   const glowColor = starSystem.state === 'dying' 

@@ -214,7 +214,7 @@ export const GalacticEnvironmentRenderer: React.FC<GalacticEnvironmentProps> = (
         touchMgr.dispose();
       }
     };
-  }, [externalStarSystems, externalSectors, config.enableEntropySpread, onResourceHarvest]);
+  }, [externalStarSystems, externalSectors, config.enableEntropySpread, onResourceHarvest, entropySpreadManager]);
 
   // Update entropy simulation and get updated sectors
   useEffect(() => {

@@ -9,6 +9,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import GalaxyMapModular from '../GalaxyMapModular';
 import { createMockBeacon } from './test-utils';
+import { galaxyMapConfig } from '../../../utils/galaxy/GalaxyMapConfig';
 
 describe('GalaxyMapModular - Performance Regression Tests', () => {
   const defaultProps = {
@@ -77,7 +78,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
     });
 
     test('should throttle performance metric updates appropriately', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       
       const props = {
         ...defaultProps,
@@ -100,7 +101,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
     });
 
     test('should handle frame skipping mechanism without performance degradation', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       mockGalaxyMapConfig.shouldSkipFrame.mockReturnValue(true); // Enable frame skipping
       
       const props = {
@@ -317,7 +318,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
     });
 
     test('should handle emergency mode detection without performance degradation', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       mockGalaxyMapConfig.getPerformanceStats.mockReturnValue({
         currentQuality: 'low',
         skipRatio: 0.8,
@@ -371,7 +372,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
     });
 
     test('should skip frame rendering when appropriate', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       mockGalaxyMapConfig.shouldSkipFrame.mockReturnValue(true);
 
       const props = {
@@ -436,7 +437,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
 
   describe('Performance Monitoring Integration', () => {
     test('should integrate with galaxy config performance tracking', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       
       const props = {
         ...defaultProps,
@@ -460,7 +461,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
     });
 
     test('should handle performance quality adjustments', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       mockGalaxyMapConfig.getPerformanceStats.mockReturnValue({
         currentQuality: 'medium',
         skipRatio: 0.3,

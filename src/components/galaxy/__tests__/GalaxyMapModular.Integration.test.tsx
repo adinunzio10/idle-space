@@ -9,6 +9,7 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import GalaxyMapModular from '../GalaxyMapModular';
 import { createMockBeacon } from './test-utils';
+import { galaxyMapConfig } from '../../../utils/galaxy/GalaxyMapConfig';
 
 describe('GalaxyMapModular - Integration and User Interaction Tests', () => {
   const defaultProps = {
@@ -482,7 +483,7 @@ describe('GalaxyMapModular - Integration and User Interaction Tests', () => {
     });
 
     test('should recover from temporary performance issues', () => {
-      const mockGalaxyMapConfig = require('../../../utils/galaxy/GalaxyMapConfig').galaxyMapConfig;
+      const mockGalaxyMapConfig = galaxyMapConfig;
       
       // Simulate poor performance conditions
       mockGalaxyMapConfig.getPerformanceStats.mockReturnValue({

@@ -12,6 +12,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { GalaxyMapModular } from '../GalaxyMapModular';
 import { Beacon, Connection } from '../../../types/galaxy';
+import { galaxyMapConfig } from '../../../utils/galaxy/GalaxyMapConfig';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -91,6 +92,7 @@ jest.mock('../../../utils/galaxy/modules', () => {
 });
 
 // Mock Reanimated and gesture handlers
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
 jest.mock('react-native-gesture-handler', () => ({
   GestureHandlerRootView: ({ children }: { children: React.ReactNode }) => children,
@@ -437,7 +439,7 @@ describe('GalaxyMapModular Module Stability', () => {
 
   describe('Performance Mode Detection', () => {
     it('should detect when frame skipping affects module rendering', () => {
-      const { galaxyMapConfig } = require('../../../utils/galaxy/GalaxyMapConfig');
+      // Using imported galaxyMapConfig
       
       // Mock frame skipping condition
       galaxyMapConfig.shouldSkipFrame.mockReturnValue(true);

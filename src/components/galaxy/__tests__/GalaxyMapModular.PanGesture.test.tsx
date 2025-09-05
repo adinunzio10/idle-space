@@ -10,12 +10,15 @@
 
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, Gesture } from 'react-native-gesture-handler';
 import { GalaxyMapModular } from '../GalaxyMapModular';
 import { Beacon, Connection } from '../../../types/galaxy';
+import { galaxyMapConfig } from '../../../utils/galaxy/GalaxyMapConfig';
+import { galaxyToScreen, calculateVisibleBounds } from '../../../utils/spatial/viewport';
 
 // Mock Reanimated
 jest.mock('react-native-reanimated', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Reanimated = require('react-native-reanimated/mock');
   
   // Mock shared values and gestures
@@ -208,7 +211,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
   });
 
   it('should throttle viewport updates during pan gestures using time-based throttling', () => {
-    const { Gesture } = require('react-native-gesture-handler');
+    // Using imported Gesture
     let panGesture: any;
     let updateCallback: any;
 
@@ -285,7 +288,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
   });
 
   it('should only use cache during emergency performance situations', () => {
-    const { galaxyMapConfig } = require('../../../utils/galaxy/GalaxyMapConfig');
+    // Using imported galaxyMapConfig
     
     // Mock frame skipping condition
     galaxyMapConfig.shouldSkipFrame.mockReturnValue(true);
@@ -307,7 +310,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
   });
 
   it('should handle coordinate transformations consistently', () => {
-    const { galaxyToScreen } = require('../../../utils/spatial/viewport');
+    // Using imported galaxyToScreen
     
     render(
       <GestureHandlerRootView>
@@ -325,7 +328,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
   });
 
   it('should properly manage gesture state without state updates during gestures', () => {
-    const { Gesture } = require('react-native-gesture-handler');
+    // Using imported Gesture
     let startCallback: any;
     let endCallback: any;
 
@@ -364,7 +367,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
   });
 
   it('should handle viewport updates without InteractionManager delays', () => {
-    const { calculateVisibleBounds } = require('../../../utils/spatial/viewport');
+    // Using imported calculateVisibleBounds
     
     render(
       <GestureHandlerRootView>
@@ -403,7 +406,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
   });
 
   it('should maintain smooth performance metrics during panning', () => {
-    const { galaxyMapConfig } = require('../../../utils/galaxy/GalaxyMapConfig');
+    // Using imported galaxyMapConfig
     
     render(
       <GestureHandlerRootView>
@@ -425,7 +428,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
 // Integration test for the complete pan gesture flow
 describe('GalaxyMapModular Pan Gesture Integration', () => {
   it('should maintain module visibility throughout a complete pan gesture cycle', async () => {
-    const { Gesture } = require('react-native-gesture-handler');
+    // Using imported Gesture
     const callbacks: any = {};
 
     // Mock complete gesture chain

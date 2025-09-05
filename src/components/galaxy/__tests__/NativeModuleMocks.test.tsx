@@ -123,6 +123,7 @@ describe('Native Module Mocks Validation', () => {
 
   describe('react-native-svg mocks', () => {
     it('should import SVG components without errors', () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Svg = require('react-native-svg');
       expect(Svg.Svg).toBeDefined();
       expect(Svg.G).toBeDefined();

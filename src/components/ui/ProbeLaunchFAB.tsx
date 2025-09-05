@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -50,17 +50,17 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
   const harvesterTranslateY = useSharedValue(20);
   const architectTranslateY = useSharedValue(20);
 
-  const probeButtonScales = {
+  const probeButtonScales = useMemo(() => ({
     pioneer: pioneerScale,
     harvester: harvesterScale,
     architect: architectScale,
-  };
+  }), [pioneerScale, harvesterScale, architectScale]);
 
-  const probeButtonTranslateY = {
+  const probeButtonTranslateY = useMemo(() => ({
     pioneer: pioneerTranslateY,
     harvester: harvesterTranslateY,
     architect: architectTranslateY,
-  };
+  }), [pioneerTranslateY, harvesterTranslateY, architectTranslateY]);
 
   const handleFABPress = useCallback(() => {
     // Haptic feedback for main button
@@ -147,7 +147,6 @@ export const ProbeLaunchFAB: React.FC<ProbeLaunchFABProps> = ({
       onProbeSelect(type, launchPosition);
     },
     [
-      canAfford,
       onProbeSelect,
       launchPosition,
       fabRotation,

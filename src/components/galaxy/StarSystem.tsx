@@ -39,12 +39,9 @@ export const StarSystemComponent: React.FC<StarSystemComponentProps> = ({
   viewportState,
   onPress,
 }) => {
-  // Don't render if not visible or below LOD threshold
-  if (!renderInfo.shouldRender || renderInfo.opacity <= 0) {
-    return null;
-  }
-
-  // Calculate screen position based on viewport
+  // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
+  
+  // Calculate screen position based on viewport - MUST be before early return
   const screenPosition = useMemo(() => {
     const screenPos = {
       x: starSystem.position.x * viewportState.scale + viewportState.translateX,
@@ -57,17 +54,34 @@ export const StarSystemComponent: React.FC<StarSystemComponentProps> = ({
     return screenPos;
   }, [starSystem.position, viewportState, starSystem.id]);
 
-  // Calculate effective radius based on zoom and LOD
+  // Calculate effective radius based on zoom and LOD - MUST be before early return
   const effectiveRadius = useMemo(() => {
     const baseRadius = starSystem.radius * renderInfo.screenSize * 0.01;
     return Math.max(1, Math.min(20, baseRadius)); // Clamp between 1-20px
   }, [starSystem.radius, renderInfo.screenSize]);
 
-  // Animation values for pulsing effect
+  // Animation values for pulsing effect - MUST be before early return
   const pulseOpacity = useSharedValue(1);
   const pulseScale = useSharedValue(1);
 
-  // Initialize animations based on star system state
+  // Animated props for the main star circle - MUST be before early return
+  const animatedMainProps = useAnimatedProps(() => ({
+    opacity: renderInfo.showAnimation ? pulseOpacity.value * renderInfo.opacity : renderInfo.opacity,
+    r: effectiveRadius * (renderInfo.showAnimation ? pulseScale.value : 1),
+  }));
+
+  // Animated props for the glow effect (always defined to avoid conditional hooks) - MUST be before early return
+  const animatedGlowProps = useAnimatedProps(() => ({
+    opacity: pulseOpacity.value * 0.1,
+    r: effectiveRadius * 2 * pulseScale.value,
+  }));
+
+  // Gradient ID calculation - MUST be before early return
+  const gradientId = useMemo(() => 
+    `starSystem_${starSystem.id}_${starSystem.state}_${viewportState.scale.toFixed(2)}_${viewportState.translateX.toFixed(0)}_${viewportState.translateY.toFixed(0)}`
+  , [starSystem.id, starSystem.state, viewportState.scale, viewportState.translateX, viewportState.translateY]);
+
+  // Initialize animations based on star system state - MUST be before early return
   React.useEffect(() => {
     if (!renderInfo.showAnimation) {
       pulseOpacity.value = 1;
@@ -113,17 +127,10 @@ export const StarSystemComponent: React.FC<StarSystemComponentProps> = ({
     }
   }, [starSystem.state, renderInfo.showAnimation, pulseOpacity, pulseScale]);
 
-  // Animated props for the main star circle
-  const animatedMainProps = useAnimatedProps(() => ({
-    opacity: renderInfo.showAnimation ? pulseOpacity.value * renderInfo.opacity : renderInfo.opacity,
-    r: effectiveRadius * (renderInfo.showAnimation ? pulseScale.value : 1),
-  }));
-
-  // Animated props for the glow effect (always defined to avoid conditional hooks)
-  const animatedGlowProps = useAnimatedProps(() => ({
-    opacity: pulseOpacity.value * 0.1,
-    r: effectiveRadius * 2 * pulseScale.value,
-  }));
+  // Don't render if not visible or below LOD threshold - AFTER all hooks
+  if (!renderInfo.shouldRender || renderInfo.opacity <= 0) {
+    return null;
+  }
 
   // Get colors for the current state
   const getStarSystemColors = () => {
@@ -152,9 +159,6 @@ export const StarSystemComponent: React.FC<StarSystemComponentProps> = ({
   };
 
   const colors = getStarSystemColors();
-  const gradientId = useMemo(() => 
-    `starSystem_${starSystem.id}_${starSystem.state}_${viewportState.scale.toFixed(2)}_${viewportState.translateX.toFixed(0)}_${viewportState.translateY.toFixed(0)}`
-  , [starSystem.id, starSystem.state, viewportState.scale, viewportState.translateX, viewportState.translateY]);
 
   // Handle press events
   const handlePress = () => {

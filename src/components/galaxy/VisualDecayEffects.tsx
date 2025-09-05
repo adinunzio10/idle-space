@@ -141,7 +141,7 @@ function generateDecayParticles(
 /**
  * Single particle component
  */
-const DecayParticle: React.FC<{ particle: DecayParticle; entropy: number }> = ({ particle, entropy }) => {
+const DecayParticleComponent: React.FC<{ particle: DecayParticle; entropy: number }> = ({ particle, entropy }) => {
   // Create worklet-safe particle data to prevent mutation warnings
   const workletSafeParticle = useMemo(() => 
     freezeForWorklet(createWorkletSafeClone(particle))
@@ -278,15 +278,9 @@ export const VisualDecayEffectsComponent: React.FC<VisualDecayEffectsProps> = ({
 }) => {
   const entropy = sector.entropy;
   
-  // Safety checks before rendering
-  if (!isVisible || 
-      entropy < DECAY_EFFECTS_CONFIG.thresholds.particleEffect ||
-      !sector.vertices || 
-      sector.vertices.length === 0) {
-    return null;
-  }
-
-  // Generate particles based on entropy level
+  // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
+  
+  // Generate particles based on entropy level - MUST be before early return
   const particles = useMemo(() => {
     const baseCount = DECAY_EFFECTS_CONFIG.particles.count;
     const entropyMultiplier = Math.min(2, entropy * 2); // Higher entropy = more particles
@@ -298,24 +292,32 @@ export const VisualDecayEffectsComponent: React.FC<VisualDecayEffectsProps> = ({
     return generateDecayParticles(sector, particleCount, viewportState);
   }, [sector, viewportState, entropy, effectIntensity]);
 
-  // Find high-entropy neighbors for wave effects
+  // Find high-entropy neighbors for wave effects - MUST be before early return
   const highEntropyNeighbors = useMemo(() => {
     return neighboringSectors.filter(neighbor => 
       neighbor.entropy > entropy + 0.2 // Significant entropy difference
     );
   }, [neighboringSectors, entropy]);
 
-  // Creep effect opacity based on entropy
+  // Creep effect opacity based on entropy - MUST be before early return
   const creepOpacity = useMemo(() => {
     if (entropy < DECAY_EFFECTS_CONFIG.thresholds.creepEffect) return 0;
     return Math.min(0.4, (entropy - DECAY_EFFECTS_CONFIG.thresholds.creepEffect) * 2 * effectIntensity);
   }, [entropy, effectIntensity]);
 
-  // Generate gradient for creep effect
+  // Generate gradient for creep effect - MUST be before early return
   const creepGradientId = useMemo(() => 
     `creep_gradient_${sector.id}_${viewportState.scale.toFixed(2)}_${viewportState.translateX.toFixed(0)}_${viewportState.translateY.toFixed(0)}`
   , [sector.id, viewportState.scale, viewportState.translateX, viewportState.translateY]);
   const creepColor = getDecayColor(entropy);
+  
+  // Safety checks before rendering - AFTER all hooks
+  if (!isVisible || 
+      entropy < DECAY_EFFECTS_CONFIG.thresholds.particleEffect ||
+      !sector.vertices || 
+      sector.vertices.length === 0) {
+    return null;
+  }
 
   return (
     <G>
@@ -339,7 +341,7 @@ export const VisualDecayEffectsComponent: React.FC<VisualDecayEffectsProps> = ({
 
       {/* Particle effects */}
       {particles.map(particle => (
-        <DecayParticle
+        <DecayParticleComponent
           key={particle.id}
           particle={particle}
           entropy={entropy}
