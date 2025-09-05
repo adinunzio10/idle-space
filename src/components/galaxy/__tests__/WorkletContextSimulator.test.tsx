@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { renderHook, act } from '@testing-library/react-native';
-import { 
+import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   useAnimatedGestureHandler,
@@ -19,14 +19,6 @@ import {
 
 // Access global worklet test utilities
 const WorkletTestUtils = global.WorkletTestUtils;
-
-// Mock worklet function for tests (in newer RN Reanimated, worklet is a directive)
-const worklet = (fn: any) => {
-  const workletFn = fn;
-  workletFn._isWorklet = true;
-  workletFn._originalFn = fn;
-  return workletFn;
-};
 
 describe('Worklet Context Simulator Validation', () => {
   beforeEach(() => {
@@ -113,7 +105,7 @@ describe('Worklet Context Simulator Validation', () => {
   describe('worklet Function', () => {
     it('should create worklet from function', () => {
       const originalFn = (x: number, y: number) => x + y;
-      const workletFn = worklet(originalFn);
+      const workletFn = WorkletTestUtils.worklet(originalFn);
       
       expect(typeof workletFn).toBe('function');
       expect(workletFn._isWorklet).toBe(true);
@@ -121,7 +113,7 @@ describe('Worklet Context Simulator Validation', () => {
     });
 
     it('should execute worklet in simulated context', () => {
-      const workletFn = worklet((value: number) => {
+      const workletFn = WorkletTestUtils.worklet((value: number) => {
         return value * 2;
       });
       
@@ -130,7 +122,7 @@ describe('Worklet Context Simulator Validation', () => {
     });
 
     it('should handle worklet execution errors gracefully', () => {
-      const workletFn = worklet(() => {
+      const workletFn = WorkletTestUtils.worklet(() => {
         throw new Error('Test error');
       });
       
@@ -191,13 +183,13 @@ describe('Worklet Context Simulator Validation', () => {
       const onEnd = jest.fn();
       
       const handlers = {
-        onStart: worklet((event: any) => {
+        onStart: WorkletTestUtils.worklet((event: any) => {
           onStart(event.translationX);
         }),
-        onActive: worklet((event: any) => {
+        onActive: WorkletTestUtils.worklet((event: any) => {
           onActive(event.translationY);
         }),
-        onEnd: worklet((event: any) => {
+        onEnd: WorkletTestUtils.worklet((event: any) => {
           onEnd(event.state);
         }),
       };

@@ -486,11 +486,11 @@ describe('GalaxyMapModular - Integration and User Interaction Tests', () => {
       const mockGalaxyMapConfig = galaxyMapConfig;
       
       // Simulate poor performance conditions
-      mockGalaxyMapConfig.getPerformanceStats.mockReturnValue({
+      (mockGalaxyMapConfig.getPerformanceStats as jest.MockedFunction<any>).mockReturnValue({
         currentQuality: 'low',
         skipRatio: 0.9,
       });
-      mockGalaxyMapConfig.shouldSkipFrame.mockReturnValue(true);
+      (mockGalaxyMapConfig.shouldSkipFrame as jest.MockedFunction<any>).mockReturnValue(true);
 
       const recoveryProps = {
         ...defaultProps,
@@ -508,11 +508,11 @@ describe('GalaxyMapModular - Integration and User Interaction Tests', () => {
         jest.advanceTimersByTime(1200);
         
         // Simulate performance improvement
-        mockGalaxyMapConfig.getPerformanceStats.mockReturnValue({
+        (mockGalaxyMapConfig.getPerformanceStats as jest.MockedFunction<any>).mockReturnValue({
           currentQuality: 'medium',
           skipRatio: 0.3,
         });
-        mockGalaxyMapConfig.shouldSkipFrame.mockReturnValue(false);
+        (mockGalaxyMapConfig.shouldSkipFrame as jest.MockedFunction<any>).mockReturnValue(false);
         
         jest.advanceTimersByTime(500);
         

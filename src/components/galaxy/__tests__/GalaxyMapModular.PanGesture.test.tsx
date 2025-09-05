@@ -9,68 +9,20 @@
  */
 
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { render, act, waitFor } from '@testing-library/react-native';
 import { GestureHandlerRootView, Gesture } from 'react-native-gesture-handler';
-import { GalaxyMapModular } from '../GalaxyMapModular';
+import GalaxyMapModular from '../GalaxyMapModular';
+// import GalaxyMapModular from '../GalaxyMapModular.minimal';
 import { Beacon, Connection } from '../../../types/galaxy';
 import { galaxyMapConfig } from '../../../utils/galaxy/GalaxyMapConfig';
 import { galaxyToScreen, calculateVisibleBounds } from '../../../utils/spatial/viewport';
 
-// Mock Reanimated
-jest.mock('react-native-reanimated', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Reanimated = require('react-native-reanimated/mock');
-  
-  // Mock shared values and gestures
-  Reanimated.useSharedValue = jest.fn((initial) => ({
-    value: initial,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-  }));
-  
-  Reanimated.useAnimatedProps = jest.fn(() => ({}));
-  Reanimated.runOnJS = jest.fn((fn) => fn);
-  
-  return {
-    ...Reanimated,
-    useSharedValue: Reanimated.useSharedValue,
-    useAnimatedProps: Reanimated.useAnimatedProps,
-    runOnJS: Reanimated.runOnJS,
-  };
-});
 
-// Mock Gesture Handler
-const createMockGesture = () => ({
-  onStart: jest.fn().mockReturnThis(),
-  onUpdate: jest.fn().mockReturnThis(),
-  onEnd: jest.fn().mockReturnThis(),
-  simultaneousWithExternalGesture: jest.fn().mockReturnThis(),
-  requireExternalGestureToFail: jest.fn().mockReturnThis(),
-});
+// Reanimated is mocked globally in jest-setup.js
 
-jest.mock('react-native-gesture-handler', () => ({
-  GestureHandlerRootView: ({ children }: { children: React.ReactNode }) => children,
-  Gesture: {
-    Pan: jest.fn(() => createMockGesture()),
-    Pinch: jest.fn(() => createMockGesture()),
-    Tap: jest.fn(() => createMockGesture()),
-    Simultaneous: jest.fn(() => createMockGesture()),
-  },
-  GestureDetector: ({ children }: { children: React.ReactNode }) => children,
-}));
+// Gesture Handler is mocked globally in jest-setup.js
 
-// Mock SVG components
-jest.mock('react-native-svg', () => ({
-  Svg: 'Svg',
-  G: 'G',
-  Circle: 'Circle',
-  Rect: 'Rect',
-  Path: 'Path',
-  Defs: 'Defs',
-  RadialGradient: 'RadialGradient',
-  LinearGradient: 'LinearGradient',
-  Stop: 'Stop',
-}));
+// SVG components are mocked globally in jest-setup.js
 
 // Mock performance utilities
 jest.mock('../../../utils/performance/WorkletDataIsolation', () => ({
@@ -94,35 +46,8 @@ jest.mock('../../../utils/spatial/viewport', () => ({
   isPointInHitArea: jest.fn(() => false),
 }));
 
-// Mock module manager and modules
-const mockModuleManager = {
-  renderModules: jest.fn(() => []),
-  getEventBus: jest.fn(() => ({
-    emit: jest.fn(),
-    subscribe: jest.fn(() => () => {}),
-  })),
-  getGlobalPerformanceMetrics: jest.fn(() => ({
-    averageFps: 60,
-    frameCount: 100,
-    disabledModules: [],
-    performanceMode: false,
-  })),
-  getAllModules: jest.fn(() => []),
-};
-
-jest.mock('../../../utils/galaxy/modules', () => ({
-  ModuleManager: jest.fn(() => mockModuleManager),
-  BeaconRenderingModule: jest.fn(),
-  ConnectionRenderingModule: jest.fn(),
-  EnvironmentRenderingModule: jest.fn(),
-  StarSystemModule: jest.fn(),
-  SectorModule: jest.fn(),
-  GestureModule: jest.fn(),
-  LODModule: jest.fn(),
-  SpatialModule: jest.fn(),
-  EntropyModule: jest.fn(),
-  OverlayModule: jest.fn(),
-}));
+// Mock module manager and modules - using global mock from jest-setup.js
+// The global mock provides the mockModuleManager with jest.fn() renderModules
 
 // Mock galaxy map config
 jest.mock('../../../utils/galaxy/GalaxyMapConfig', () => ({
@@ -194,7 +119,9 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
     expect(getByTestId('galaxy-map')).toBeTruthy();
   });
 
-  it('should initialize modules and not use cached renders during normal operation', () => {
+  it('should initialize modules and not use cached renders during normal operation', async () => {
+    const modulesMock = require('../../../utils/galaxy/modules');
+    
     render(
       <GestureHandlerRootView>
         <GalaxyMapModular
@@ -206,8 +133,19 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
       </GestureHandlerRootView>
     );
 
-    // Should render modules normally (not from cache)
-    expect(mockModuleManager.renderModules).toHaveBeenCalled();
+    // Wait for async module initialization and rendering
+    await waitFor(() => {
+      // Check if ModuleManager constructor was called
+      expect(modulesMock.ModuleManager).toHaveBeenCalled();
+    });
+    
+    // Get the most recent instance of ModuleManager
+    const mockInstance = modulesMock.ModuleManager.mock.results[modulesMock.ModuleManager.mock.results.length - 1].value;
+    
+    // Wait for renderModules to be called
+    await waitFor(() => {
+      expect(mockInstance.renderModules).toHaveBeenCalled();
+    });
   });
 
   it('should throttle viewport updates during pan gestures using time-based throttling', () => {
@@ -216,7 +154,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
     let updateCallback: any;
 
     // Mock Gesture.Pan to capture the update callback
-    Gesture.Pan.mockImplementation(() => {
+    (Gesture.Pan as jest.MockedFunction<any>).mockImplementation(() => {
       panGesture = {
         onStart: jest.fn().mockReturnThis(),
         onUpdate: jest.fn((callback) => {
@@ -291,7 +229,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
     // Using imported galaxyMapConfig
     
     // Mock frame skipping condition
-    galaxyMapConfig.shouldSkipFrame.mockReturnValue(true);
+    (galaxyMapConfig.shouldSkipFrame as jest.MockedFunction<any>).mockReturnValue(true);
 
     render(
       <GestureHandlerRootView>
@@ -333,7 +271,7 @@ describe('GalaxyMapModular Pan Gesture Performance', () => {
     let endCallback: any;
 
     // Mock Gesture.Pan to capture callbacks
-    Gesture.Pan.mockImplementation(() => ({
+    (Gesture.Pan as jest.MockedFunction<any>).mockImplementation(() => ({
       onStart: jest.fn((callback) => {
         startCallback = callback;
         return { onUpdate: jest.fn().mockReturnThis(), onEnd: jest.fn((callback) => {
@@ -432,7 +370,7 @@ describe('GalaxyMapModular Pan Gesture Integration', () => {
     const callbacks: any = {};
 
     // Mock complete gesture chain
-    Gesture.Pan.mockImplementation(() => ({
+    (Gesture.Pan as jest.MockedFunction<any>).mockImplementation(() => ({
       onStart: jest.fn((fn) => { callbacks.start = fn; return { onUpdate: jest.fn().mockReturnThis(), onEnd: jest.fn().mockReturnThis() }; }),
       onUpdate: jest.fn((fn) => { callbacks.update = fn; return { onEnd: jest.fn().mockReturnThis() }; }),
       onEnd: jest.fn((fn) => { callbacks.end = fn; return {}; }),

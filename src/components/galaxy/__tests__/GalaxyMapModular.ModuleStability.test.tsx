@@ -9,8 +9,8 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react-native';
-import { GalaxyMapModular } from '../GalaxyMapModular';
+import { render, act, waitFor } from '@testing-library/react-native';
+import GalaxyMapModular from '../GalaxyMapModular';
 import { Beacon, Connection } from '../../../types/galaxy';
 import { galaxyMapConfig } from '../../../utils/galaxy/GalaxyMapConfig';
 
@@ -22,13 +22,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   clear: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock expo-battery
-jest.mock('expo-battery', () => ({
-  getBatteryLevelAsync: jest.fn(() => Promise.resolve(1)),
-  getBatteryStateAsync: jest.fn(() => Promise.resolve(1)),
-  isLowPowerModeEnabledAsync: jest.fn(() => Promise.resolve(false)),
-  PowerState: { CHARGING: 1, UNPLUGGED: 2, UNKNOWN: 0 },
-}));
+// expo-battery is mocked globally in jest-setup.js
 
 // Mock performance utilities
 jest.mock('../../../utils/performance/BatteryOptimizationManager', () => ({
@@ -91,30 +85,9 @@ jest.mock('../../../utils/galaxy/modules', () => {
   };
 });
 
-// Mock Reanimated and gesture handlers
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
-jest.mock('react-native-gesture-handler', () => ({
-  GestureHandlerRootView: ({ children }: { children: React.ReactNode }) => children,
-  Gesture: {
-    Pan: () => ({ onStart: jest.fn().mockReturnThis(), onUpdate: jest.fn().mockReturnThis(), onEnd: jest.fn().mockReturnThis(), simultaneousWithExternalGesture: jest.fn().mockReturnThis() }),
-    Pinch: () => ({ onStart: jest.fn().mockReturnThis(), onUpdate: jest.fn().mockReturnThis(), onEnd: jest.fn().mockReturnThis(), simultaneousWithExternalGesture: jest.fn().mockReturnThis() }),
-    Tap: () => ({ onEnd: jest.fn().mockReturnThis(), requireExternalGestureToFail: jest.fn().mockReturnThis() }),
-    Simultaneous: () => ({}),
-  },
-  GestureDetector: ({ children }: { children: React.ReactNode }) => children,
-}));
+// Reanimated and Gesture Handler are mocked globally in jest-setup.js
 
-// Mock SVG
-jest.mock('react-native-svg', () => ({
-  Svg: 'Svg',
-  G: 'G',
-  Circle: 'Circle',
-  Rect: 'Rect',
-  Defs: 'Defs',
-  RadialGradient: 'RadialGradient',
-  Stop: 'Stop',
-}));
+// SVG components are mocked globally in jest-setup.js
 
 // Mock utilities
 jest.mock('../../../utils/spatial/viewport', () => ({
@@ -320,7 +293,9 @@ describe('GalaxyMapModular Module Stability', () => {
   });
 
   describe('Module Rendering Stability', () => {
-    it('should render modules consistently without flickering', () => {
+    it('should render modules consistently without flickering', async () => {
+      const modulesMock = require('../../../utils/galaxy/modules');
+      
       render(
         <GalaxyMapModular
           width={800}
@@ -330,11 +305,21 @@ describe('GalaxyMapModular Module Stability', () => {
         />
       );
 
-      // Should call renderModules
-      expect(mockModuleManager.renderModules).toHaveBeenCalled();
+      // Wait for module initialization and first render
+      await waitFor(() => {
+        expect(modulesMock.ModuleManager).toHaveBeenCalled();
+      });
+
+      // Get the actual mock instance created by the component
+      const mockInstance = modulesMock.ModuleManager.mock.results[modulesMock.ModuleManager.mock.results.length - 1].value;
+
+      // Wait for renderModules to be called
+      await waitFor(() => {
+        expect(mockInstance.renderModules).toHaveBeenCalled();
+      });
       
       // Get initial call count
-      const initialCallCount = mockModuleManager.renderModules.mock.calls.length;
+      const initialCallCount = mockInstance.renderModules.mock.calls.length;
 
       // Simulate multiple renders (as would happen during panning)
       for (let i = 0; i < 5; i++) {
@@ -351,7 +336,11 @@ describe('GalaxyMapModular Module Stability', () => {
       }
 
       // Should have called renderModules for each render
-      expect(mockModuleManager.renderModules.mock.calls.length).toBeGreaterThan(initialCallCount);
+      // Since we're creating new component instances with key prop, we need to check the total calls across all instances
+      const totalCalls = modulesMock.ModuleManager.mock.results.reduce((total: number, result: any) => {
+        return total + (result.value.renderModules.mock.calls?.length || 0);
+      }, 0);
+      expect(totalCalls).toBeGreaterThan(initialCallCount);
       
       // But should NOT have re-initialized modules
       expect(moduleInitializationCalls.length).toBeLessThanOrEqual(5); // One per component instance
@@ -438,11 +427,11 @@ describe('GalaxyMapModular Module Stability', () => {
   });
 
   describe('Performance Mode Detection', () => {
-    it('should detect when frame skipping affects module rendering', () => {
+    it('should detect when frame skipping affects module rendering', async () => {
       // Using imported galaxyMapConfig
       
       // Mock frame skipping condition
-      galaxyMapConfig.shouldSkipFrame.mockReturnValue(true);
+      (galaxyMapConfig.shouldSkipFrame as jest.MockedFunction<any>).mockReturnValue(true);
 
       render(
         <GalaxyMapModular
@@ -452,6 +441,11 @@ describe('GalaxyMapModular Module Stability', () => {
           connections={mockConnections}
         />
       );
+
+      // Wait for performance monitoring to run (it runs every second)
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 1100)); // Wait just over 1 second
+      });
 
       // Should have called shouldSkipFrame
       expect(galaxyMapConfig.shouldSkipFrame).toHaveBeenCalled();

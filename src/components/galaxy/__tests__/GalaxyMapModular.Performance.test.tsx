@@ -97,12 +97,12 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
       
       // Should report performance but not excessively
       expect(mockGalaxyMapConfig.reportPerformance).toHaveBeenCalled();
-      expect(mockGalaxyMapConfig.reportPerformance.mock.calls.length).toBeLessThan(100);
+      expect((mockGalaxyMapConfig.reportPerformance as jest.MockedFunction<any>).mock.calls.length).toBeLessThan(100);
     });
 
     test('should handle frame skipping mechanism without performance degradation', () => {
       const mockGalaxyMapConfig = galaxyMapConfig;
-      mockGalaxyMapConfig.shouldSkipFrame.mockReturnValue(true); // Enable frame skipping
+      (mockGalaxyMapConfig.shouldSkipFrame as jest.MockedFunction<any>).mockReturnValue(true); // Enable frame skipping
       
       const props = {
         ...defaultProps,
@@ -319,7 +319,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
 
     test('should handle emergency mode detection without performance degradation', () => {
       const mockGalaxyMapConfig = galaxyMapConfig;
-      mockGalaxyMapConfig.getPerformanceStats.mockReturnValue({
+      (mockGalaxyMapConfig.getPerformanceStats as jest.MockedFunction<any>).mockReturnValue({
         currentQuality: 'low',
         skipRatio: 0.8,
       });
@@ -373,7 +373,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
 
     test('should skip frame rendering when appropriate', () => {
       const mockGalaxyMapConfig = galaxyMapConfig;
-      mockGalaxyMapConfig.shouldSkipFrame.mockReturnValue(true);
+      (mockGalaxyMapConfig.shouldSkipFrame as jest.MockedFunction<any>).mockReturnValue(true);
 
       const props = {
         ...defaultProps,
@@ -462,7 +462,7 @@ describe('GalaxyMapModular - Performance Regression Tests', () => {
 
     test('should handle performance quality adjustments', () => {
       const mockGalaxyMapConfig = galaxyMapConfig;
-      mockGalaxyMapConfig.getPerformanceStats.mockReturnValue({
+      (mockGalaxyMapConfig.getPerformanceStats as jest.MockedFunction<any>).mockReturnValue({
         currentQuality: 'medium',
         skipRatio: 0.3,
       });
