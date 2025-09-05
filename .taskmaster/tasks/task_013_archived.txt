@@ -1,7 +1,7 @@
 # Task ID: 13
 # Title: Debug and Fix React Native Reanimated JSI Crashes in Galaxy Map
 # Status: cancelled
-# Dependencies: 11, 12
+# Dependencies: None
 # Priority: medium
 # Description: Investigate and resolve React Native Reanimated crashes occurring in galaxy map gesture handling, specifically JSI crashes in worklet execution and RNBetterPanGestureRecognizer context violations.
 # Details:

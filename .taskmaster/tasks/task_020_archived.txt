@@ -1,7 +1,7 @@
 # Task ID: 20
 # Title: Refactor Settings and Statistics modals to dedicated full-screen components
 # Status: cancelled
-# Dependencies: 17, 3
+# Dependencies: None
 # Priority: medium
 # Description: Convert the existing Settings and Statistics modal dialogs into dedicated full-screen components that follow the same navigation pattern as Galaxy Map and Probe Manager screens for improved user experience and consistency.
 # Details:
