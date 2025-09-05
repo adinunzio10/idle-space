@@ -15,7 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GalaxyMapCore } from '../components/galaxy/GalaxyMapCore';
-import { GalaxyMapModular } from '../components/galaxy/GalaxyMapModular';
+import GalaxyMapModular from '../components/galaxy/GalaxyMapModular';
 import { GameHUD } from '../components/ui/GameHUD';
 import { BeaconSpecializationOverlay } from '../components/ui/BeaconSpecializationOverlay';
 import { useStrategicOverlays } from '../components/ui/OverlayManager';

@@ -41,3 +41,4 @@ ios/build/
 ios/DerivedData/
 ios/.xcode.env.local
 package-lock.json
+coverage/
