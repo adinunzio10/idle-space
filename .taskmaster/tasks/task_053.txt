@@ -1,0 +1,55 @@
+# Task ID: 53
+# Title: Fix Maximum Update Depth Error in GalaxyMapModular Component
+# Status: done
+# Dependencies: 11, 14, 15
+# Priority: medium
+# Description: Resolve the critical React maximum update depth exceeded error in GalaxyMapModular caused by infinite render loops from improper useEffect dependencies or state updates triggering continuous re-renders.
+# Details:
+Debug and fix the maximum update depth error occurring at line 65 of GalaxyMapModular.tsx. Investigation steps: 1) **Identify Circular Dependencies**: Audit all useEffect hooks in GalaxyMapModular for missing dependency arrays or dependencies that change on every render (objects/arrays recreated each render, inline function definitions). Common culprits include viewport calculations, gesture handlers, or beacon filtering logic. 2) **Memoization Strategy**: Implement useMemo for expensive computations like visible beacon filtering, connection calculations, and viewport transformations. Use useCallback for event handlers passed to child components. 3) **State Update Analysis**: Review all setState calls within useEffect hooks - ensure they have proper conditional guards to prevent infinite loops. Check for state updates that immediately trigger the same effect again. 4) **Ref-based Solutions**: Replace state with useRef for values that don't need to trigger re-renders (animation values, previous viewport positions, gesture state). 5) **Context Optimization**: If using contexts (GameContext, ResourceContext), ensure context values are memoized to prevent unnecessary consumer re-renders. 6) **Component Splitting**: Consider breaking GalaxyMapModular into smaller sub-components with React.memo to isolate re-render boundaries. 7) **Gesture Handler Review**: Based on previous gesture-related issues (Tasks 11, 14), ensure React Native Gesture Handler worklets aren't triggering JavaScript state updates without runOnJS wrapper.
+
+# Test Strategy:
+Systematic testing to ensure the error is resolved: 1) Add console.log statements to track render counts and identify which useEffect/state update is causing the loop. Use React DevTools Profiler to visualize component re-renders. 2) Test component mounting/unmounting cycles - error should not occur during initial load or navigation. 3) Verify all interactive features work without triggering the error: pan/zoom gestures, beacon placement, connection updates, viewport changes. 4) Test with varying beacon counts (0, 10, 100, 500) to ensure performance optimizations don't reintroduce the issue at scale. 5) Use React.StrictMode locally to catch potential issues with effect cleanup and state updates. 6) Monitor memory usage to ensure fix doesn't introduce memory leaks from uncleared intervals/listeners. 7) Test on both iOS and Android to ensure platform-specific gesture handling doesn't trigger the error.
+
+# Subtasks:
+## 1. Audit and Fix useEffect Circular Dependencies [done]
+### Dependencies: None
+### Description: Identify and fix all useEffect hooks with circular dependencies that cause infinite render loops, focusing on lines 97, 127, 157, 167, 338, and 432.
+### Details:
+Systematically review each useEffect hook for missing dependency arrays, dependencies that change on every render (objects/arrays recreated each render), and inline function definitions. Add proper dependency arrays and ensure objects/arrays are memoized. Fix viewport calculations, gesture handlers, and beacon filtering logic that may be causing circular updates.
+
+## 2. Implement Comprehensive Memoization Strategy [done]
+### Dependencies: 53.1
+### Description: Apply useMemo and useCallback to expensive computations and event handlers to prevent unnecessary re-renders, focusing on moduleContext and moduleElements.
+### Details:
+Implement useMemo for expensive computations including visible beacon filtering, connection calculations, viewport transformations, moduleContext creation, and moduleElements processing. Use useCallback for event handlers passed to child components and gesture callbacks to maintain referential equality.
+
+## 3. Fix State Update Patterns and Performance Metrics [done]
+### Dependencies: 53.1
+### Description: Resolve problematic state updates in updatePerformanceMetrics and viewport updates that trigger continuous re-renders.
+### Details:
+Add conditional guards to all setState calls within useEffect hooks to prevent infinite loops. Fix updatePerformanceMetrics function to avoid state updates during render cycles. Implement proper throttling for viewport state updates and ensure performance monitoring doesn't trigger render loops.
+
+## 4. Optimize Gesture Handler Callbacks [done]
+### Dependencies: 53.2
+### Description: Refactor gesture handler callbacks to prevent excessive re-renders during user interactions, ensuring proper runOnJS wrapper usage.
+### Details:
+Review all gesture handler implementations to ensure they don't trigger JavaScript state updates without runOnJS wrapper. Optimize pan, pinch, and tap gesture callbacks to minimize render triggers. Implement proper gesture state management using refs instead of state where appropriate.
+
+## 5. Fix pendingViewportUpdate Ref Handling [done]
+### Dependencies: 53.3
+### Description: Resolve stale closure issues with pendingViewportUpdate ref that may be causing inconsistent state updates.
+### Details:
+Fix pendingViewportUpdate ref handling to prevent stale closures. Ensure ref updates are properly synchronized with component state. Implement proper cleanup in useEffect hooks that interact with the pendingViewportUpdate ref to prevent memory leaks and inconsistent updates.
+
+## 6. Refactor Module System Event Handling [done]
+### Dependencies: 53.2, 53.3
+### Description: Optimize the module system event bus to prevent cascading updates that contribute to the infinite render loop.
+### Details:
+Refactor module system architecture to prevent cascading updates through the event bus. Implement proper event debouncing and batching. Ensure module event handlers don't trigger immediate state updates that cause other modules to re-render. Add event listener cleanup to prevent memory leaks.
+
+## 7. Add Error Boundaries and Performance Monitoring [done]
+### Dependencies: 53.4, 53.5, 53.6
+### Description: Implement comprehensive error boundaries and performance monitoring to catch and handle maximum update depth errors gracefully.
+### Details:
+Add React error boundaries around GalaxyMapModular to catch and handle maximum update depth errors. Implement performance monitoring that doesn't interfere with render cycles. Add logging and debugging tools to track component re-render patterns. Create fallback UI states for error recovery.
+

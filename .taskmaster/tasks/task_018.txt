@@ -1,0 +1,55 @@
+# Task ID: 18
+# Title: Refactor Pattern State Management to Eliminate Technical Debt
+# Status: done
+# Dependencies: 7, 15
+# Priority: medium
+# Description: Consolidate pattern suggestion state management into a single source of truth to eliminate the dual-state system between App.tsx and GalaxyMapView, removing prop drilling and improving maintainability.
+# Details:
+Based on architectural analysis, refactor the current split pattern state by implementing React Context approach. Current issues: App.tsx manages pattern state via multiple useState hooks (patternSuggestionCount, mapVisualizationsVisible, patternPopupVisible, currentPatternCount), GalaxyMapView uses both external control object 'externalPatternControl' and internal usePatternSuggestionState hook creating dual state management, complex prop drilling between components, and hardcoded beacon count approximation instead of real pattern analysis. Implementation: Create PatternSuggestionContext with PatternSuggestionProvider managing consolidated state (pattern visibility, popup state, real pattern count using PatternDetector). Replace externalPatternControl pattern with context consumer in GalaxyMapView. Update PatternToggleButton to use context directly. Remove debug console.log statements and implement proper TypeScript interfaces. Maintain backward compatibility while eliminating prop drilling and state synchronization issues.
+
+# Test Strategy:
+Verify pattern suggestion toggle functionality works identically to current implementation. Test pattern count displays real detected patterns from PatternDetector instead of beacon count approximation. Confirm popup open/close behavior remains unchanged. Test state persistence during component re-renders and navigation. Validate removal of all console.log statements. Verify TypeScript compilation with proper context typing. Test component isolation - GalaxyMapView should function independently of App.tsx pattern state. Performance test to ensure context updates don't cause unnecessary re-renders. Validate state synchronization between formerly dual-managed states.
+
+# Subtasks:
+## 1. Create PatternSuggestionContext and Provider [done]
+### Dependencies: None
+### Description: Implement React Context for consolidated pattern state management
+### Details:
+Create PatternSuggestionContext with TypeScript interfaces. Implement PatternSuggestionProvider managing: pattern visibility state (mapVisualizationsVisible), popup state (patternPopupVisible), pattern count calculation, and pattern suggestions state. Define context actions for state updates and proper TypeScript typing.
+
+## 2. Replace App.tsx pattern state with context consumer [done]
+### Dependencies: None
+### Description: Remove individual useState hooks and implement context consumer in App.tsx
+### Details:
+Remove patternSuggestionCount, mapVisualizationsVisible, patternPopupVisible useState hooks from App.tsx. Wrap app with PatternSuggestionProvider. Replace direct state management with context consumer pattern. Update props passed to GalaxyMapScreen to use context values.
+
+## 3. Refactor GalaxyMapView to use context instead of dual state [done]
+### Dependencies: None
+### Description: Replace externalPatternControl and internal usePatternSuggestionState with context
+### Details:
+Remove externalPatternControl object pattern from GalaxyMapView. Remove internal usePatternSuggestionState hook. Implement useContext(PatternSuggestionContext) to access consolidated state. Update all pattern-related state references to use context values and actions.
+
+## 4. Update PatternToggleButton to use context directly [done]
+### Dependencies: None
+### Description: Simplify PatternToggleButton by removing prop drilling and using context
+### Details:
+Modify PatternToggleButton to use useContext(PatternSuggestionContext) instead of receiving props from parent. Remove callback prop dependencies and use context actions directly. Maintain existing functionality while simplifying component interface.
+
+## 5. Implement real pattern count using PatternDetector [done]
+### Dependencies: None
+### Description: Replace hardcoded beacon count approximation with actual pattern detection
+### Details:
+Update pattern count calculation to use PatternDetector from Task 7 instead of simplified beacon count approximation (currentPatternCount). Implement real geometric pattern analysis to count actual detected patterns (triangles, squares, pentagons, hexagons). Update context to provide accurate pattern counts.
+
+## 6. Remove debug logging and ensure TypeScript compliance [done]
+### Dependencies: None
+### Description: Clean up debug statements and verify type safety
+### Details:
+Remove all debug console.log statements from pattern handling code. Ensure proper TypeScript interfaces for PatternSuggestionContext state and actions. Verify no TypeScript compilation errors. Add proper error handling for context usage.
+
+## 7. Test state persistence and component isolation [done]
+### Dependencies: None
+### Description: Verify refactored state management works correctly
+### Details:
+Test pattern state persistence during component re-renders and navigation. Verify GalaxyMapView functions independently without App.tsx pattern state dependencies. Test all pattern toggle functionality matches previous behavior. Perform performance testing to ensure context updates don't cause unnecessary re-renders.
+

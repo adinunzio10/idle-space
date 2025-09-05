@@ -1,0 +1,11 @@
+# Task ID: 31
+# Title: Create Audio System with Ambient Music and Sound Effects
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Implement a comprehensive audio system featuring ambient space music, beacon placement sounds, pattern completion audio cues, probe launch effects, stellar reignition audio, and settings-based volume controls.
+# Details:
+Install expo-av for audio playback capabilities and react-native-track-player for background music management. Create AudioManager class with methods: playAmbientTrack(), playBeaconPlacement(), playPatternComplete(), playProbeLaunch(), playReignitionEvent(), and stopAllSounds(). Implement ambient music system with 3-5 looping space-themed tracks (cosmic drones, stellar winds, quantum harmonics) using seamless loop points. Create sound effect library: beacon placement (harmonic chime with pitch variation based on beacon level), pattern completion (ascending musical phrase with intensity based on pattern size), probe launch (swoosh with type-specific pitch - Pioneer high, Harvester mid, Architect low), stellar reignition (triumphant orchestral swell with particle effects sync). Add AudioSettings class with volume controls: master volume, music volume, effects volume, and mute toggle. Implement fade transitions between ambient tracks based on galaxy sector entropy levels. Use react-native-sound-player for low-latency sound effects and expo-av for background music. Add haptic feedback sync with major audio events using expo-haptics. Implement audio ducking to reduce music volume during important sound effects. Create AudioPreloader to cache frequently used sounds for instant playback.
+
+# Test Strategy:
+Test audio playback across iOS and Android platforms with various device audio configurations. Verify ambient music loops seamlessly without gaps or pops. Test sound effect timing accuracy with game events (beacon placement should trigger immediately on touch). Verify volume controls affect appropriate audio channels independently. Test audio persistence across app backgrounding and foreground transitions. Performance testing to ensure audio doesn't impact frame rate during intensive gameplay. Test audio ducking behavior during overlapping music and effects. Verify haptic feedback synchronization with audio cues on supported devices.

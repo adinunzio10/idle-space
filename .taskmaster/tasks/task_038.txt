@@ -1,0 +1,61 @@
+# Task ID: 38
+# Title: Create Visual Galaxy Sector Overlay System with State Visualization
+# Status: done
+# Dependencies: 3
+# Priority: medium
+# Description: Implement a comprehensive visual overlay system that displays galaxy sectors with distinct states (healthy/dying/dead), sector boundaries, entropy spread visualization, and interactive highlighting of harvestable resources.
+# Details:
+Create SectorOverlayManager class to render visual overlays on top of the existing galaxy map. Implement sector boundary visualization using react-native-svg with hexagonal grid lines that fade in/out based on zoom level (visible at zoom >0.3x, opacity increases with zoom). Create SectorStateRenderer with distinct visual treatments: Healthy sectors (subtle blue tint #3B82F6 at 10% opacity), Dying sectors (orange/red gradient overlay #F59E0B to #EF4444 at 20% opacity with pulsing animation), Dead sectors (dark purple/black overlay #1F2937 at 30% opacity with static effect). Implement EntropyVisualization using animated particle systems showing entropy spread between adjacent sectors with flowing dark particles. Add HarvestableIndicator system that highlights dying stars with glowing halos and dead systems with void fragment icons when overlay is active. Create OverlayControls component with toggle buttons: Show Boundaries, Show Sector States, Show Entropy Effects, Show Harvestable Resources. Implement performance optimizations using viewport culling to only render visible sectors and LOD system reducing overlay complexity at distant zoom levels. Add smooth fade transitions when toggling overlay elements to maintain visual polish.
+
+# Test Strategy:
+Test sector boundary rendering accuracy at various zoom levels ensuring grid alignment with existing sector system. Verify sector state overlays correctly display healthy/dying/dead regions with appropriate visual effects and animations. Test entropy visualization particles flow correctly between adjacent sectors following entropy spread mechanics. Validate harvestable resource highlighting accurately identifies dying stars and dead systems. Performance testing with overlay system active measuring frame rate impact with 100+ visible sectors. Test overlay toggle controls provide smooth transitions without visual glitches. Memory usage monitoring during extended overlay usage to prevent leaks from particle systems.
+
+# Subtasks:
+## 1. Create SectorOverlayManager Core Orchestration System [done]
+### Dependencies: None
+### Description: Implement the main SectorOverlayManager class that coordinates all overlay rendering layers and manages the integration with the existing galaxy map system.
+### Details:
+Create SectorOverlayManager class with methods for overlay initialization, layer management, and integration with GalaxyMapView. Implement overlay state management for toggling different visual layers. Set up the foundation for rendering multiple overlay types (boundaries, states, entropy, resources) with proper z-index ordering. Include methods for overlay cleanup and memory management.
+
+## 2. Implement Sector Boundary Visualization System [done]
+### Dependencies: 38.1
+### Description: Create hexagonal grid boundary visualization using react-native-svg that fades in/out based on zoom level with proper opacity transitions.
+### Details:
+Implement SectorBoundaryRenderer using react-native-svg to draw hexagonal grid lines. Add zoom-based visibility logic (visible at zoom >0.3x, opacity increases with zoom). Create SVG path generation for hexagonal sector boundaries aligned with existing sector system. Implement smooth fade transitions using React Native Reanimated for zoom-based opacity changes.
+
+## 3. Create SectorStateRenderer with Visual Treatments [done]
+### Dependencies: 38.1
+### Description: Implement distinct visual treatments for healthy, dying, and dead sectors with appropriate colors, opacities, and animations.
+### Details:
+Create SectorStateRenderer component with three distinct visual states: Healthy sectors (subtle blue tint #3B82F6 at 10% opacity), Dying sectors (orange/red gradient overlay #F59E0B to #EF4444 at 20% opacity with pulsing animation), Dead sectors (dark purple/black overlay #1F2937 at 30% opacity with static effect). Implement gradient generation and pulsing animations using React Native Reanimated.
+
+## 4. Implement EntropyVisualization Particle System [done]
+### Dependencies: 38.1, 38.2
+### Description: Create animated particle systems that visualize entropy spread between adjacent sectors with flowing dark particles.
+### Details:
+Enhance existing EntropyVisualization component to show entropy spread between adjacent sectors using animated particle systems. Implement flowing dark particle effects that move from dying sectors to adjacent healthy sectors. Use React Native Reanimated for smooth particle animations and manage particle lifecycle for performance. Integrate with entropy spread data to show realistic flow patterns.
+
+## 5. Create HarvestableIndicator Resource Highlighting System [done]
+### Dependencies: 38.1, 38.3
+### Description: Implement highlighting system for dying stars with glowing halos and dead systems with void fragment icons when overlay is active.
+### Details:
+Create HarvestableIndicator component that highlights dying stars with animated glowing halos and dead systems with void fragment icons. Implement glow effects using react-native-svg radial gradients and animated scaling. Add icon rendering for void fragments in dead systems. Include show/hide logic based on overlay toggle state and integrate with harvestable resource data.
+
+## 6. Build OverlayControls UI Component [done]
+### Dependencies: 38.2, 38.3, 38.4, 38.5
+### Description: Create control panel with toggle buttons for Show Boundaries, Show Sector States, Show Entropy Effects, and Show Harvestable Resources.
+### Details:
+Create OverlayControls component with four toggle buttons using NativeWind styling. Implement toggle state management and callbacks to enable/disable overlay layers. Add visual feedback for active/inactive states with appropriate colors and icons. Position controls accessibly on screen with proper touch targets (minimum 44px). Include haptic feedback for toggle interactions.
+
+## 7. Implement Viewport Culling and LOD Optimization [done]
+### Dependencies: 38.1
+### Description: Create performance optimization system using viewport culling to only render visible sectors and LOD system for distant zoom levels.
+### Details:
+Implement viewport bounds calculation to determine visible sectors and cull off-screen overlays. Create LOD (Level of Detail) system that reduces overlay complexity at distant zoom levels by simplifying particle effects, reducing boundary detail, and lowering animation frame rates. Add performance monitoring to track render times and optimize rendering pipeline. Implement sector batching for efficient rendering of multiple overlays.
+
+## 8. Add Smooth Transitions and Performance Testing [done]
+### Dependencies: 38.6, 38.7
+### Description: Implement smooth fade transitions for overlay toggles and conduct comprehensive performance testing with 100+ sectors.
+### Details:
+Add smooth fade transitions using React Native Reanimated when toggling overlay elements to maintain visual polish. Implement transition timing coordination between different overlay layers. Create comprehensive performance test suite that validates smooth rendering with 100+ sectors, measures frame rates during overlay transitions, and ensures memory usage remains stable. Test on various device performance levels and optimize accordingly.
+

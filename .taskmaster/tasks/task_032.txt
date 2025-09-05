@@ -1,0 +1,11 @@
+# Task ID: 32
+# Title: Configure App Store and Google Play Distribution
+# Status: pending
+# Dependencies: 3, 5, 6, 7, 8
+# Priority: medium
+# Description: Set up backend distribution infrastructure including signing certificates, build configuration, in-app purchase backend systems, privacy policy hosting, and submission preparation workflows for both iOS App Store and Google Play Store.
+# Details:
+Configure app signing certificates using expo build:ios and expo build:android commands for production builds. Set up app.json/app.config.js with proper bundle identifiers, version codes, and build-specific configuration. Implement react-native-iap backend integration for in-app purchase infrastructure with product setup, purchase validation, and receipt verification systems. Create privacy policy document and configure hosting infrastructure with accessible URL endpoints. Configure app.json with required permissions, usage descriptions, and platform-specific build requirements. Set up distribution workflows including certificate management, keystore configuration, and automated build preparation. Implement backend systems for app review compliance including metadata validation, permission auditing, and build verification processes. Create submission preparation workflows covering binary generation, certificate validation, and distribution pipeline automation.
+
+# Test Strategy:
+Test app signing by generating production builds for both platforms and verifying certificate validity. Validate in-app purchase backend systems with test product configurations and receipt verification workflows. Test privacy policy hosting accessibility and server response validation. Validate app permissions and usage descriptions configuration in build outputs. Test certificate management and keystore operations. Perform backend validation including build configuration accuracy, permission auditing, and distribution pipeline functionality. Test submission preparation workflows with mock binary uploads and certificate validation processes.

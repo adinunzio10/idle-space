@@ -1,0 +1,37 @@
+# Task ID: 9
+# Title: Develop Basic Upgrade and Progression System
+# Status: done
+# Dependencies: 7, 8
+# Priority: medium
+# Description: Implement fundamental upgrade mechanics with Consciousness Expansion milestones and choice-based permanent improvements.
+# Details:
+Create UpgradeManager with categories: Beacon Efficiency, Probe Speed, Launch Capacity, Offline Earnings multipliers. Implement Consciousness Expansion milestones based on total active beacons: 10, 25, 50, 100, 250, 500 beacons. Add choice-based upgrades offering two options per milestone: efficiency vs speed, generation vs offline earnings. Use exponential cost scaling: baseCost * (multiplier ^ level). Create upgrade validation ensuring sufficient resources. Add upgrade preview showing impact on current generation rates. Implement unlock conditions for advanced upgrades requiring specific pattern discoveries or achievements.
+
+# Test Strategy:
+Test upgrade cost calculations and resource validation. Verify milestone triggers and choice persistence. Test upgrade impact calculations on resource generation. Balance testing for progression pacing.
+
+# Subtasks:
+## 1. Create UpgradeManager Class with Category-based Structure [done]
+### Dependencies: None
+### Description: Implement the core UpgradeManager class with upgrade categories and exponential cost calculations
+### Details:
+Create UpgradeManager with categories: Beacon Efficiency, Probe Speed, Launch Capacity, Offline Earnings multipliers. Implement exponential cost scaling using baseCost * (multiplier ^ level). Add upgrade validation ensuring sufficient resources and proper category organization.
+
+## 2. Implement Consciousness Expansion Milestone System [done]
+### Dependencies: 9.1
+### Description: Create milestone triggers based on total active beacon counts with unlock conditions
+### Details:
+Implement Consciousness Expansion milestones triggered at beacon counts: 10, 25, 50, 100, 250, 500. Create milestone detection system that monitors total active beacons and triggers unlock events when thresholds are reached.
+
+## 3. Develop Choice-based Upgrade Implementation [done]
+### Dependencies: 9.2
+### Description: Create two-option upgrade selections for each milestone with persistent choice tracking
+### Details:
+Add choice-based upgrades offering two options per milestone: efficiency vs speed, generation vs offline earnings. Implement choice selection UI and persistence system to track player decisions and apply appropriate bonuses.
+
+## 4. Create Upgrade Preview and Impact Calculation System [done]
+### Dependencies: 9.3
+### Description: Implement upgrade preview showing impact on generation rates and unlock condition validation
+### Details:
+Create upgrade preview calculations showing impact on current generation rates. Implement unlock condition validation for advanced upgrades requiring specific pattern discoveries or achievements. Add real-time preview updates for upgrade selections.
+

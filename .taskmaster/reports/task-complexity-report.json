@@ -1,21 +1,21 @@
 {
 	"meta": {
-		"generatedAt": "2025-09-04T23:07:45.357Z",
+		"generatedAt": "2025-09-05T00:22:59.284Z",
 		"tasksAnalyzed": 1,
-		"totalTasks": 56,
+		"totalTasks": 51,
 		"analysisCount": 1,
 		"thresholdScore": 5,
 		"projectName": "Taskmaster",
-		"usedResearch": true
+		"usedResearch": false
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 56,
-			"taskTitle": "Improve React Native Component Testing Infrastructure for GalaxyMapModular Integration Tests",
-			"complexityScore": 8,
-			"recommendedSubtasks": 8,
-			"expansionPrompt": "Break down the React Native testing infrastructure improvements into specific technical implementation subtasks: 1) Jest configuration updates for ES module handling (expo-battery, rbush transformIgnorePatterns), 2) Native module mock implementations for AsyncStorage, expo-battery, gesture-handler, reanimated, SVG, and rbush, 3) Worklet execution context simulator development with runOnJS() and SharedValue support, 4) Test utility library creation building on existing ModuleStability.simple.test.tsx pattern, 5) Integration test framework for gesture interactions, 6) Performance and stability test suite, 7) Mock gesture recognizer system, and 8) Component rendering test infrastructure with proper context providers.",
-			"reasoning": "High complexity due to React Native testing challenges including: 1) Multiple cascade dependencies requiring sophisticated mocking (6+ native modules), 2) Worklet context simulation requiring deep understanding of Reanimated architecture, 3) Existing Jest configuration needs significant updates for ES modules, 4) Testing infrastructure must handle both logic-only and full integration scenarios, 5) Current codebase shows successful simple testing approach that needs expansion, 6) Gesture simulation requires complex state management and event sequencing. Based on analysis: Jest config exists but needs transformIgnorePatterns updates, comprehensive mock infrastructure already partially implemented in jest-setup.js, successful simple tests indicate good foundation, but full React Native component testing with gestures and worklets requires substantial additional infrastructure."
+			"taskId": 58,
+			"taskTitle": "Review and Split Mixed Frontend/Backend Tasks",
+			"complexityScore": 4,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down this task into: 1) Analyze all pending tasks to identify mixed frontend/backend work by examining implementation details and test strategies 2) Categorize each mixed task by separating frontend components (UI, UX, styling, client-side state) from backend components (API logic, database operations, business logic) 3) Create new frontend-focused tasks for UI components, user interactions, and visual design while updating original tasks to focus on backend implementation 4) Establish proper task dependencies and validate no functionality is lost between split tasks",
+			"reasoning": "This is primarily a project management and analysis task rather than heavy implementation work. The complexity is moderate because it requires: systematic analysis of existing tasks, understanding of frontend vs backend separation, task creation/modification through Task Master commands, and dependency management. However, it's not technically complex coding work - mainly organizational analysis and task manipulation using established Task Master workflows."
 		}
 	]
 }

@@ -62,9 +62,7 @@
         "details": "Install expo-sqlite for structured data storage and @react-native-async-storage/async-storage for simple key-value pairs. Create SaveManager class with methods for saveGameState(), loadGameState(), createBackup(), and recoverFromCorruption(). Implement automatic save every 30 seconds using background timers. Create data schemas for Player, Beacon, Probe, and Galaxy entities. Add versioning system for save compatibility during updates. Implement compression for large save files using lz-string library.",
         "testStrategy": "Unit tests for save/load operations. Test corruption recovery with malformed data. Verify automatic save intervals. Test large dataset performance (500+ beacons). Validate data migration between schema versions.",
         "priority": "high",
-        "dependencies": [
-          1
-        ],
+        "dependencies": [],
         "status": "done",
         "subtasks": [
           {
@@ -129,9 +127,7 @@
         "details": "Use react-native-svg for scalable vector graphics with performance optimization. Implement GalaxyMapView component with react-native-gesture-handler for pinch/pan gestures. Create BeaconRenderer with LOD system - full detail at zoom >0.5x, simplified icons at <0.5x, cluster rendering beyond 500 beacons. Use transform3d for 60fps animations. Implement ConnectionRenderer for beacon links using cubic bezier curves. Add star field background with parallax scrolling using react-native-reanimated 3.0+. Include spatial indexing for efficient collision detection.",
         "testStrategy": "Performance testing with 500+ beacons maintaining 60fps. Gesture responsiveness tests on various device sizes. Memory usage monitoring during extended pan/zoom sessions. Visual regression testing for rendering accuracy.",
         "priority": "high",
-        "dependencies": [
-          1
-        ],
+        "dependencies": [],
         "status": "done",
         "subtasks": [
           {
@@ -210,9 +206,7 @@
         "details": "Create ResourceManager class using React Context for global state. Implement tick-based calculation system running at 1Hz using expo-background-task for offline processing. Define resource types: QuantumData (primary currency), StellarEssence (harvested from dying stars), VoidFragments (from dead systems), ResonanceCrystals (pattern bonuses), ChronosParticles (premium earned currency). Use BigNumber.js for large number handling avoiding JavaScript precision issues. Implement offline calculation with 50% rate cap at 8 hours maximum. Add resource generation modifiers from beacon levels and patterns.",
         "testStrategy": "Unit tests for resource calculations with various beacon configurations. Offline progression accuracy tests with different time intervals. Performance testing with rapid resource updates. Validation of BigNumber operations and display formatting.",
         "priority": "high",
-        "dependencies": [
-          2
-        ],
+        "dependencies": [],
         "status": "done",
         "subtasks": [
           {
@@ -277,8 +271,7 @@
         "testStrategy": "Test beacon placement validation edge cases. Verify automatic leveling triggers and specialization UI. Test connection detection accuracy with various beacon configurations. Performance testing with rapid beacon placement.",
         "priority": "high",
         "dependencies": [
-          3,
-          4
+          3
         ],
         "status": "done",
         "subtasks": [
@@ -480,7 +473,6 @@
         "description": "Develop mobile-optimized UI with resource displays, floating action buttons, and strategic navigation architecture using NativeWind styling.",
         "status": "done",
         "dependencies": [
-          4,
           6
         ],
         "priority": "medium",
@@ -1145,7 +1137,6 @@
         "testStrategy": "Verify probe launches require no resources and only time delays work correctly. Test beacon placement cost escalation formula with various beacon counts and specializations. Validate resource deduction occurs correctly for beacon placement with insufficient resource error handling. Test cost preview UI accuracy before placement confirmation. Performance test cost calculations with large beacon counts (500+). Verify tutorial updates reflect new economic model accurately. Test game balance by playing through early game progression with new cost structure.",
         "status": "done",
         "dependencies": [
-          4,
           5,
           6
         ],
@@ -1221,9 +1212,7 @@
             "title": "Connect Auto-Save and Offline Generation to Game Systems",
             "description": "Integrate auto-save interval setting with GameController's save system and connect offline generation toggle to the game's offline progression logic using the new settings context.",
             "status": "done",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [],
             "details": "Connect the auto-save interval dropdown (10s/30s/60s) in existing UI to modify the actual save interval in GameController or SaveManager through the settings context. Replace placeholder alert with actual functionality. Implement offline generation toggle integration with the game's offline progression calculation system. Ensure changes to auto-save interval apply immediately and persist across app restarts. Add proper validation and error handling for these critical game systems. Update existing SettingsScreen.tsx to use settings context instead of showing placeholder alerts.\n<info added on 2025-09-01T22:28:38.637Z>\nImplementation completed successfully. Created useGameSettings hook to bridge settings context with GameController through updateAutoSaveInterval() and setOfflineGenerationEnabled() methods. Auto-save interval now dynamically updates the game controller's save timer (10s/30s/60s options) with immediate effect and persistence through AsyncStorage. Offline generation toggle properly controls resource generation processing during app backgrounding. All settings changes apply instantly without requiring app restart and maintain state across sessions. Removed placeholder alerts and replaced with functional integration using the settings context system.\n</info added on 2025-09-01T22:28:38.637Z>",
             "testStrategy": "Test auto-save interval changes take effect immediately by monitoring actual save occurrences. Verify offline generation toggle affects resource accumulation while app is backgrounded. Test UI updates properly reflect setting changes."
           },
@@ -1232,9 +1221,7 @@
             "title": "Implement Number Formatting and Animation Speed Systems",
             "description": "Create number formatting system for resource displays and implement animation speed multiplier controls that affect game animations throughout the app, connecting to existing UI controls.",
             "status": "done",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [],
             "details": "Build number formatting system that can display numbers in scientific, engineering, or abbreviated formats. Connect to existing scientific notation toggle in settings UI. Apply this formatting to all resource displays throughout the app (Quantum Data, Stellar Essence, etc.). Implement animation speed multiplier (0.5x-2x) that affects game animations including probe launches, beacon connections, and UI transitions. Connect to existing animation speed slider in settings UI. Ensure formatting and speed changes apply immediately to existing UI elements without requiring app restart. Replace placeholder alerts with actual functionality.\n<info added on 2025-09-01T22:30:19.192Z>\nImplementation successfully completed with SettingsAwareFormatter utility class providing comprehensive number formatting (scientific, abbreviated, accessibility modes) and animation system integration. Created useSettingsFormatter React hook for component integration. Updated GameHUD and ResourceHUD to use real-time settings-aware formatting. Animation system now provides getAnimationDuration() and getAnimationConfig() methods that reduce animation speeds by 90% when accessibility mode enabled. All formatting changes apply immediately when settings are modified without requiring app restart. Functionality is fully operational and connected to existing settings UI controls.\n</info added on 2025-09-01T22:30:19.192Z>",
             "testStrategy": "Test number formatting applies consistently across all resource displays in the app. Verify animation speed multiplier affects all relevant animations in real-time. Test settings UI properly controls these systems."
           },
@@ -1243,9 +1230,7 @@
             "title": "Connect Debug, Audio, and Accessibility Systems",
             "description": "Integrate debug info toggle with performance monitoring system, create audio system integration, and implement accessibility features including text scaling and high contrast modes using existing UI controls.",
             "status": "done",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [],
             "details": "Connect debug info toggle in existing UI to the existing performance monitoring system (src/utils/performance/monitor.ts) to show/hide debug overlay. Replace placeholder alert with actual functionality. Create audio system integration for sound effects volume and background music toggle (currently shows placeholder alerts). Implement text scaling system for large text accessibility option in existing UI. Create high contrast theme variant and connect toggle to actual theme switching. Integrate reduce animations setting with the game's animation systems to respect accessibility preferences. Update existing SettingsScreen.tsx to use actual functionality instead of placeholder alerts.\n<info added on 2025-09-01T22:33:25.710Z>\nImplementation completed successfully. Created comprehensive AudioManager class using expo-av for sound effects and background music control with volume settings integration. Built AccessibilityManager that properly interfaces with React Native accessibility features including screen reader support, dynamic font scaling, and user preference handling for high contrast themes and reduced animations. Developed SettingsAwareDebugOverlay component that conditionally renders debug information based on both settings toggle state and development environment. Enhanced useGameSettings hook to orchestrate real-time synchronization between all game systems (GameController, AudioManager, AccessibilityManager) when settings change. All systems properly initialize on app startup and respond immediately to user preference changes without requiring app restart.\n</info added on 2025-09-01T22:33:25.710Z>",
             "testStrategy": "Test debug info toggle shows/hides actual performance data. Verify audio settings control game sounds when audio system is implemented. Test accessibility features integrate with device settings and affect app behavior appropriately. Verify existing UI controls connect to actual systems."
           },
@@ -1254,9 +1239,7 @@
             "title": "Implement Functional Data Management Features",
             "description": "Connect export save and reset progress features in existing UI to actual SaveManager functionality, replacing placeholder alerts with working save data export/import and complete progress reset.",
             "status": "done",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [],
             "details": "Replace export save placeholder alert in existing UI with actual SaveManager integration to generate and share save data files. Implement save data import with validation against save file schema. Connect reset progress button in existing UI to actual data clearing functionality that removes all game progress, not just showing a placeholder alert. Add proper confirmation dialogs, loading states, success/error messages, and file handling using platform-appropriate sharing mechanisms. Update existing SettingsScreen.tsx and SettingsModal.tsx to use actual functionality instead of placeholder alerts.\n<info added on 2025-09-01T22:35:15.057Z>\nImplementation completed with comprehensive data management system. Export save functionality generates timestamped JSON files containing complete game state and metadata, with cross-platform file sharing via DocumentPicker and platform-specific share mechanisms. Import system validates file format, parses JSON safely, and provides user confirmation dialogs before applying saves. Reset progress feature performs complete data wipe with optional settings preservation, including confirmation prompts and success feedback. All features include proper error handling with user-friendly alerts, loading states during operations, and integration with existing SettingsContext for haptic feedback and user preferences. Platform-specific implementations handle iOS/Android share sheets and web download functionality seamlessly.\n</info added on 2025-09-01T22:35:15.057Z>",
             "testStrategy": "Test save data export creates valid files that can be imported successfully. Verify import validates and rejects corrupted data properly. Confirm reset progress actually clears all game data and returns to initial state. Test existing UI properly handles success/error states."
           },
@@ -1265,9 +1248,7 @@
             "title": "Connect Pattern Suggestions Setting to Pattern Detection System",
             "description": "Integrate the pattern suggestions toggle in existing settings UI with the actual pattern detection system to enable/disable automatic pattern highlighting and suggestions.",
             "status": "done",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [],
             "details": "Connect the pattern suggestions toggle in existing settings UI to the game's pattern detection system. When enabled, the system should highlight potential geometric patterns (triangles, squares, pentagons, hexagons) and suggest optimal beacon placements. When disabled, suppress pattern suggestions and highlighting. Replace placeholder alert with actual integration to pattern detection logic. Ensure setting persists across app sessions and applies immediately when toggled.\n<info added on 2025-09-01T22:37:00.411Z>\nIMPLEMENTATION COMPLETE - Pattern Suggestions Setting Fully Integrated\n\nThe Pattern Suggestions toggle in Settings is now fully connected to the actual pattern detection system through comprehensive state management integration. Key implementation achievements:\n\n1. **Context Integration**: PatternSuggestionContext now subscribes to SettingsContext and dynamically responds to patternSuggestionsEnabled setting changes.\n\n2. **Real-time State Management**: When disabled, system immediately clears all active suggestions, resets pattern count to 0, and closes any open suggestion popups. When re-enabled, automatically recalculates suggestions based on current beacon positions.\n\n3. **Performance Optimization**: All pattern detection calculations now include a setting check before processing, preventing unnecessary computation when suggestions are disabled.\n\n4. **Persistence & Immediate Application**: Setting persists across app sessions via AsyncStorage and applies instantly without requiring app restart, providing seamless user experience.\n\n5. **Memory Management**: Proper cleanup implemented to prevent memory leaks or stale suggestion data when toggling between enabled/disabled states.\n\nThe placeholder alert has been completely replaced with actual functional integration, establishing a robust connection between the settings UI and the pattern detection system that maintains performance while providing responsive user control.\n</info added on 2025-09-01T22:37:00.411Z>",
             "testStrategy": "Test pattern suggestions toggle properly enables/disables pattern highlighting in galaxy map. Verify setting persistence across app restarts. Test immediate application of setting changes without requiring app restart."
           }
@@ -1463,8 +1444,6 @@
         "description": "Transform the main screen from a menu-driven approach to a galaxy map-centered command center with floating UI overlays, action buttons, and immersive controls for direct galactic network management.",
         "status": "done",
         "dependencies": [
-          2,
-          4,
           6,
           8,
           17
@@ -1487,9 +1466,7 @@
             "title": "Create FloatingUIManager Component with Reanimated Infrastructure",
             "description": "Build a new FloatingUIManager component using react-native-reanimated and react-native-gesture-handler for managing floating overlay animations and positioning.",
             "status": "done",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [],
             "details": "Create FloatingUIManager.tsx component leveraging existing react-native-reanimated infrastructure. Implement smooth overlay animations, positioning logic, and gesture handling. Design the component to manage multiple floating panels without interfering with galaxy map interactions.",
             "testStrategy": ""
           },
@@ -1498,9 +1475,7 @@
             "title": "Implement Resource Display Floating Overlay System",
             "description": "Create floating panels for resource displays with semi-transparent backgrounds positioned as top overlays that don't obstruct map interaction.",
             "status": "done",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "Design and implement floating overlay panels for resource information display. Use semi-transparent backgrounds and strategic positioning at the top of the screen. Ensure panels provide quick access to stats and contextual information while maintaining map visibility and interaction capability.",
             "testStrategy": ""
           },
@@ -1509,9 +1484,7 @@
             "title": "Extend FloatingActionButton for Primary FAB with Expansion Patterns",
             "description": "Enhance existing FloatingActionButton.tsx to create primary FAB for probe launches with radial or linear expansion patterns following Material Design guidelines.",
             "status": "done",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "Extend the existing FloatingActionButton.tsx component to create a primary FAB positioned in bottom-right corner. Implement expansion patterns (radial or linear) for revealing additional actions. Use react-native-vector-icons for consistent iconography and ensure Material Design compliance.",
             "testStrategy": ""
           },
@@ -1520,9 +1493,7 @@
             "title": "Create Secondary FABs for Navigation and Quick Actions",
             "description": "Implement secondary floating action buttons for pattern gallery access, settings navigation, and probe manager functions using expansion animations.",
             "status": "done",
-            "dependencies": [
-              4
-            ],
+            "dependencies": [],
             "details": "Create secondary FAB components that expand from the primary FAB. Implement buttons for pattern gallery access, settings navigation, and other key functions. Design smooth expansion/collapse animations and ensure proper gesture handling for each secondary action.",
             "testStrategy": ""
           },
@@ -1839,23 +1810,6 @@
         ]
       },
       {
-        "id": 24,
-        "title": "Implement Intelligent Probe Placement AI System",
-        "description": "Create an AI-driven probe placement system that strategically expands beacon networks from existing edges, identifies network boundaries, maintains optimal connection distances, and prioritizes geometric pattern completion and dying star targets.",
-        "details": "Develop ProbeAI class with sophisticated placement algorithms: 1) **Network Edge Detection**: Implement NetworkBoundaryAnalyzer using graph traversal to identify beacon network perimeters and expansion candidates. Use Delaunay triangulation to find network 'holes' and optimal expansion points. 2) **Strategic Placement Algorithm**: Create PlacementOptimizer that scores potential positions based on: connection viability (within beacon range), pattern completion potential (triangle/square/pentagon opportunities), dying star proximity weighting, and network connectivity improvement. Use weighted scoring system with configurable priorities. 3) **Connection Distance Validation**: Implement distance-based validation preventing isolated beacons using configurable max connection distance (default 2x beacon range). Add pathfinding verification ensuring new beacons maintain network connectivity. 4) **Pattern Completion Priority**: Integrate with existing PatternDetector to identify near-complete geometric formations and prioritize positions that would complete triangles (highest priority), squares, pentagons, or hexagons. 5) **Target Prioritization System**: Add PlayerTargetManager allowing manual star marking for AI bias. Weight placement scores toward marked dying stars with exponential decay based on distance. 6) **Adaptive Intelligence**: Implement learning system that tracks successful placements and adjusts scoring weights based on resource generation effectiveness. 7) **Integration with Probe System**: Extend existing ProbeManager to support AI placement mode alongside manual placement, with toggle in settings screen.",
-        "testStrategy": "Test network boundary detection accuracy with various beacon configurations including isolated clusters and linear chains. Verify connection distance validation prevents orphaned beacons across different network topologies. Test pattern completion priority by setting up near-complete geometric formations and confirming AI completes them correctly. Validate dying star target prioritization with manual star marking and distance-based scoring. Performance testing with large networks (100+ beacons) ensuring AI calculations complete within acceptable time limits. Test adaptive learning by running multiple placement cycles and verifying score weight adjustments improve placement quality over time.",
-        "status": "pending",
-        "dependencies": [
-          3,
-          5,
-          6,
-          7,
-          23
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
         "id": 25,
         "title": "Audit and Complete Beacon Type Properties Implementation",
         "description": "Ensure Pioneer, Harvester, and Architect beacon types have distinct characteristics with proper specializations including resource generation bonuses, connection range modifications, and pattern multipliers.",
@@ -1863,7 +1817,6 @@
         "testStrategy": "Systematically verify each beacon type implements correct bonuses: 1) Deploy Pioneer beacons and confirm baseline resource generation and standard connection range. 2) Place Harvester beacons near dying stars and verify +50% Stellar Essence extraction bonus is applied correctly. 3) Test Architect beacons can form connections at extended range (+100%) and validate pattern detection works with increased connection distances. 4) Test each specialization: Efficiency beacons generate +25% more resources, Range beacons connect at +50% extended radius, Stability beacons provide +100% pattern bonus multiplier. 5) Verify specialization bonuses stack correctly with base beacon type bonuses. 6) Test save/load functionality preserves beacon types and specializations correctly. 7) Confirm UI displays accurate information about beacon capabilities and active bonuses.",
         "status": "done",
         "dependencies": [
-          4,
           6,
           7
         ],
@@ -1878,9 +1831,7 @@
         "testStrategy": "Test sector grid generation and coordinate system accuracy across different galaxy sizes. Verify star system state transitions with time-based decay mechanics and entropy calculations. Test entropy spreading between adjacent sectors with various beacon network configurations. Validate beacon network protection calculations against entropy in different sector layouts. Performance testing with large numbers of sectors and concurrent entropy calculations. Test sector state persistence and loading with complex entropy states. Verify visual rendering of sector boundaries and entropy effects at different zoom levels.",
         "status": "done",
         "dependencies": [
-          2,
           3,
-          4,
           5
         ],
         "priority": "medium",
@@ -1947,103 +1898,61 @@
       {
         "id": 27,
         "title": "Implement Quantum Leap Prestige System",
-        "description": "Create the complete prestige mechanic allowing players to reset their beacon network for permanent meta-progression bonuses, Echo Beacon spawning, and decay resistance improvements.",
-        "details": "Develop QuantumLeapManager class with full reset and progression system: 1) **Reset Mechanics**: Implement resetNetwork() method that clears all beacons, probes, and accumulated resources while preserving meta-progression currencies. Store pattern analysis before reset using PatternAnalyzer to identify strong geometric formations (triangles, squares, pentagons, hexagons) and their beacon positions. 2) **Echo Beacon System**: Create EchoBeacon class extending Beacon with enhanced properties: higher starting levels (2-5 based on pattern strength), improved generation rates (+50% base), and visual distinction using golden particle effects. Implement spawnEchoBeacons() method that places Echo Beacons at previous strong pattern locations with level scaling: Triangle patterns spawn level 2, Square level 3, Pentagon level 4, Hexagon level 5. 3) **Meta-Progression Currency**: Add QuantumResonance currency earned based on total beacons at reset (1 per 10 beacons). Create MetaUpgradeManager with permanent bonuses: Decay Resistance (reduces entropy spread rate by 10% per level), Network Efficiency (+5% resource generation per level), Pattern Mastery (+10% pattern bonus multiplier per level), Probe Acceleration (+15% launch speed per level). 4) **Leap Counter and Milestones**: Track totalQuantumLeaps with milestone rewards at leaps 1, 3, 7, 15, 30 unlocking exclusive meta-upgrades and cosmetic effects. 5) **UI Integration**: Add Quantum Leap button to main interface with confirmation dialog showing current progress, potential QuantumResonance gain, and Echo Beacon preview locations. Create MetaProgressionScreen displaying available upgrades, leap history, and next milestone progress.",
-        "testStrategy": "Test complete reset functionality ensuring all game state clears except meta-progression. Verify Echo Beacon placement accuracy at previous pattern locations with correct level scaling. Test QuantumResonance calculation based on beacon count at reset. Validate meta-upgrade purchases and permanent effect application across resets. Test decay resistance mechanics with entropy spread rate reduction. Verify UI flow for leap confirmation and meta-progression screen navigation. Performance testing with multiple leaps and large Echo Beacon spawning. Integration testing ensuring saved meta-progression persists between app sessions.",
+        "description": "Create the complete prestige mechanic backend allowing players to reset their beacon network for permanent meta-progression bonuses, Echo Beacon spawning, and decay resistance improvements through pure business logic and data processing systems.",
         "status": "pending",
         "dependencies": [
-          2,
-          4,
           5,
-          7,
-          26
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 28,
-        "title": "Enhance Offline Progression System with Queued Probe Completions",
-        "description": "Implement offline progression calculations for probes launched before going offline, automatically placing completed beacons and displaying a summary of network expansion that occurred during offline time.",
-        "details": "Enhance the existing offline progression system to handle queued probe operations: 1) **Offline Probe Tracking**: Extend ResourceManager's offline calculation system to track active probes when app becomes inactive. Store probe launch timestamps, types, and target coordinates in persistent storage using AsyncStorage. Implement ProbeQueueManager to serialize/deserialize probe queue state across app sessions. 2) **Completion Calculation**: On app return, calculate elapsed offline time and determine which probes completed based on launch time + deployment duration (Pioneer: 30s, Harvester: 90s, Architect: 60s). Account for any manual acceleration bonuses that were active when launched. 3) **Automated Beacon Placement**: For completed probes, automatically spawn beacons at their target coordinates using existing BeaconManager.createBeacon() method. Respect beacon placement rules and connection validation. Update network topology and trigger pattern detection for newly placed beacons. 4) **Offline Summary Display**: Create OfflineProgressModal component showing: number of probes completed by type, beacons placed with coordinates, new connections formed, patterns completed, resources generated from new network expansion. Use animated counters for engaging progression feedback. 5) **Resource Integration**: Calculate and award resources generated by newly placed beacons during offline time, including pattern bonuses from completed geometric shapes. Update total resource accumulation in existing offline progression summary.",
-        "testStrategy": "Test probe queue persistence across app restarts with various probe types and launch times. Verify offline time calculation accuracy for probe completion with different deployment durations and manual acceleration states. Test automatic beacon placement at correct coordinates with proper network connection validation. Validate pattern detection triggers for newly placed beacons forming geometric shapes. Test offline summary modal displays accurate probe completion counts and network expansion statistics. Verify resource calculations include bonuses from new patterns formed by offline beacon placements. Performance testing with large numbers of queued probes (50+) during extended offline periods.",
-        "status": "pending",
-        "dependencies": [
-          4,
-          6,
           7
         ],
         "priority": "medium",
+        "details": "Develop backend QuantumLeapManager class with full reset and progression system: 1) **Reset Mechanics**: Implement resetNetwork() method that clears all beacons, probes, and accumulated resources while preserving meta-progression currencies in game state. Store pattern analysis before reset using existing PatternAnalyzer to identify strong geometric formations (triangles, squares, pentagons, hexagons) and their beacon positions for Echo Beacon placement data. 2) **Echo Beacon System**: Create EchoBeacon class extending Beacon with enhanced backend properties: higher starting levels (2-5 based on pattern strength), improved generation rates (+50% base), and metadata for visual distinction. Implement spawnEchoBeacons() method that calculates Echo Beacon placement at previous strong pattern locations with level scaling: Triangle patterns spawn level 2, Square level 3, Pentagon level 4, Hexagon level 5. 3) **Meta-Progression Currency**: Add QuantumResonance currency calculation based on total beacons at reset (1 per 10 beacons). Create MetaUpgradeManager with permanent bonus calculations: Decay Resistance (reduces entropy spread rate by 10% per level), Network Efficiency (+5% resource generation per level), Pattern Mastery (+10% pattern bonus multiplier per level), Probe Acceleration (+15% launch speed per level). 4) **Leap Counter and Milestones**: Track totalQuantumLeaps with backend milestone reward system at leaps 1, 3, 7, 15, 30 unlocking exclusive meta-upgrades and effect modifiers. 5) **Save System Integration**: Ensure all meta-progression data persists across app sessions with proper serialization and deserialization of QuantumLeapManager state, MetaUpgradeManager bonuses, and Echo Beacon spawn data.",
+        "testStrategy": "Test complete backend reset functionality ensuring all game state clears except meta-progression data structures. Verify Echo Beacon placement calculation accuracy at previous pattern locations with correct level scaling algorithms. Test QuantumResonance calculation logic based on beacon count at reset. Validate meta-upgrade purchase logic and permanent effect calculations across resets. Test decay resistance mechanics with entropy spread rate reduction calculations. Verify save system integration ensuring meta-progression data persists between app sessions. Performance testing with multiple leap calculations and large Echo Beacon spawning datasets. Integration testing with existing PatternAnalyzer and ResourceManager systems.",
         "subtasks": []
       },
       {
         "id": 29,
         "title": "Create Achievement System with Milestone Tracking",
-        "description": "Implement a comprehensive achievement system that tracks player accomplishments across beacon counts, patterns discovered, resources generated, and special events, rewarding Chronos Particles and unlocking titles or visual effects.",
-        "details": "Develop AchievementManager class with persistent tracking system using SQLite storage for achievement progress. Create achievement categories: 1) **Beacon Milestones**: Track total beacons placed (10, 50, 100, 500, 1000+), beacons upgraded, specializations chosen. 2) **Pattern Discovery**: Track unique geometric patterns found (first triangle, square, pentagon, hexagon), pattern variations, overlapping patterns created. 3) **Resource Generation**: Monitor cumulative Quantum Data, Stellar Essence, Void Fragments generated with tiered thresholds (1K, 10K, 100K, 1M+). 4) **Special Events**: Track Quantum Leaps performed, Echo Beacons placed, dying stars saved, entropy reversals achieved. Implement AchievementTracker with event-driven updates using React Native EventEmitter to monitor game actions. Create reward system: achievements grant 5-50 Chronos Particles based on difficulty, unlock player titles ('Network Pioneer', 'Pattern Master', 'Quantum Architect'), and visual effects (beacon auras, special connection colors, galaxy map themes). Add AchievementUI component with progress bars, completion animations, and notification system using react-native-toast-message. Implement completion percentage tracking for multi-tiered achievements (e.g., 'Place 1000 beacons' shows 45.6% at 456 beacons). Use AsyncStorage for achievement persistence and sync with main save system.",
-        "testStrategy": "Test achievement triggering accuracy across all categories with simulated game actions (beacon placement, pattern formation, resource generation). Verify progress persistence across app restarts and device changes. Test reward distribution ensuring Chronos Particles are correctly awarded and titles/visual effects are unlocked. Validate UI animations and notification timing with rapid achievement completion. Test performance impact of continuous progress tracking during intensive gameplay sessions. Verify achievement data integrity during save/load operations and prestige resets.",
+        "description": "Implement comprehensive backend achievement system that tracks player accomplishments across beacon counts, patterns discovered, resources generated, and special events, rewarding Chronos Particles and unlocking titles or visual effects through pure business logic and data persistence.",
         "status": "pending",
         "dependencies": [
-          2,
-          4,
           5,
           7,
           27
         ],
         "priority": "medium",
+        "details": "Develop backend AchievementManager class with persistent tracking system using SQLite storage for achievement progress. Create achievement categories: 1) **Beacon Milestones**: Track total beacons placed (10, 50, 100, 500, 1000+), beacons upgraded, specializations chosen. 2) **Pattern Discovery**: Track unique geometric patterns found (first triangle, square, pentagon, hexagon), pattern variations, overlapping patterns created. 3) **Resource Generation**: Monitor cumulative Quantum Data, Stellar Essence, Void Fragments generated with tiered thresholds (1K, 10K, 100K, 1M+). 4) **Special Events**: Track Quantum Leaps performed, Echo Beacons placed, dying stars saved, entropy reversals achieved. Implement AchievementTracker with event-driven updates using React Native EventEmitter to monitor game actions. Create reward system calculations: achievements grant 5-50 Chronos Particles based on difficulty, unlock player titles ('Network Pioneer', 'Pattern Master', 'Quantum Architect'), and visual effects (beacon auras, special connection colors, galaxy map themes). Implement completion percentage tracking logic for multi-tiered achievements (e.g., 'Place 1000 beacons' calculates 45.6% at 456 beacons). Use AsyncStorage for achievement persistence and sync with main save system. Focus exclusively on business logic, data persistence, achievement calculation algorithms, and reward distribution without any frontend components.",
+        "testStrategy": "Test achievement triggering accuracy across all categories with simulated game actions (beacon placement, pattern formation, resource generation). Verify progress persistence across app restarts and device changes through AsyncStorage and SQLite integration. Test reward calculation algorithms ensuring Chronos Particles are correctly computed and titles/visual effects are properly unlocked in data layer. Validate achievement completion percentage calculations with edge cases and boundary conditions. Test performance impact of continuous progress tracking during intensive gameplay sessions. Verify achievement data integrity during save/load operations and prestige resets. Test EventEmitter integration for real-time achievement progress updates without UI dependencies.",
         "subtasks": []
       },
       {
         "id": 30,
         "title": "Integrate Analytics SDK for Player Behavior Tracking and Balance Optimization",
-        "description": "Implement comprehensive analytics tracking system using industry-standard SDK to monitor player behavior metrics including retention rates, progression milestones, resource generation patterns, and session data for game balance optimization while maintaining privacy compliance.",
-        "details": "Integrate analytics SDK (Firebase Analytics or similar) with privacy-first event tracking system: 1) **Core Metrics Implementation**: Track 7-day and 30-day retention using cohort analysis with anonymous user IDs. Monitor progression milestones including beacon placement counts, first pattern completion, prestige events, and achievement unlocks. Record resource generation rates per session and cumulative totals across Quantum Data, Stellar Essence, and Void Fragments. Track pattern completion rates by geometric type (triangles, squares, pentagons, hexagons) and complexity levels. 2) **Session Analytics**: Implement session length tracking with background/foreground state management using AppState. Record beacon placement frequency, probe launch patterns, and upgrade decisions. Track user interface interactions including menu usage, settings changes, and feature discovery rates. 3) **Balance Optimization Events**: Monitor resource economy health through spending patterns, accumulation rates, and bottleneck identification. Track beacon type distribution and specialization choices to identify meta preferences. Record offline progression engagement and return session behaviors. 4) **Privacy Compliance**: Implement GDPR/CCPA compliant consent management with opt-out functionality. Use hashed device identifiers without personally identifiable information. Provide clear data usage transparency in settings with export/deletion options. 5) **Data Processing**: Create AnalyticsManager class with event queuing, batch uploading, and offline capability. Implement data validation and sanitization before transmission. Set up dashboard integration for real-time balance monitoring and A/B testing framework preparation.",
-        "testStrategy": "Verify analytics initialization and consent flow across first-time and returning users. Test event tracking accuracy for all core metrics with simulated gameplay scenarios including beacon placement, pattern formation, resource accumulation, and prestige resets. Validate session tracking with background/foreground transitions and app termination scenarios. Test privacy controls ensuring opt-out functionality completely stops data collection and user data can be exported/deleted on request. Verify offline event queuing and batch upload when connectivity returns. Test analytics data accuracy by comparing tracked metrics with actual game state across multiple play sessions. Validate retention calculation accuracy with controlled user cohorts and time manipulation testing.",
+        "description": "Implement comprehensive backend analytics tracking system using industry-standard SDK to monitor player behavior metrics including retention rates, progression milestones, resource generation patterns, and session data for game balance optimization with privacy-compliant data handling.",
         "status": "pending",
         "dependencies": [
-          4,
           27,
           29
         ],
         "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 31,
-        "title": "Create Audio System with Ambient Music and Sound Effects",
-        "description": "Implement a comprehensive audio system featuring ambient space music, beacon placement sounds, pattern completion audio cues, probe launch effects, stellar reignition audio, and settings-based volume controls.",
-        "details": "Install expo-av for audio playback capabilities and react-native-track-player for background music management. Create AudioManager class with methods: playAmbientTrack(), playBeaconPlacement(), playPatternComplete(), playProbeLaunch(), playReignitionEvent(), and stopAllSounds(). Implement ambient music system with 3-5 looping space-themed tracks (cosmic drones, stellar winds, quantum harmonics) using seamless loop points. Create sound effect library: beacon placement (harmonic chime with pitch variation based on beacon level), pattern completion (ascending musical phrase with intensity based on pattern size), probe launch (swoosh with type-specific pitch - Pioneer high, Harvester mid, Architect low), stellar reignition (triumphant orchestral swell with particle effects sync). Add AudioSettings class with volume controls: master volume, music volume, effects volume, and mute toggle. Implement fade transitions between ambient tracks based on galaxy sector entropy levels. Use react-native-sound-player for low-latency sound effects and expo-av for background music. Add haptic feedback sync with major audio events using expo-haptics. Implement audio ducking to reduce music volume during important sound effects. Create AudioPreloader to cache frequently used sounds for instant playback.",
-        "testStrategy": "Test audio playback across iOS and Android platforms with various device audio configurations. Verify ambient music loops seamlessly without gaps or pops. Test sound effect timing accuracy with game events (beacon placement should trigger immediately on touch). Verify volume controls affect appropriate audio channels independently. Test audio persistence across app backgrounding and foreground transitions. Performance testing to ensure audio doesn't impact frame rate during intensive gameplay. Test audio ducking behavior during overlapping music and effects. Verify haptic feedback synchronization with audio cues on supported devices.",
-        "status": "pending",
-        "dependencies": [
-          2,
-          5,
-          6,
-          7,
-          8,
-          26
-        ],
-        "priority": "medium",
+        "details": "Integrate analytics SDK (Firebase Analytics or similar) with privacy-first backend event tracking system: 1) **Core Metrics Implementation**: Track 7-day and 30-day retention using cohort analysis with anonymous user IDs. Monitor progression milestones including beacon placement counts, first pattern completion, prestige events, and achievement unlocks. Record resource generation rates per session and cumulative totals across Quantum Data, Stellar Essence, and Void Fragments. Track pattern completion rates by geometric type (triangles, squares, pentagons, hexagons) and complexity levels. 2) **Session Analytics Backend**: Implement session length tracking with background/foreground state management using AppState APIs. Record beacon placement frequency, probe launch patterns, and upgrade decisions. Track user interactions and feature usage patterns through backend data processing. 3) **Balance Optimization Data Processing**: Monitor resource economy health through spending patterns, accumulation rates, and bottleneck identification. Track beacon type distribution and specialization choices to identify meta preferences. Record offline progression engagement and return session behaviors. Process analytics data for balance insights and optimization recommendations. 4) **Privacy-Compliant Data Handling**: Implement GDPR/CCPA compliant data processing with anonymous identifiers and data minimization principles. Use hashed device identifiers without personally identifiable information. Ensure backend systems support data export/deletion requests through automated processes. 5) **AnalyticsManager Backend Implementation**: Create AnalyticsManager class with event queuing, batch uploading, and offline capability. Implement robust data validation and sanitization before transmission. Set up backend data processing pipeline for real-time balance monitoring and A/B testing framework preparation. Handle consent state management and data collection control through backend flags.",
+        "testStrategy": "Verify analytics SDK initialization and backend event processing accuracy. Test event tracking for all core metrics with simulated gameplay scenarios including beacon placement, pattern formation, resource accumulation, and prestige resets. Validate session tracking with background/foreground transitions and app termination scenarios through backend monitoring. Test privacy-compliant data handling ensuring backend systems respect opt-out states and can process data export/deletion requests. Verify offline event queuing and batch upload functionality when connectivity returns. Test analytics data accuracy by comparing backend-tracked metrics with actual game state across multiple play sessions. Validate retention calculation accuracy with controlled backend data processing and time-based cohort analysis.",
         "subtasks": []
       },
       {
         "id": 32,
         "title": "Configure App Store and Google Play Distribution",
-        "description": "Set up complete app store distribution infrastructure including signing certificates, store listings, in-app purchase configuration, privacy policies, and submission preparation for both iOS App Store and Google Play Store.",
-        "details": "Configure app signing certificates using expo build:ios and expo build:android commands for production builds. Set up app.json/app.config.js with proper bundle identifiers, version codes, and store-specific metadata. Create comprehensive store listings including app title, description, keywords, category selection, and age ratings for both platforms. Generate required screenshots for all device sizes (iPhone 6.5\", 5.5\", iPad Pro, Android phones/tablets) using expo-screenshot or device simulators. Implement react-native-iap for in-app purchase infrastructure with product setup, purchase validation, and receipt verification even for non-monetary transactions. Create privacy policy document covering data collection, storage, and usage patterns, hosted on accessible URL. Configure app.json with required permissions, usage descriptions, and store-specific requirements. Set up app store connect and Google Play Console accounts with proper app registration. Implement app review guidelines compliance including content ratings, metadata accuracy, and functionality testing. Create submission checklist covering binary uploads, metadata completion, pricing configuration, and review submission workflow.",
-        "testStrategy": "Test app signing by generating production builds for both platforms and verifying certificate validity. Validate in-app purchase flow on TestFlight and Google Play Internal Testing tracks with test products. Verify all store metadata displays correctly in app store preview tools. Test privacy policy accessibility and compliance with platform requirements. Validate app permissions and usage descriptions match actual app functionality. Perform pre-submission testing including app review guideline compliance checks, functionality testing on physical devices, and performance validation. Test store listing appearance across different device types and regions.",
+        "description": "Set up backend distribution infrastructure including signing certificates, build configuration, in-app purchase backend systems, privacy policy hosting, and submission preparation workflows for both iOS App Store and Google Play Store.",
         "status": "pending",
         "dependencies": [
-          1,
-          2,
           3,
-          4,
           5,
           6,
           7,
           8
         ],
         "priority": "medium",
+        "details": "Configure app signing certificates using expo build:ios and expo build:android commands for production builds. Set up app.json/app.config.js with proper bundle identifiers, version codes, and build-specific configuration. Implement react-native-iap backend integration for in-app purchase infrastructure with product setup, purchase validation, and receipt verification systems. Create privacy policy document and configure hosting infrastructure with accessible URL endpoints. Configure app.json with required permissions, usage descriptions, and platform-specific build requirements. Set up distribution workflows including certificate management, keystore configuration, and automated build preparation. Implement backend systems for app review compliance including metadata validation, permission auditing, and build verification processes. Create submission preparation workflows covering binary generation, certificate validation, and distribution pipeline automation.",
+        "testStrategy": "Test app signing by generating production builds for both platforms and verifying certificate validity. Validate in-app purchase backend systems with test product configurations and receipt verification workflows. Test privacy policy hosting accessibility and server response validation. Validate app permissions and usage descriptions configuration in build outputs. Test certificate management and keystore operations. Perform backend validation including build configuration accuracy, permission auditing, and distribution pipeline functionality. Test submission preparation workflows with mock binary uploads and certificate validation processes.",
         "subtasks": []
       },
       {
@@ -2054,7 +1963,6 @@
         "testStrategy": "Test pattern-based crystal generation by creating various geometric formations and verifying correct generation rates with multiplicative stacking. Test void fragment collection from dead star systems at different beacon network ranges and connection counts. Validate BigNumber.js calculations for both resource types handle large values without precision loss. Test resource persistence across app restarts and offline progression calculations. Verify UI displays correctly update with new resource counts and visual indicators for generation opportunities. Test edge cases like pattern destruction affecting crystal generation and beacon network changes affecting fragment collection rates.",
         "status": "pending",
         "dependencies": [
-          4,
           7,
           23
         ],
@@ -2064,16 +1972,14 @@
       {
         "id": 34,
         "title": "Create Quantum Surge Mechanic with Active Play Rewards",
-        "description": "Implement a powerful active play mechanic providing 10x resource generation for 60 seconds on a 30-minute cooldown, complete with UI timer, activation effects, and availability notifications.",
-        "details": "Create QuantumSurgeManager class with surge mechanics: 1) **Cooldown System**: Implement 30-minute countdown timer using expo-task-manager for background tracking, persisted in save system to survive app restarts. 2) **Activation System**: Create surge button that becomes available when cooldown expires, triggering immediate 10x multiplier to all resource generation (Quantum Data, Stellar Essence, Void Fragments) for exactly 60 seconds. Use ResourceMultiplierManager to apply temporary multipliers without affecting base generation rates. 3) **UI Components**: Design SurgeButton component with three states - cooling down (shows countdown timer), available (glowing/pulsing animation), active (progress bar showing remaining time). Add countdown display in main HUD using MM:SS format. 4) **Visual Effects**: Implement activation particle effects using react-native-reanimated with quantum-themed animations (energy pulses from beacons, screen glow overlay, beacon connection intensification). 5) **Notification System**: Use expo-notifications to alert players when surge becomes available, with customizable notification settings. 6) **Anti-Automation**: Ensure surge requires manual activation - no auto-trigger capability, maintaining focus on active engagement rewards.",
-        "testStrategy": "Test cooldown timer accuracy across app suspensions and device restarts. Verify 10x multiplier applies correctly to all resource types without affecting base generation rates permanently. Test activation button states and visual feedback responsiveness. Verify 60-second active duration timing precision. Test notification delivery when surge becomes available. Validate surge effects persist correctly during resource generation calculations. Performance testing with surge active during high beacon counts to ensure smooth multiplier calculations.",
+        "description": "Implement backend systems for a powerful active play mechanic providing 10x resource generation for 60 seconds on a 30-minute cooldown, focusing exclusively on business logic, timer management, and resource calculations.",
         "status": "pending",
         "dependencies": [
-          2,
-          4,
           8
         ],
         "priority": "medium",
+        "details": "Create backend QuantumSurgeManager class with surge mechanics focusing solely on business logic: 1) **Cooldown System**: Implement 30-minute countdown timer using expo-task-manager for background tracking, persisted in save system to survive app restarts. Include precise timestamp tracking and cooldown state management. 2) **Activation System**: Create surge activation logic that triggers immediate 10x multiplier to all resource generation (Quantum Data, Stellar Essence, Void Fragments) for exactly 60 seconds. Implement ResourceMultiplierManager to apply temporary multipliers without affecting base generation rates, ensuring clean separation between base and boosted calculations. 3) **Timer Management**: Implement precise timing mechanisms for both 30-minute cooldown and 60-second active duration using Date objects and interval management. Handle app suspension/resume scenarios with proper time drift correction. 4) **State Persistence**: Ensure surge cooldown state, activation timestamps, and remaining durations persist across app restarts through integration with existing save system. 5) **Anti-Automation Logic**: Implement validation ensuring surge requires manual activation with proper state checks preventing automated triggering or exploitation. 6) **Resource Calculation Integration**: Ensure surge multipliers integrate cleanly with existing resource generation algorithms without permanently modifying base rates or causing calculation errors.",
+        "testStrategy": "Test cooldown timer accuracy across app suspensions and device restarts using automated timing validation. Verify 10x multiplier applies correctly to all resource types without affecting base generation rates permanently through isolated calculation testing. Test ResourceMultiplierManager integration with existing resource systems. Validate surge state persistence by forcing app restarts during various surge phases (cooldown, active, available). Test anti-automation validation by attempting improper activation scenarios. Performance testing of multiplier calculations during high beacon counts to ensure efficient resource generation algorithms. Verify precise timing mechanisms handle edge cases like device sleep and background app refresh.",
         "subtasks": []
       },
       {
@@ -2092,34 +1998,16 @@
       {
         "id": 36,
         "title": "Implement Probe Launch Capacity Upgrades",
-        "description": "Create a progressive probe launch capacity system starting with 1-2 simultaneous probes, upgradeable to 5+ through resource investment with exponential cost scaling and clear UI queue indicators.",
-        "details": "Develop ProbeCapacityManager class extending the existing probe system: 1) **Capacity System**: Create capacity property in ProbeManager starting at 1 probe, with upgrades available at capacity levels 2, 3, 4, 5+ using exponential cost scaling (baseCost: 1000 Quantum Data, multiplier: 2.5x per level). Store capacity upgrades in player progression data via SaveManager. 2) **Queue System**: Implement ProbeQueue class managing launch slots with occupied/available states. Create queue validation preventing over-capacity launches and provide queuing for excess launch requests. Add probe launch scheduling with capacity-based parallel execution. 3) **UI Integration**: Extend existing probe launch UI with capacity indicators showing occupied slots (active probes) vs available slots (remaining capacity). Add upgrade button integrated with resource system validation. Display queue status with visual indicators for each slot: active probe (green), queued launch (yellow), available (gray). Use animated transitions for probe slot state changes. 4) **Resource Integration**: Connect to existing ResourceManager for upgrade cost validation and deduction. Implement upgrade preview showing next capacity level cost and benefit. Add upgrade confirmation dialog preventing accidental purchases.",
-        "testStrategy": "Test probe capacity upgrade purchases with insufficient/sufficient resources verifying correct cost deduction and capacity increase. Validate parallel probe launches respect current capacity limits with proper queue management. Test UI queue indicators accurately reflect probe states during simultaneous launches and completions. Verify save/load functionality preserves probe capacity upgrades across sessions. Test capacity system integration with existing probe placement and AI systems ensuring no conflicts with concurrent probe operations.",
+        "description": "Create a progressive probe launch capacity system backend starting with 1-2 simultaneous probes, upgradeable to 5+ through resource investment with exponential cost scaling and queue management logic.",
         "status": "pending",
         "dependencies": [
-          4,
           5,
           6,
           9
         ],
         "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 37,
-        "title": "Create Probe Targeting and Direction Control UI",
-        "description": "Implement a user interface that allows players to influence probe expansion direction with targeting modes for dying star systems, pattern completion, and empty sector exploration, including visual indicators for probable probe placement zones.",
-        "details": "Create ProbeTargetingManager class with three targeting modes: 1) **Dying Star Priority**: Automatically target sectors containing dying star systems for Stellar Essence harvesting, using galaxy sector data to identify optimal expansion paths. 2) **Pattern Completion**: Analyze existing beacon network to identify incomplete geometric patterns and direct probes toward positions that would complete triangles, squares, pentagons, or hexagons. 3) **Empty Sector Exploration**: Target unexplored sectors for balanced expansion, avoiding areas with existing beacon coverage. Implement TargetingUI component with toggle buttons for each mode, positioned in the probe launch interface. Create ProbePlacementPredictor that calculates and displays visual probability zones using heat map overlays on the galaxy map - red zones for dying star targets, blue zones for pattern completion, green zones for exploration. Use react-native-svg to render semi-transparent colored regions showing likely probe deployment areas based on current targeting algorithm. Add ProbePathCalculator that considers targeting mode, existing beacon positions, probe type capabilities, and resource availability to determine optimal expansion vectors. Implement visual feedback system showing targeting mode status in HUD and probe queue interface. Store targeting preferences in save system to persist player choices across sessions.",
-        "testStrategy": "Test each targeting mode independently by placing probes and verifying they follow expected expansion patterns toward dying stars, pattern completion spots, or empty sectors. Validate visual probability zones update correctly when switching between targeting modes and accurately represent calculated probe placement likelihood. Test targeting mode persistence across app restarts and save/load cycles. Verify pattern completion targeting correctly identifies incomplete geometric formations and suggests optimal probe positions. Test performance with multiple targeting calculations running simultaneously during automated probe launches. Validate heat map overlay rendering performance with complex beacon networks and verify visual indicators don't interfere with galaxy map navigation.",
-        "status": "pending",
-        "dependencies": [
-          3,
-          5,
-          6,
-          8,
-          26
-        ],
-        "priority": "medium",
+        "details": "Develop backend ProbeCapacityManager class extending the existing probe system: 1) **Capacity System**: Create capacity property in ProbeManager starting at 1 probe, with upgrades available at capacity levels 2, 3, 4, 5+ using exponential cost scaling (baseCost: 1000 Quantum Data, multiplier: 2.5x per level). Store capacity upgrades in player progression data via SaveManager. 2) **Queue System**: Implement ProbeQueue class managing launch slots with occupied/available states. Create queue validation preventing over-capacity launches and provide queuing for excess launch requests. Add probe launch scheduling with capacity-based parallel execution algorithms. 3) **Resource Integration**: Connect to existing ResourceManager for upgrade cost validation and deduction. Implement upgrade cost calculation methods showing next capacity level cost requirements. Add upgrade processing logic with resource validation preventing invalid purchases. 4) **Save System Integration**: Extend existing save/load functionality to persist probe capacity levels and queue states across sessions. Implement capacity data serialization and restoration maintaining queue integrity during load operations.",
+        "testStrategy": "Test probe capacity upgrade purchases with insufficient/sufficient resources verifying correct cost deduction and capacity increase in backend state. Validate parallel probe launches respect current capacity limits with proper queue management algorithms. Test queue state management during simultaneous launches and completions ensuring proper slot allocation. Verify save/load functionality preserves probe capacity upgrades and queue states across sessions. Test capacity system integration with existing probe placement and AI systems ensuring no conflicts with concurrent probe operations through pure backend logic validation.",
         "subtasks": []
       },
       {
@@ -2130,8 +2018,7 @@
         "testStrategy": "Test sector boundary rendering accuracy at various zoom levels ensuring grid alignment with existing sector system. Verify sector state overlays correctly display healthy/dying/dead regions with appropriate visual effects and animations. Test entropy visualization particles flow correctly between adjacent sectors following entropy spread mechanics. Validate harvestable resource highlighting accurately identifies dying stars and dead systems. Performance testing with overlay system active measuring frame rate impact with 100+ visible sectors. Test overlay toggle controls provide smooth transitions without visual glitches. Memory usage monitoring during extended overlay usage to prevent leaks from particle systems.",
         "status": "done",
         "dependencies": [
-          3,
-          26
+          3
         ],
         "priority": "medium",
         "subtasks": [
@@ -2230,83 +2117,61 @@
         ]
       },
       {
-        "id": 39,
-        "title": "Create Pattern Discovery Gallery UI with Visual Collection Display",
-        "description": "Build a comprehensive pattern gallery screen that displays all discovered geometric patterns with visual representations, rarity indicators, discovery timestamps, bonus multipliers, and completion tracking accessible from the main HUD.",
-        "details": "Implement PatternGalleryScreen component with comprehensive pattern collection visualization: 1) **Gallery Grid Layout**: Create scrollable grid using FlatList displaying pattern cards with visual SVG representations of each discovered geometric formation (triangle, square, pentagon, hexagon). Each card shows the actual beacon configuration that was discovered. 2) **Pattern Metadata Display**: Show discovery timestamp, current bonus multiplier value (1.5x for triangles through 5x for hexagons), rarity classification based on formation complexity and discovery frequency. Include completion percentage tracking how many unique variations of each pattern type have been found. 3) **Visual Pattern Rendering**: Use react-native-svg to render miniature versions of each pattern configuration, showing beacon positions and connecting lines in the same visual style as the galaxy map overlays. 4) **Rarity System Integration**: Implement rarity classification (Common, Uncommon, Rare, Epic, Legendary) based on pattern complexity, overlapping formations, and discovery frequency. Highlight rare formations with special border effects and animations. 5) **HUD Integration**: Add 'Patterns' button to main screen floating action button array that opens the gallery screen with slide-up animation. Include pattern count badge showing total discovered patterns. 6) **Data Management**: Extend PatternDetector to persist pattern discoveries with timestamps and metadata in save system. Create PatternCollection class managing discovered patterns, rarity calculations, and completion tracking across game sessions.",
-        "testStrategy": "Verify pattern gallery displays all discovered patterns from PatternDetector system with accurate visual representations matching actual beacon configurations. Test rarity indicators correctly classify patterns based on complexity and discovery frequency. Validate discovery timestamps persist across app sessions and display in readable format. Test completion percentage calculations accurately reflect pattern discovery progress. Verify gallery access button integrates smoothly with main HUD without interfering with existing floating UI elements. Test scroll performance with large numbers of discovered patterns maintaining 60fps.",
-        "status": "pending",
-        "dependencies": [
-          7,
-          19,
-          22
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
         "id": 40,
         "title": "Implement Beacon Count Milestone System with Binary Upgrade Choices",
-        "description": "Create a progression system that presents binary upgrade choices at specific beacon count milestones (10, 25, 50, 100, 250, 500), with permanent decisions that shape player strategy between efficiency/speed, generation/offline earnings, and range/stability paths.",
-        "details": "Implement MilestoneManager class to track beacon count progression and trigger upgrade choices at predetermined thresholds: 1) **Milestone Tracking**: Create beacon count listener that monitors total placed beacons across all types, triggering milestone events at 10, 25, 50, 100, 250, 500 beacons. Store completed milestones in player progression data via SaveManager. 2) **Binary Choice System**: Design MilestoneChoiceModal component presenting two mutually exclusive upgrade paths at each milestone - Efficiency vs Speed (affects resource generation rate vs probe deployment time), Generation vs Offline Earnings (boosts active play vs away progress multipliers), Range vs Stability (increases beacon connection radius vs pattern bonus strength). 3) **Permanent Choice Storage**: Store player milestone decisions in persistent data structure, applying chosen bonuses permanently to relevant game systems. Efficiency choices modify ResourceManager generation rates, Speed choices affect ProbeManager deployment timers, Generation choices boost active multipliers, Offline choices increase away progress caps, Range choices extend beacon connection radii, Stability choices amplify pattern detection bonuses. 4) **Progression UI Integration**: Add milestone preview section to existing progression UI showing upcoming milestones with choice descriptions. Display current milestone progress bar and next milestone beacon count target. Show previously made choices with their current bonus effects in a dedicated milestone history section.",
-        "testStrategy": "Test milestone trigger accuracy by placing exactly 10, 25, 50, 100, 250, 500 beacons and verifying modal appears with correct choices. Verify each choice permanently applies intended bonuses to appropriate game systems (resource generation, probe timers, connection ranges, pattern multipliers). Test progression UI correctly displays upcoming milestones and tracks current beacon count progress. Validate milestone choices persist across game sessions through SaveManager integration.",
+        "description": "Create a backend progression system that tracks beacon count milestones and manages binary upgrade choices at specific thresholds (10, 25, 50, 100, 250, 500), with permanent decision storage that shapes player strategy through efficiency/speed, generation/offline earnings, and range/stability progression paths.",
         "status": "pending",
         "dependencies": [
           5,
-          25,
-          4,
           9
         ],
         "priority": "medium",
+        "details": "Implement backend MilestoneManager class for beacon count progression and upgrade choice management: 1) **Milestone Tracking Backend**: Create beacon count listener that monitors total placed beacons across all types, triggering milestone events at 10, 25, 50, 100, 250, 500 beacons. Implement milestone calculation algorithms and threshold detection logic. Store completed milestones in player progression data via SaveManager integration. 2) **Binary Choice System Logic**: Design backend binary choice system with two mutually exclusive upgrade paths at each milestone - Efficiency vs Speed (affects resource generation rate vs probe deployment time), Generation vs Offline Earnings (boosts active play vs away progress multipliers), Range vs Stability (increases beacon connection radius vs pattern bonus strength). Implement choice validation and permanent decision storage mechanisms. 3) **Milestone Bonus Application**: Store player milestone decisions in persistent data structure, applying chosen bonuses permanently to relevant game systems. Create bonus application logic for Efficiency choices modifying ResourceManager generation rates, Speed choices affecting ProbeManager deployment timers, Generation choices boosting active multipliers, Offline choices increasing away progress caps, Range choices extending beacon connection radii, Stability choices amplifying pattern detection bonuses. 4) **Save System Integration**: Integrate milestone progression data with existing SaveManager for persistent storage across sessions. Implement milestone data serialization and deserialization for game state management.",
+        "testStrategy": "Test milestone trigger accuracy by programmatically placing exactly 10, 25, 50, 100, 250, 500 beacons and verifying milestone events fire with correct choice data structures. Verify each choice permanently applies intended bonuses to appropriate game systems through backend calculations (resource generation rates, probe timers, connection ranges, pattern multipliers). Test milestone progression persistence across game sessions through SaveManager integration. Validate milestone bonus calculations and choice storage accuracy.",
         "subtasks": []
       },
       {
         "id": 41,
         "title": "Create Chronos Particles Premium Currency System",
-        "description": "Implement Chronos Particles as an earned-only premium currency obtained through achievements, perfect patterns, and special events, used for instant timer completion, network boosts, and cosmetic unlocks.",
-        "details": "Create ChronosParticleManager class to handle earned-only premium currency system. Implement earning mechanisms: 1) **Achievement Rewards**: Integrate with Task 29 achievement system to award 5-50 Chronos Particles per achievement based on difficulty (beacon milestones: 5-10 particles, rare patterns: 20-30 particles, major resource milestones: 15-25 particles). 2) **Perfect Pattern Formation**: Award 3-15 particles when geometric patterns are formed with optimal beacon positioning (triangle: 3, square: 5, pentagon: 8, hexagon: 15), with bonus multipliers for simultaneous multi-pattern formations. 3) **Special Events**: Implement stellar reignition cascade rewards (10-25 particles per star saved), quantum surge perfect timing bonuses (5 particles for activating during optimal resource peaks), and rare entropy reversal events (50+ particles). Create spending system: **Instant Completion** (10 particles per probe launch timer skip, 25 particles per upgrade timer skip), **Network Boosts** (50 particles for 2x pattern bonus for 10 minutes, 100 particles for 3x resource generation for 5 minutes), **Cosmetic Unlocks** (beacon visual themes: 25-75 particles, UI color schemes: 50 particles, particle trail effects: 100+ particles). Implement ChronosWallet with secure local storage using expo-secure-store, transaction logging for debugging, and strict validation preventing external currency addition. Add prominent 'EARNED ONLY' labeling throughout UI to emphasize no real-money purchases. Create ChronosShop interface with categorized spending options and clear particle costs.",
-        "testStrategy": "Test earning mechanisms by triggering achievements, forming perfect patterns, and initiating special events to verify correct particle awards. Validate spending system by purchasing instant completions and boosts, confirming timers reset correctly and multipliers apply properly. Test wallet security by attempting to modify particle counts directly in storage and verifying protection mechanisms. Test UI labeling to ensure 'EARNED ONLY' messaging appears consistently across all Chronos Particle interfaces. Verify transaction logging accurately records all earning and spending events for debugging purposes.",
+        "description": "Implement backend-only Chronos Particles system as an earned-only premium currency obtained through achievements, perfect patterns, and special events, used for instant timer completion, network boosts, and cosmetic unlocks.",
         "status": "pending",
         "dependencies": [
-          2,
           5,
           7,
-          26,
           29
         ],
         "priority": "medium",
+        "details": "Create ChronosParticleManager class to handle earned-only premium currency backend system. Implement earning mechanisms: 1) **Achievement Rewards**: Integrate with Task 29 achievement system to award 5-50 Chronos Particles per achievement based on difficulty (beacon milestones: 5-10 particles, rare patterns: 20-30 particles, major resource milestones: 15-25 particles). 2) **Perfect Pattern Formation**: Award 3-15 particles when geometric patterns are formed with optimal beacon positioning (triangle: 3, square: 5, pentagon: 8, hexagon: 15), with bonus multipliers for simultaneous multi-pattern formations. 3) **Special Events**: Implement stellar reignition cascade rewards (10-25 particles per star saved), quantum surge perfect timing bonuses (5 particles for activating during optimal resource peaks), and rare entropy reversal events (50+ particles). Create spending system logic: **Instant Completion** (10 particles per probe launch timer skip, 25 particles per upgrade timer skip), **Network Boosts** (50 particles for 2x pattern bonus for 10 minutes, 100 particles for 3x resource generation for 5 minutes), **Cosmetic Unlocks** (beacon visual themes: 25-75 particles, UI color schemes: 50 particles, particle trail effects: 100+ particles). Implement ChronosWallet with secure local storage using expo-secure-store, transaction logging for debugging, strict validation preventing external currency addition, and cost calculation algorithms for all spending categories. Focus on business logic, currency management, and transaction processing without frontend concerns.",
+        "testStrategy": "Test earning mechanisms by triggering achievements, forming perfect patterns, and initiating special events to verify correct particle awards through backend calculations. Validate spending system logic by processing instant completions and boosts, confirming timer calculations and multiplier algorithms work correctly. Test wallet security by attempting to modify particle counts directly in storage and verifying protection mechanisms. Test transaction logging to ensure all earning and spending events are recorded accurately for debugging purposes. Verify cost calculation algorithms return correct particle amounts for all spending categories.",
         "subtasks": []
       },
       {
         "id": 42,
         "title": "Create Stellar Reignition Cascade Events System",
-        "description": "Implement cascade events that trigger when beacon density reaches threshold in dying sectors, featuring spectacular visual effects, cascade animations, and permanent resource bonuses for revived sectors.",
-        "details": "Create CascadeEventManager class to handle stellar reignition mechanics: 1) **Threshold Detection System**: Monitor beacon density per sector using spatial analysis, trigger cascade when beacon count reaches 8+ beacons within dying sector boundaries. Integrate with Task 26's GalaxySectorManager to identify dying sectors and calculate beacon coverage. 2) **Cascade Trigger Logic**: Implement cascade initiation when threshold met, checking for adjacent dying sectors within 2-sector radius for potential chain reactions. Use breadth-first search algorithm to identify cascade propagation paths. 3) **Animation System**: Create spectacular visual effects using react-native-reanimated with particle systems showing energy waves radiating from trigger beacon through dying star systems. Implement star reignition animation sequence: dying star brightens over 3 seconds, transitions from red/orange to bright white/blue, emits energy pulses to nearby dead stars causing chain revival. 4) **Resource Bonus Application**: Apply permanent sector bonuses to revived areas: +50% Stellar Essence generation from all beacons in revived sectors, +25% base Quantum Data generation, unlock of rare Chronos Particle deposits (1-3 particles per revived sector). Store revived sector states in save system for persistence. 5) **Visual Effects Integration**: Use react-native-svg for energy wave animations, implement screen shake effects during cascade events, add ambient lighting changes to revived sectors with subtle blue/white glow overlays. Create cascade event history tracking for achievement integration.",
-        "testStrategy": "Test beacon density threshold detection by placing exactly 8 beacons in dying sectors and verifying cascade triggers correctly. Validate cascade propagation by creating chains of dying sectors with adequate beacon coverage, confirming chain reactions spread to adjacent sectors. Test animation timing and visual effects coordination ensuring star reignition sequences complete before resource bonuses apply. Verify permanent resource bonus persistence across app restarts and save/load cycles. Test performance impact during large cascade events with multiple simultaneous sector revivals. Validate achievement system integration for cascade event milestones.",
+        "description": "Implement backend cascade events system that triggers when beacon density reaches threshold in dying sectors, focusing on cascade logic, resource calculations, and state persistence without any UI components.",
         "status": "pending",
         "dependencies": [
           5,
-          26,
           29,
           38
         ],
         "priority": "medium",
+        "details": "Create CascadeEventManager class to handle stellar reignition backend mechanics: 1) **Threshold Detection System**: Monitor beacon density per sector using spatial analysis algorithms, trigger cascade when beacon count reaches 8+ beacons within dying sector boundaries. Integrate with Task 26's GalaxySectorManager to identify dying sectors and calculate beacon coverage using efficient spatial indexing. 2) **Cascade Trigger Logic**: Implement cascade initiation logic when threshold conditions are met, checking for adjacent dying sectors within 2-sector radius for potential chain reactions. Use breadth-first search algorithm to identify cascade propagation paths and calculate chain reaction sequences. 3) **Resource Bonus Calculation System**: Apply permanent sector bonuses to revived areas through backend calculations: +50% Stellar Essence generation multiplier for all beacons in revived sectors, +25% base Quantum Data generation bonus, procedural generation of rare Chronos Particle deposits (1-3 particles per revived sector based on sector size and beacon density). 4) **State Persistence System**: Store revived sector states in save system for persistence across sessions, maintain cascade event history with timestamps and affected sectors, implement efficient data structures for fast lookup of revived sector bonuses during resource calculations. 5) **Achievement Integration Backend**: Create cascade event history tracking system for achievement milestone calculation, implement counters for total sectors revived, largest cascade chain length, and total Chronos Particles earned from cascades.",
+        "testStrategy": "Test beacon density threshold detection algorithms by creating mock sectors with exactly 8 beacons and verifying cascade trigger logic activates correctly. Validate cascade propagation algorithms by creating chains of dying sectors with adequate beacon coverage, confirming breadth-first search correctly identifies all affected sectors in chain reactions. Test resource bonus calculation accuracy by verifying +50% Stellar Essence and +25% Quantum Data multipliers apply correctly to affected beacons and persist through save/load cycles. Validate Chronos Particle generation algorithms ensuring 1-3 particles generate per sector based on documented rules. Test state persistence by triggering cascades, restarting application, and confirming revived sector bonuses remain active. Validate achievement integration by verifying cascade event counters increment correctly and milestone calculations trigger at appropriate thresholds.",
         "subtasks": []
       },
       {
         "id": 43,
         "title": "Implement Random Discovery System for Dead Systems",
-        "description": "Create a discovery system that grants permanent passive bonuses when establishing beacons in dead star systems, with 20+ unique bonuses persisting through prestige resets and complete UI for notifications and collection tracking.",
-        "details": "Develop DiscoveryManager class with comprehensive discovery mechanics: 1) **Discovery Pool Creation**: Create static pool of 25+ unique permanent passive bonuses including geometric pattern bonuses ('+10% triangle effectiveness', '+15% square pattern generation', '+20% pentagon multiplier'), operational improvements ('probes launch 5% faster', 'beacon placement range +10%', 'connection stability +15%'), resource generation bonuses ('+8% quantum data generation', '+12% stellar essence from dying stars', '+5% void fragment collection'), and meta-progression enhancements ('quantum leap efficiency +10%', 'echo beacon power +20%'). Store discoveries as DiscoveryBonus objects with unique IDs, names, descriptions, bonus types, and values. 2) **Discovery Trigger System**: Integrate with beacon placement in dead star systems using existing StarSystem status checking. Implement discovery roll with 15-20% chance per dead system beacon placement, ensuring each system can only grant one discovery. Create DiscoveryRollManager that validates system status, checks previous discoveries, and selects random unused bonuses from the pool. 3) **Permanent Progression**: Extend SaveManager to persist discovered bonuses across prestige resets, storing discovery IDs in permanent progression data separate from resetable game state. Apply discovery bonuses through EffectManager that modifies base game calculations for pattern detection, resource generation, probe systems, and beacon mechanics. 4) **Discovery UI System**: Create DiscoveryNotificationModal displaying discovery animations, bonus details, and congratulations messaging. Implement DiscoveryCollectionScreen showing all discovered bonuses with icons, descriptions, unlock dates, and progress statistics. Add discovery counter to main UI showing collected/total discoveries with subtle glow effects for recent acquisitions.",
-        "testStrategy": "Test discovery trigger probability by placing 100 beacons in dead systems and verifying 15-20% discovery rate with no duplicate discoveries per system. Verify each of the 25+ bonuses correctly applies to their respective game systems with accurate percentage modifications. Test prestige reset functionality ensuring discoveries persist while other game state clears. Test UI notifications appear correctly with proper animations and bonus descriptions. Validate discovery collection screen displays all unlocked bonuses with correct statistics and progress tracking.",
+        "description": "Create a discovery system backend that grants permanent passive bonuses when establishing beacons in dead star systems, with 20+ unique bonuses persisting through prestige resets.",
         "status": "pending",
         "dependencies": [
-          2,
-          4,
           5,
           27
         ],
         "priority": "medium",
+        "details": "Develop DiscoveryManager class with comprehensive discovery mechanics: 1) **Discovery Pool Creation**: Create static pool of 25+ unique permanent passive bonuses including geometric pattern bonuses ('+10% triangle effectiveness', '+15% square pattern generation', '+20% pentagon multiplier'), operational improvements ('probes launch 5% faster', 'beacon placement range +10%', 'connection stability +15%'), resource generation bonuses ('+8% quantum data generation', '+12% stellar essence from dying stars', '+5% void fragment collection'), and meta-progression enhancements ('quantum leap efficiency +10%', 'echo beacon power +20%'). Store discoveries as DiscoveryBonus objects with unique IDs, names, descriptions, bonus types, and values. 2) **Discovery Trigger System**: Integrate with beacon placement in dead star systems using existing StarSystem status checking. Implement discovery roll with 15-20% chance per dead system beacon placement, ensuring each system can only grant one discovery. Create DiscoveryRollManager that validates system status, checks previous discoveries, and selects random unused bonuses from the pool. 3) **Permanent Progression**: Extend SaveManager to persist discovered bonuses across prestige resets, storing discovery IDs in permanent progression data separate from resetable game state. Apply discovery bonuses through EffectManager that modifies base game calculations for pattern detection, resource generation, probe systems, and beacon mechanics.",
+        "testStrategy": "Test discovery trigger probability by placing 100 beacons in dead systems and verifying 15-20% discovery rate with no duplicate discoveries per system. Verify each of the 25+ bonuses correctly applies to their respective game systems with accurate percentage modifications. Test prestige reset functionality ensuring discoveries persist while other game state clears. Test EffectManager integration with all relevant game systems.",
         "subtasks": []
       },
       {
@@ -2319,21 +2184,6 @@
         "dependencies": [
           3,
           5
-        ],
-        "priority": "medium",
-        "subtasks": []
-      },
-      {
-        "id": 45,
-        "title": "Implement Hierarchical Pattern Discovery System",
-        "description": "Transform the basic geometric pattern system into a hierarchical discovery system with complex multi-shape configurations, emergent patterns, and progressive complexity tiers to provide months of discovery content.",
-        "details": "Create a comprehensive hierarchical pattern system that builds upon existing basic shapes: 1) **Pattern Definition System**: Implement ComplexPattern interface with geometric requirements, scale variations, specialization dependencies, proximity rules, and exclusivity conditions. Create PatternRequirement structure defining shape arrangements, beacon specializations, and connection rules. 2) **Enhanced Detection Algorithm**: Extend existing PatternDetector to handle multi-shape configurations using spatial indexing and hierarchical matching. Implement real-time detection with partial progress tracking for complex patterns spanning 10-50+ beacons. Add conflict resolution for overlapping pattern possibilities. 3) **Pattern Tiers Implementation**: Create Tier 1 Enhanced Basic Patterns (Solar Ring: pentagon + 5 triangles, Quantum Core: square + corner triangles, Stellar Crown: hexagon + alternating perimeter shapes), Tier 2 Network Formations (Quantum Lattice: interconnected square grids, Stellar Cascade: fibonacci triangle chains, Resonance Web: complex multi-shape networks), Tier 3 Architectural Marvels (Galaxy Heart: 50+ beacon formations, Cosmic Mandala: symmetrical specialized patterns). 4) **Discovery System Integration**: Implement progressive pattern unlocking based on basic shape mastery, context-aware suggestion system for complex patterns, discovery celebration with visual effects and Resonance Crystal rewards. 5) **Data Structures**: Create PatternDatabase with flexible pattern definitions, DiscoveryTracker for completion state, and HierarchicalBonus calculator for multiplicative pattern interactions. 6) **Performance Optimization**: Implement spatial partitioning for efficient large-network scanning, background pattern detection with battery optimization, and incremental validation to maintain 60fps target.",
-        "testStrategy": "Comprehensive testing across all pattern tiers: 1) **Pattern Detection Accuracy**: Test detection of all 30+ complex patterns with various beacon arrangements, verify partial progress calculation for incomplete patterns, test pattern prioritization when multiple configurations possible. 2) **Performance Validation**: Measure pattern detection performance with 500+ beacon networks maintaining <16ms scanning time, verify memory usage stays under 20MB additional overhead, test battery impact during background detection. 3) **Discovery Progression**: Verify basic shapes unlock Tier 1 patterns, test suggestion system provides appropriate hints without spoiling discovery, validate discovery celebration triggers correctly. 4) **Integration Testing**: Test pattern bonus calculations integrate properly with resource generation, verify discovered patterns persist across save/load cycles, test pattern library displays all discovered configurations with correct metadata. 5) **User Experience**: Test tutorial progression introduces complexity gradually, verify hint system remains valuable long-term, validate discovery satisfaction balance with guidance assistance.",
-        "status": "pending",
-        "dependencies": [
-          7,
-          19,
-          39
         ],
         "priority": "medium",
         "subtasks": []
@@ -2417,7 +2267,6 @@
         "testStrategy": "Comprehensive testing of galaxy map visual integrity: 1) **Artifact Detection**: Load galaxy map with various entropy states and zoom levels, systematically scan for square artifacts or color bleeding, test entropy transitions over time to identify visual discontinuities. 2) **Sector Boundary Verification**: Zoom to different levels and verify hexagonal sector boundaries render consistently without gaps or overlaps, test sector state transitions (healthy->dying->dead) for smooth color changes. 3) **Entropy Animation Testing**: Observe entropy spread mechanics in real-time, verify particle effects flow smoothly between sectors without clustering, test entropy visualization with multiple simultaneous spreading events. 4) **Cross-Platform Validation**: Test on iOS, Android, and web platforms to identify platform-specific rendering differences, verify SVG rendering consistency across React Native implementations. 5) **Performance Impact**: Monitor frame rate during heavy entropy activity, test memory usage with extended entropy animations, verify rendering performance doesn't degrade with multiple active entropy sources.",
         "status": "done",
         "dependencies": [
-          26,
           38,
           23
         ],
@@ -2543,7 +2392,6 @@
         "status": "done",
         "dependencies": [
           38,
-          26,
           48
         ],
         "priority": "medium",
@@ -2690,76 +2538,6 @@
             "details": "Implement GalaxyMapConfig class with configuration options for: which modules are active, rendering quality levels (low/medium/high), performance thresholds for auto-disabling, debugging modes to isolate module-specific issues. Add React.memo to all module components and useMemo for expensive calculations. Create simplified rendering modes for low-end devices. Implement fallback mechanisms with user controls to re-enable disabled modules. Add comprehensive performance dashboard for debugging.\n<info added on 2025-09-03T04:38:03.734Z>\nCRITICAL PERFORMANCE ISSUES IDENTIFIED FROM 50.3 TESTING REQUIRE IMMEDIATE ATTENTION:\n\n**BROKEN OBJECT POOL SYSTEM:**\n- BeaconRenderer acquiring pooled objects but never releasing them in useEffect cleanup\n- All pools showing 0/X available (confirmed with 120 beacon test)  \n- Massive memory leaks causing performance degradation to 2 FPS with 565ms frame times\n- MUST implement proper pool.release() calls in component cleanup\n\n**BEACON RENDERING MODULE FAILURES:**\n- Clustering system not activating despite exceeding 100+ beacon threshold (threshold logic broken)\n- Spatial culling completely non-functional - all beacons rendering off-screen\n- LOD system providing no performance benefits\n- Module overhead causing 10fps regression during panning (Core 30-40fps → Modular 20-30fps)\n- Frame skipping during performance drops not working\n\n**CRITICAL FIXES NEEDED FOR CONFIGURATION SYSTEM:**\n1. Emergency object pool release mechanism in GalaxyMapConfig\n2. Debug and fix clustering activation thresholds  \n3. Implement working spatial culling in BeaconRenderingModule\n4. Add automatic frame skipping during performance degradation\n5. Optimize module event bus overhead causing regression\n6. Create automatic LOD adjustment based on real-time performance metrics\n\n**PERFORMANCE TARGET:** 500+ beacons at 60fps with modular system outperforming Core baseline (currently failing at 120 beacons). Testing tools and 120 beacon stress test framework now available for validation.\n</info added on 2025-09-03T04:38:03.734Z>",
             "status": "done",
             "testStrategy": "Test configuration system can enable/disable modules correctly, verify performance thresholds trigger automatic module disabling, confirm React.memo and useMemo prevent unnecessary re-renders, validate simplified rendering modes work on simulated low-end devices"
-          }
-        ]
-      },
-      {
-        "id": 51,
-        "title": "Enhanced Sector Visualization - Replace simple rectangular test sectors with sophisticated Voronoi cell boundaries, smooth entropy gradients, hexagonal grid overlays, and organic sector shapes",
-        "description": "Complete the galaxy map overhaul by implementing full logic, polish, and sophisticated rendering features for the modular galaxy map system created in task 50. Transform the basic modular foundation into a production-ready visualization engine with Voronoi boundaries, entropy gradients, hexagonal overlays, and organic sector shapes.",
-        "status": "pending",
-        "dependencies": [
-          26,
-          38,
-          50
-        ],
-        "priority": "medium",
-        "details": "Build upon the modular galaxy map foundation from task 50 to create a fully functional and polished galaxy visualization system: 1) **Complete Modular Component Logic**: Implement full business logic for all modular components created in task 50 (GalaxyMapCore, GalaxyMapModular, GalaxyOverlaySystem, SectorStateRenderer, OverlayControls). Connect data flow between components, implement proper state management, and add missing event handlers. 2) **Voronoi Sector Implementation**: Complete VoronoiSectorRenderer with full Fortune's algorithm implementation for organic cell boundaries. Integrate with existing SectorManager and ensure proper star system positioning within Voronoi cells. Add boundary caching and regeneration logic based on sector changes. 3) **Enhanced Visual Polish**: Implement smooth entropy gradient transitions using SVG radialGradient elements with proper color interpolation (healthy blue #3B82F6 → dying orange #F59E0B → dead red #EF4444). Add sophisticated boundary rendering with bezier curves, glow effects, and zoom-adaptive detail levels. 4) **Hexagonal Grid Overlay**: Complete HexagonalGridOverlay with adaptive density based on zoom level and proper opacity transitions. Ensure grid alignment with sector boundaries and implement performance-optimized rendering. 5) **Production-Ready Features**: Add comprehensive error handling, loading states, and fallback rendering for all modular components. Implement proper cleanup and memory management. Add debug overlays and development tools integration. 6) **Integration & Testing**: Ensure all modular components work seamlessly together, integrate with existing BeaconRenderer and StarSystem components, and validate the complete galaxy map experience meets performance requirements (60fps with 500+ beacons).",
-        "testStrategy": "Validate complete modular system integration by testing data flow between all components created in task 50. Test Voronoi cell generation accuracy with various star system distributions and verify no boundary overlaps or gaps exist. Validate smooth entropy gradient rendering with proper color transitions and performance optimization. Test hexagonal grid overlay visibility, opacity transitions, and alignment across multiple zoom levels. Verify organic sector shapes render correctly with noise-based boundary perturbation. Conduct comprehensive performance testing with 100+ sectors and 500+ beacons ensuring 60fps maintenance on target mobile devices. Test error handling, loading states, and graceful degradation scenarios.",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Complete modular component business logic implementation",
-            "description": "Implement full business logic for GalaxyMapCore, GalaxyMapModular, GalaxyOverlaySystem, SectorStateRenderer, and OverlayControls components",
-            "status": "pending",
-            "dependencies": [],
-            "details": "",
-            "testStrategy": ""
-          },
-          {
-            "id": 2,
-            "title": "Implement production-ready Voronoi sector boundaries",
-            "description": "Complete VoronoiSectorRenderer with Fortune's algorithm, caching system, and integration with SectorManager",
-            "status": "pending",
-            "dependencies": [],
-            "details": "",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Add sophisticated visual polish and rendering effects",
-            "description": "Implement smooth entropy gradients, bezier curve boundaries, glow effects, and zoom-adaptive detail levels",
-            "status": "pending",
-            "dependencies": [],
-            "details": "",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Complete hexagonal grid overlay system",
-            "description": "Finish HexagonalGridOverlay with adaptive density, opacity transitions, and boundary alignment",
-            "status": "pending",
-            "dependencies": [],
-            "details": "",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Add production features and error handling",
-            "description": "Implement comprehensive error handling, loading states, fallback rendering, and memory management",
-            "status": "pending",
-            "dependencies": [],
-            "details": "",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Integration testing and performance optimization",
-            "description": "Test complete modular system integration and optimize for 60fps performance with 500+ beacons",
-            "status": "pending",
-            "dependencies": [],
-            "details": "",
-            "testStrategy": ""
           }
         ]
       },
@@ -3214,11 +2992,508 @@
             "testStrategy": ""
           }
         ]
+      },
+      {
+        "id": 57,
+        "title": "Optimize Task Master Configuration with Tag Implementation",
+        "description": "Implement and optimize Task Master tags system to improve task organization, filtering, and project management workflow efficiency.",
+        "details": "Implement comprehensive Task Master tag optimization: 1) **Tag System Analysis**: Research current Task Master tag capabilities using `task-master --help` and documentation to understand available tagging features, tag hierarchies, and filtering options. Analyze current tasks.json structure to identify optimal tagging strategies for the Signal Garden project. 2) **Tag Strategy Design**: Create a comprehensive tagging taxonomy for the project including technical tags (frontend, backend, ui, performance, testing), priority tags (critical, high, medium, low), feature tags (galaxy-map, beacon-system, resource-management, save-system), and status tags (blocked, research-needed, ready-for-review). Design tag inheritance patterns for parent-child task relationships. 3) **Tag Implementation**: Apply tags to all existing tasks in the project using `task-master update-task --id=<id> --tags='tag1,tag2'` commands. Implement bulk tagging operations for similar task groups. Configure tag-based filtering workflows using `task-master list --tags='frontend,high'` and similar commands. 4) **Workflow Optimization**: Create custom tag-based workflows for different development phases, integrate tag filtering with next task selection using `task-master next --tags='ready'`, and establish tag conventions for team collaboration. 5) **Configuration Enhancement**: Update .taskmaster/config.json with optimized settings for tag display, filtering preferences, and default tag behaviors. Create tag aliases and shortcuts for common tag combinations.",
+        "testStrategy": "Validate tag system implementation and optimization: 1) **Tag Coverage Verification**: Run `task-master list` to verify all tasks have appropriate tags applied. Test tag filtering functionality with various tag combinations to ensure proper task isolation. Verify tag inheritance works correctly for parent-child task relationships. 2) **Workflow Efficiency Testing**: Measure time reduction in task discovery using tag-based filtering vs. manual search. Test tag-based next task selection to ensure it returns appropriate tasks based on current development context. Validate bulk operations work correctly across tagged task groups. 3) **Configuration Validation**: Test updated Task Master configuration loads correctly and respects tag-based preferences. Verify tag aliases and shortcuts function as expected. Test tag display formatting and readability in various Task Master commands. 4) **Integration Testing**: Validate tag system works seamlessly with existing MCP integration and Claude Code workflow. Test tag-based reporting and analytics if available in Task Master.",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research and Document Task Master Tag System Capabilities",
+            "description": "Analyze current Task Master CLI capabilities and existing project structure to understand available tagging features and identify optimization opportunities.",
+            "dependencies": [],
+            "details": "Execute `task-master --help` to document all available commands and tag-related functionality. Examine .taskmaster/tasks/tasks.json structure to understand current task organization. Research Task Master documentation for tag hierarchies, filtering options, and bulk operations. Document findings on what tag features are actually available versus what was assumed in the task description. Create a baseline assessment of current tagging gaps in the Signal Garden project's 57 existing tasks.\n<info added on 2025-09-04T23:47:53.716Z>\nResearch completed successfully. Task Master tag system operates through separate tag contexts/workspaces rather than hierarchical tagging within single context. Current project uses single 'master' tag with 57 tasks. Core tag operations confirmed: add-tag, delete-tag, rename-tag, copy-tag, use-tag commands. Tag-based filtering available via --tag parameter on list/next/show commands. Configuration stores defaultTag: master in config.json. Each tag maintains independent task lists with separate ID sequences and dependency structures. \n\nOptimization strategy identified: implement feature-based contexts (frontend, backend, ui, testing), priority-based contexts (critical, high, medium, low), and workflow-based contexts (ready, blocked, review). Cross-tag dependencies and tag-based task selection workflows present significant optimization opportunities for Signal Garden's complex 57-task structure across MVP, strategic depth, and meta-progression phases.\n</info added on 2025-09-04T23:47:53.716Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Design Comprehensive Tagging Taxonomy for Signal Garden Project",
+            "description": "Create a structured tagging system optimized for the Signal Garden mobile game development workflow and task organization needs.",
+            "dependencies": [
+              "57.1"
+            ],
+            "details": "Design tag categories based on research findings: Technical tags (react-native, typescript, ui, performance, testing, backend), Priority tags (critical, high, medium, low), Feature tags (galaxy-map, beacon-system, resource-management, save-system, pattern-detection), Phase tags (mvp, strategic-depth, meta-progression), Status tags (blocked, research-needed, ready-for-review, testing). Create tag inheritance patterns for parent-child task relationships. Define tag naming conventions and establish guidelines for consistent tag application across the project.\n<info added on 2025-09-04T23:48:39.104Z>\n## Final Signal Garden Tagging Taxonomy\n\n### Core Feature Tags:\n- **frontend**: UI components, React Native views, styling, user interactions\n- **backend**: Data management, save systems, resource calculations, game logic  \n- **galaxy-map**: Galaxy map rendering, zoom/pan mechanics, beacon visualization\n- **beacon-system**: Beacon placement, networking, upgrades, pattern detection\n- **resource-management**: Quantum Data, currencies, offline progression mechanics\n- **performance**: Optimization tasks, React Native fixes, rendering improvements\n- **testing**: Test infrastructure, validation, quality assurance\n\n### Priority Classification:\n- **critical**: App-blocking issues, crashes, React Native warnings\n- **high**: MVP core loop requirements (Tasks 1-10)\n- **medium**: Strategic depth features and enhancements  \n- **low**: Future enhancements and polish features\n\n### Workflow Status Tags:\n- **ready**: All dependencies complete, ready for immediate development\n- **blocked**: Waiting on external dependencies or research completion\n- **review**: Implementation complete, needs validation before marking done\n- **research**: Requires investigation or technical research phase\n\n### Development Phase Tags:\n- **mvp**: Core game loop functionality (Tasks 1-10)\n- **strategic**: Enhanced gameplay and depth features (Tasks 11-40+)\n- **meta**: Prestige systems, achievements, advanced mechanics\n- **polish**: UI/UX refinements, audio, app store preparation\n\n### Tag Application Guidelines:\nEach task receives 1 feature tag + 1 priority tag + 1-2 workflow/phase tags. Use task-master tag filtering to create focused development workspaces while maintaining master project context. Implement batch tagging operations for efficient taxonomy deployment across existing 57+ tasks.\n</info added on 2025-09-04T23:48:39.104Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Bulk Tagging Operations and Tag-Based Filtering",
+            "description": "Apply the designed tagging taxonomy to all existing tasks and implement tag-based filtering workflows using available Task Master commands.",
+            "dependencies": [
+              "57.2"
+            ],
+            "details": "Apply tags to all 57 existing tasks in the Signal Garden project using available Task Master commands. Group similar tasks for bulk operations where possible. Implement tag-based filtering workflows for different development scenarios (e.g., finding all high-priority UI tasks, all MVP phase tasks). Test and validate tag filtering functionality to ensure proper task isolation. Create documentation for team members on how to use tag-based task selection and filtering.\n<info added on 2025-09-04T23:50:26.357Z>\nBULK TAGGING IMPLEMENTATION COMPLETED: Successfully implemented comprehensive tag organization system using Task Master tag contexts. Created 6 specialized contexts: frontend, backend, galaxy-map, performance, mvp, ready. Used bulk operations with add-tag --copy-from=master commands to duplicate all 57 tasks into specialized workspaces. Validated tag-based filtering with use-tag commands and confirmed proper task switching, dependency preservation, and status maintenance. All contexts maintain independent task lists while preserving original completion states (36 completed tasks). Tag-based filtering and next task selection working correctly. Optimization results: focused workspaces created, parallel development enabled, task discovery efficiency improved through targeted filtering.\n</info added on 2025-09-04T23:50:26.357Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Configure and Validate Tag-Based Workflow Optimizations",
+            "description": "Optimize Task Master configuration settings and establish tag-based development workflows for improved project management efficiency.",
+            "dependencies": [
+              "57.3"
+            ],
+            "details": "Update .taskmaster/config.json with optimized settings for tag display and filtering preferences based on implemented taxonomy. Create custom tag-based workflows for different development phases (MVP completion, feature development, bug fixing). Establish tag conventions for team collaboration and next task selection optimization. Test and validate the complete tag system implementation by running various filtering scenarios. Document the optimized workflow processes and create usage guidelines for maintaining tag consistency in future development.\n<info added on 2025-09-04T23:52:03.512Z>\nConfiguration successfully completed and validated. All tag-based workflow optimizations are now operational with comprehensive documentation, testing validation, and seamless integration with existing development tools. Task discovery time significantly reduced through targeted filtering, parallel development enabled via specialized contexts, and workflow efficiency optimized for different development phases. TAG_WORKFLOWS.md documentation created for team adoption and maintenance of tag consistency in future development.\n</info added on 2025-09-04T23:52:03.512Z>",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 58,
+        "title": "Review and Split Mixed Frontend/Backend Tasks",
+        "description": "Analyze all pending tasks to identify those containing both frontend and backend components, then extract frontend work into separate dedicated tasks while updating original tasks to focus solely on backend implementation.",
+        "details": "1. **Task Analysis Phase**: Execute `task-master list --status=pending` to retrieve all pending tasks. Review each task's implementation details and test strategy to identify mixed frontend/backend work patterns such as: API endpoint creation with UI components, database operations with user interface, backend services with corresponding frontend integrations, full-stack feature implementations. 2. **Task Categorization**: Create systematic analysis of each mixed task to determine: which components are purely backend (API logic, database operations, service layer, authentication), which components are purely frontend (UI components, user interactions, styling, client-side state management), natural separation points for splitting functionality. 3. **Task Splitting Strategy**: For each identified mixed task, create new frontend-focused tasks that include: UI component development, user experience implementation, client-side state management, visual design and styling. Update original tasks to focus exclusively on: backend API development, database operations, business logic implementation, server-side processing. 4. **Dependency Management**: Establish proper dependencies where frontend tasks depend on corresponding backend tasks to ensure logical implementation order. Use `task-master add-task` for new frontend tasks and `task-master update-task` for backend task modifications. 5. **Documentation**: Ensure clear separation of concerns in task descriptions, avoiding overlap while maintaining comprehensive coverage of original requirements.",
+        "testStrategy": "Verify task splitting accuracy by reviewing each modified task to ensure no functionality is lost or duplicated between frontend and backend versions. Confirm all new frontend tasks have appropriate dependencies on their backend counterparts. Test task workflow by running `task-master next` to ensure logical task ordering is maintained. Validate that implementation details in split tasks are specific to their respective domains (frontend tasks should not reference database operations, backend tasks should not reference UI components). Review test strategies in split tasks to ensure they test appropriate layers (frontend tests focus on UI behavior, backend tests focus on business logic and data operations).",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Analyze All Pending Tasks for Frontend/Backend Separation",
+            "description": "Execute task-master list --status=pending and systematically review each task to identify mixed frontend/backend components by examining implementation details and test strategies.",
+            "dependencies": [],
+            "details": "Use task-master list command to retrieve all pending tasks. Create analysis document identifying tasks with mixed concerns such as API endpoints with UI components, database operations with user interfaces, and full-stack feature implementations. Categorize findings into clear frontend vs backend components.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create New Frontend-Focused Tasks",
+            "description": "Extract frontend components from mixed tasks and create dedicated frontend tasks using task-master add-task for UI components, user interactions, styling, and client-side state management.",
+            "dependencies": [
+              "58.1"
+            ],
+            "details": "For each identified mixed task, create new frontend tasks covering UI component development, user experience implementation, visual design, and client-side state management. Use task-master add-task with appropriate descriptions and implementation details focused solely on frontend concerns.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Update Original Tasks to Backend-Only Focus",
+            "description": "Modify existing mixed tasks using task-master update-task to remove frontend components and focus exclusively on backend implementation including API logic, database operations, and business logic.",
+            "dependencies": [
+              "58.1"
+            ],
+            "details": "Update each identified mixed task to focus solely on backend concerns: API development, database operations, business logic implementation, and server-side processing. Remove all frontend-related implementation details and test strategies while ensuring comprehensive backend coverage.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Establish Task Dependencies and Validate Coverage",
+            "description": "Create proper dependencies between new frontend tasks and their corresponding backend tasks using task-master add-dependency, then validate that no functionality is lost in the splitting process.",
+            "dependencies": [
+              "58.2",
+              "58.3"
+            ],
+            "details": "Use task-master add-dependency to establish logical implementation order where frontend tasks depend on their backend counterparts. Review all split tasks to ensure complete coverage of original requirements without overlap or missing functionality. Test workflow with task-master next to verify proper task sequencing.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 59,
+        "title": "Create Quantum Leap Prestige System UI Components",
+        "description": "Design and implement comprehensive frontend components for the prestige reset system including confirmation dialogs, progression screens, echo beacon visualizations, particle effects, and milestone tracking displays using React Native and NativeWind styling.",
+        "details": "Create QuantumLeapUI component suite with the following elements: 1) **Quantum Leap Confirmation Dialog**: Implement modal dialog using react-native-modal with dark space theme styling, featuring current progress preview (total beacons, patterns discovered, resources accumulated), leap benefits calculation display, and confirmation/cancel buttons with haptic feedback. Include QuantumLeapPreview component showing post-leap benefits and permanent upgrades. 2) **MetaProgressionScreen**: Create full-screen component displaying available Echo Beacon upgrades in grid layout, leap history timeline with dates and benefits gained, permanent multiplier displays, and next milestone progress bars. Use ScrollView with lazy loading for performance. 3) **Echo Beacon Placement Preview**: Implement EchoBeaconVisualizer component using react-native-svg to show translucent beacon overlays on galaxy map, connection range indicators with animated pulses, and placement validation feedback. Integrate with existing galaxy map coordinate system. 4) **Quantum Particle Effects**: Create QuantumLeapEffectManager using react-native-reanimated for activation animations including particle burst effects on leap trigger, screen-wide quantum energy waves, beacon transformation animations, and progress counter reset animations. 5) **Milestone Progress Tracking**: Implement ProgressMilestoneDisplay components with animated progress bars, achievement unlock notifications, and visual feedback for milestone completion. Use consistent NativeWind styling with bg-surface, text-primary, and accent colors. Ensure responsive design for various device sizes and portrait orientation optimization.",
+        "testStrategy": "Test quantum leap confirmation dialog by simulating various game states and verifying accurate progress calculations and benefit previews display correctly. Validate MetaProgressionScreen performance with large datasets of leap history and multiple Echo Beacon upgrades, ensuring smooth scrolling and lazy loading functionality. Test Echo Beacon placement preview accuracy by comparing overlay positions with actual galaxy map coordinates and verifying visual feedback for valid/invalid placements. Verify quantum particle effects performance across different device specifications, ensuring 60fps animation during leap activation without blocking UI responsiveness. Test milestone progress displays with simulated progress changes and achievement triggers, confirming animations complete smoothly and notifications appear correctly. Validate responsive design across device sizes and orientations, ensuring one-handed usability and proper safe area handling. Test integration with existing UI architecture and navigation flows.",
+        "status": "pending",
+        "dependencies": [
+          8,
+          29,
+          41,
+          "27"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 60,
+        "title": "Create Achievement System UI Components",
+        "description": "Design and implement comprehensive frontend components for the achievement system including progress tracking, notifications, collection screens, and celebration animations with React Native and NativeWind styling.",
+        "details": "Create AchievementUI component suite with the following elements: 1) **AchievementProgressCard Component**: Implement individual achievement cards using View components with NativeWind styling, featuring achievement icon, title, description, progress bar using react-native-progress with custom styling, completion percentage display, and reward preview (Chronos Particles amount). Include locked/unlocked states with opacity transitions and completion checkmark animations. 2) **AchievementNotificationSystem**: Integrate react-native-toast-message for achievement completion notifications with custom toast templates matching dark space theme, slide-in animations, haptic feedback on completion, and auto-dismiss after 4 seconds. Configure toast positioning for mobile-safe areas and implement queue system for multiple simultaneous achievements. 3) **AchievementCollectionScreen**: Create full-screen component with categorized tabs (Beacon Milestones, Pattern Discovery, Resource Generation, Special Events) using react-native-tab-view or custom tab implementation. Implement FlatList with sections for performance, search/filter functionality, and completion percentage tracker at top. Include category-specific icons and progress summaries. 4) **CompletionCelebrationAnimation**: Implement celebration effects using react-native-reanimated with particle burst animations, screen flash effects, and confetti particles using react-native-confetti-cannon. Create staggered animation sequences with scale transforms, rotation effects, and color transitions. 5) **Mobile Accessibility**: Implement proper accessibility labels, screen reader support, semantic roles, focus management, and respect for system text size preferences. Ensure minimum touch targets of 44px and proper color contrast ratios for all text elements.",
+        "testStrategy": "Test AchievementProgressCard rendering with various achievement states (locked, in-progress, completed) and verify progress bar animations and percentage calculations display correctly. Validate notification system by triggering multiple achievements simultaneously and confirming proper toast queuing, positioning, and auto-dismiss behavior. Test AchievementCollectionScreen performance with large datasets of achievements across all categories, ensuring smooth scrolling and tab switching. Verify celebration animations trigger correctly on achievement completion with proper timing and visual effects. Test accessibility features using screen readers, voice control, and various text size settings to ensure full compliance with mobile accessibility standards.",
+        "status": "pending",
+        "dependencies": [
+          29,
+          41
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 61,
+        "title": "Create Analytics Consent Management UI",
+        "description": "Design and implement GDPR/CCPA compliant privacy controls including consent dialogs, privacy settings, data transparency displays, and export/deletion interfaces with React Native components.",
+        "details": "Create comprehensive privacy compliance UI components: 1) **InitialConsentDialog Component**: Implement modal using react-native-modal with dark space theme, featuring clear data usage explanation, accept/decline buttons with haptic feedback, and 'Learn More' expandable section detailing specific data collection practices. Include ConsentExplanation component showing data types collected (gameplay analytics, device info, crash reports) and their purposes. 2) **PrivacySettingsScreen**: Create full-screen component with granular toggle controls using Switch components for each data category (analytics, personalization, marketing, crash reporting). Implement PrivacyToggleGroup with section headers and descriptions. Include 'Reset All' and 'Save Preferences' buttons with confirmation dialogs. 3) **DataTransparencyDisplay**: Create scrollable view showing collected data categories, retention periods, and third-party sharing status. Implement CollectedDataCard components displaying data type, collection frequency, and user control options. 4) **ExportDeleteInterface**: Implement data request forms with email input validation, request type selection (export/delete), and status tracking. Create RequestStatusTracker showing submission confirmation and processing timeline. 5) **ConsentStatusIndicator**: Create persistent UI element showing current consent status with quick access to privacy settings. Implement animated status icons and last-updated timestamps. Use AsyncStorage for preference persistence and create ConsentManager class for centralized consent state management with automatic compliance checking.",
+        "testStrategy": "Test InitialConsentDialog presentation on first app launch and verify consent choices persist correctly across app restarts. Validate privacy settings toggles by changing preferences and confirming AsyncStorage updates reflect changes accurately. Test data transparency display with various data collection scenarios ensuring all collected information types are properly documented and displayed. Verify export/deletion request forms handle email validation, submission confirmation, and error states appropriately. Test consent status indicators update correctly when privacy preferences change and provide proper navigation to settings screens. Validate compliance with platform privacy requirements by testing consent flows on both iOS and Android, ensuring proper integration with system privacy settings and app transparency reports.",
+        "status": "pending",
+        "dependencies": [
+          "30"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 62,
+        "title": "Create App Store Marketing Assets Frontend",
+        "description": "Design and generate all visual assets for app store distribution including device-specific screenshots, app icons, splash screens, store listing elements, and promotional graphics with focus on visual design and frontend presentation materials.",
+        "details": "Create comprehensive marketing asset generation system with the following components: 1) **Screenshot Generation System**: Implement automated screenshot capture using expo-screenshot for iPhone 6.5/5.5 and iPad Pro dimensions, creating scripted gameplay sequences showcasing key features (galaxy map with beacons, resource generation, pattern formation, upgrade screens). Use device simulators with programmatic navigation to capture consistent, high-quality screenshots. 2) **App Icon Variants**: Design adaptive app icon system with multiple resolutions (20x20 to 1024x1024) and platform-specific variants (iOS rounded corners, Android adaptive icons), featuring the Signal Garden quantum beacon theme with dark space background and glowing elements. 3) **Splash Screen Assets**: Create platform-specific splash screens using expo-splash-screen with consistent branding, loading animations using react-native-reanimated for smooth transitions, and proper asset optimization for various screen densities. 4) **Store Listing Visuals**: Design promotional graphics including feature graphics for Google Play (1024x500), promotional banners showcasing idle gameplay mechanics, achievement celebrations, and galaxy expansion progression. 5) **Marketing Asset Templates**: Create reusable design templates using React Native components for generating promotional materials, social media assets, and press kit elements with consistent Signal Garden branding and typography. 6) **Asset Management System**: Implement AssetGeneratorManager to programmatically create, optimize, and export all marketing materials with proper file naming conventions and platform requirements.",
+        "testStrategy": "Test screenshot generation system by running automated capture sequences across different device simulators and verifying image quality, proper UI element visibility, and consistent gameplay representation. Validate app icon variants by testing installation across iOS and Android devices, confirming proper rendering at all required resolutions and adherence to platform design guidelines. Test splash screen performance by measuring load times and animation smoothness across various device specifications. Verify store listing graphics meet platform requirements (file sizes, dimensions, content guidelines) by uploading test assets to app store consoles. Test marketing asset templates by generating multiple promotional materials and confirming consistent branding, typography, and visual hierarchy across all outputs.",
+        "status": "pending",
+        "dependencies": [
+          3,
+          5,
+          38,
+          "32"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 63,
+        "title": "Create Quantum Surge UI Components",
+        "description": "Design and implement frontend components for the active play mechanic including surge button states, countdown timer, progress bar, particle effects, and visual feedback systems with React Native and NativeWind styling.",
+        "details": "Create comprehensive Quantum Surge UI component suite with the following elements: 1) **SurgeButton Component**: Implement interactive button using TouchableOpacity with three distinct states - cooldown (disabled with countdown overlay), available (pulsing glow animation), and active (intense particle effects). Use NativeWind styling for dark space theme with quantum-themed gradients and borders. Include haptic feedback on press using expo-haptics. 2) **SurgeCountdownTimer Component**: Create MM:SS format countdown display using react-native-reanimated for smooth minute/second transitions, automatically updating every second with useInterval hook. Style with monospace font and quantum glow effects. 3) **SurgeProgressBar Component**: Implement animated progress bar showing remaining surge time using react-native-progress with custom quantum-themed styling, featuring gradient fill and pulse animations during active state. 4) **QuantumParticleEffects Component**: Create particle system using react-native-reanimated with floating quantum particles, screen edge glow overlays, and beacon connection intensification effects. Implement configurable particle density and animation speeds. 5) **SurgeNotificationIndicator Component**: Design availability notification with animated quantum symbols, subtle screen edge highlights, and optional toast notifications when surge becomes available. 6) **SurgeScreenOverlay Component**: Create fullscreen glow effects during active surge with animated gradients and particle layers that don't interfere with gameplay interaction. Integrate all components with QuantumSurgeManager state management and ensure proper cleanup of animations on component unmount.",
+        "testStrategy": "Test SurgeButton component rendering in all three states (cooldown/available/active) and verify proper state transitions with mock QuantumSurgeManager data. Validate countdown timer accuracy by comparing displayed time with actual countdown values and test MM:SS format edge cases (59→00 transitions). Test progress bar animations during 60-second active periods, confirming smooth progress updates and proper completion handling. Verify particle effects performance by monitoring frame rates during intense animations and test cleanup on component unmount to prevent memory leaks. Test surge notification indicator visibility and timing, ensuring notifications appear exactly when cooldown expires. Validate screen overlay effects don't interfere with beacon placement or galaxy map interactions during active surge periods. Test all components respond correctly to QuantumSurgeManager state changes and handle rapid state transitions gracefully.",
+        "status": "pending",
+        "dependencies": [
+          34,
+          5
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 64,
+        "title": "Create Probe Capacity Upgrade UI Components",
+        "description": "Design and implement frontend components for the probe launch capacity system including capacity indicators, queue visualization, upgrade controls, and animated transitions with React Native and NativeWind styling.",
+        "details": "Create comprehensive ProbeCapacityUI component suite with the following elements: 1) **ProbeCapacityIndicator Component**: Implement capacity display using View components with NativeWind styling, featuring visual slot representation with occupied/available states, animated progress bar showing current usage (e.g., \"5/8 Probes Active\"), and color-coded visual indicators (active slots in quantum blue, queued in amber yellow, available in neutral gray). Include probe type icons and status badges for each occupied slot. 2) **ProbeQueueVisualization Component**: Create queue management interface displaying probe launch queue with TouchableOpacity cards for each queued probe, showing probe type, target coordinates, estimated launch time, and queue position. Implement drag-to-reorder functionality using react-native-gesture-handler for queue prioritization. 3) **CapacityUpgradeButton Component**: Design upgrade button with integrated resource validation, displaying current upgrade cost (Stellar Essence + Void Fragments), next capacity level preview, and disabled state when insufficient resources. Include haptic feedback and loading states during upgrade processing. 4) **SlotTransitionAnimator Component**: Implement smooth animations using react-native-reanimated for slot state changes, featuring slide-in effects for new probes, fade-out for completed missions, and pulsing animations for active probes. 5) **CapacityUpgradeModal Component**: Create preview modal using react-native-modal showing detailed upgrade information including current vs upgraded capacity, resource costs breakdown, estimated ROI calculations, and confirmation dialog with cancel/upgrade buttons. Include upgrade benefits visualization and permanent capacity increase effects. All components follow dark space theme with quantum-inspired gradients and consistent typography.",
+        "testStrategy": "Test ProbeCapacityIndicator rendering with various capacity states (empty, partial, full, over-capacity) and verify color-coding accuracy and slot animations. Validate ProbeQueueVisualization by populating queue with different probe types and testing drag-to-reorder functionality, ensuring queue position updates correctly. Test CapacityUpgradeButton resource validation by setting different resource amounts and confirming button enables/disables appropriately with accurate cost displays. Verify SlotTransitionAnimator performance by rapidly changing probe states and ensuring smooth animations without frame drops. Test CapacityUpgradeModal with various upgrade scenarios, confirming cost calculations, preview accuracy, and proper modal dismissal on successful upgrades.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          34,
+          41,
+          "36"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 65,
+        "title": "Create Beacon Milestone Choice UI Components",
+        "description": "Design and implement frontend components for the binary upgrade choice system including milestone choice modals, progress displays, selection interfaces, and confirmation dialogs using React Native and NativeWind styling.",
+        "details": "Create comprehensive MilestoneChoiceUI component suite with the following elements: 1) **MilestoneChoiceModal Component**: Implement modal dialog using react-native-modal with dark space theme styling, featuring two mutually exclusive upgrade path cards with titles, descriptions, benefits preview, and visual icons. Include binary choice selection using TouchableOpacity with haptic feedback and confirmation requirement before applying permanent upgrade. Use NativeWind classes for quantum-themed gradients and space aesthetics. 2) **MilestoneProgressBar Component**: Create progress tracking display using react-native-progress with custom styling, showing current beacon count toward next milestone target (e.g., '47/50 Beacons'), percentage completion, and estimated time to milestone. Include animated progress updates and milestone threshold markers. 3) **BinaryChoiceCard Component**: Design upgrade option cards with clear visual hierarchy showing choice title, detailed benefit description, resource impact preview, and selection state indicator. Use conditional styling for selected/unselected states with smooth transitions. 4) **MilestoneHistorySection Component**: Implement scrollable list of previous milestone decisions using FlatList, displaying choice made, benefits gained, beacon count at time of choice, and timestamp. Include search/filter functionality for milestone review. 5) **UpcomingMilestonePreview Component**: Create preview display showing next milestone target, required beacon count, and potential upgrade choices with locked/teaser styling. 6) **PermanentChoiceConfirmation Component**: Implement final confirmation dialog with warning text about permanent nature of choice, upgrade summary, and double-confirmation requirement to prevent accidental selections.",
+        "testStrategy": "Test MilestoneChoiceModal rendering with various milestone scenarios and verify binary choice selection logic prevents multiple selections while allowing choice changes before confirmation. Validate MilestoneProgressBar accuracy by testing with different beacon counts and verifying progress calculations match actual game state. Test BinaryChoiceCard visual states and animations during selection changes, confirming proper styling transitions and haptic feedback responsiveness. Validate MilestoneHistorySection performance with large datasets of previous choices and test search functionality with various filter criteria. Test UpcomingMilestonePreview with different game progression states to ensure accurate milestone targets and choice previews. Verify PermanentChoiceConfirmation prevents accidental selections through double-confirmation flow and test integration with beacon upgrade system to ensure choices apply correctly to game state.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          41,
+          "40"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 66,
+        "title": "Create Chronos Particles Shop Interface",
+        "description": "Design and implement frontend components for the earned-only premium currency system including shop interface with categorized spending options, prominent earned-only labeling, particle cost displays, and purchase confirmation dialogs.",
+        "details": "Create comprehensive ChronosShopUI component suite with the following elements: 1) **ChronosShopInterface Component**: Implement main shop screen using ScrollView with NativeWind styling, featuring prominent 'EARNED ONLY' banner at top with quantum particle animation effects, categorized spending sections (Instant Completion, Network Boosts, Cosmetic Unlocks) using View containers with section headers and dividers. Include visual particle wallet indicator showing current balance with animated particle count updates. 2) **ChronosShopCategory Component**: Create category sections with TouchableOpacity items displaying purchase options, particle costs using Text components with quantum-themed styling, benefit descriptions, and availability states. Include cost comparison displays and savings indicators for bulk purchases. 3) **ChronosParticlePurchaseModal Component**: Implement confirmation dialog using react-native-modal with dark space theme, featuring purchase item preview, particle cost breakdown, current balance display, and 'EARNED ONLY' reminder text. Include confirm/cancel buttons with haptic feedback and insufficient balance state handling. 4) **ChronosSpendingHistory Component**: Create spending tracker displaying recent purchases with timestamps, particle amounts spent, items purchased, and remaining balance after each transaction. Use FlatList for efficient rendering with pull-to-refresh functionality. 5) **ParticleWalletIndicator Component**: Implement wallet display with current particle count, animated counter updates on balance changes, and prominent 'EARNED' badge emphasizing the earned-only nature of the currency.",
+        "testStrategy": "Test ChronosShopInterface rendering with various particle balance states (zero, low, high) and verify earned-only messaging displays prominently throughout all screens. Validate purchase confirmation modal by attempting purchases with sufficient/insufficient balances and confirming proper error states and success flows. Test spending history accuracy by making multiple purchases and verifying transaction records display correct timestamps, amounts, and balance calculations. Verify particle wallet indicator updates correctly when balance changes through earnings or spending, including smooth animation transitions and proper formatting of large numbers.",
+        "status": "pending",
+        "dependencies": [
+          41
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 67,
+        "title": "Create Stellar Reignition Visual Effects Components",
+        "description": "Design and implement frontend components for spectacular cascade event animations including particle systems, star reignition sequences, energy pulse effects, and ambient lighting changes using React Native and react-native-svg.",
+        "details": "Create comprehensive StellarReignitionVFX component suite with the following elements: 1) **ParticleSystemManager Component**: Implement energy wave particle system using react-native-reanimated with configurable particle count, velocity vectors, and lifespan management. Create particle emitters for energy waves radiating from reignited stars using Animated.Value arrays for position updates and opacity fading. Include particle recycling system for performance optimization. 2) **StarReignitionSequence Component**: Create dying star revival animation using react-native-svg Circle components with animated radius and fill color transitions. Implement 3-second animation sequence: phase 1 (0-1s): star pulses with expanding radius, phase 2 (1-2s): color transition from red/orange (#FF6B35, #FF8E53) to bright white/blue (#FFFFFF, #4FC3F7), phase 3 (2-3s): stabilization with gentle glow effect. Use Animated.timing with custom easing curves for smooth transitions. 3) **EnergyPulseEffect Component**: Design radial energy pulse animations using react-native-svg with expanding circles and gradient fills. Implement pulse propagation from reignited stars to nearby dead stars using distance calculations and staggered animation delays. Create cascading pulse chains with varying intensities based on distance and beacon connectivity. 4) **ScreenShakeEffect Component**: Implement device shake effects during major cascade events using react-native-reanimated transform animations. Create intensity-based shake patterns with configurable duration and frequency, triggered by CascadeEventManager. Include haptic feedback integration using expo-haptics for enhanced tactile experience. 5) **AmbientLightingOverlay Component**: Design blue/white glow overlays for revived sectors using react-native-svg with radialGradient definitions. Implement smooth lighting transitions with opacity animations and color blending for sector boundaries. Create dynamic lighting zones that expand as more stars are revived within sectors. 6) **CascadeHistoryVisualization Component**: Build interactive timeline component showing cascade event history using ScrollView with animated timeline markers. Display event details including trigger timestamp, affected sectors count, cascade chain length, and resource bonuses gained. Include visual indicators for cascade types (single vs. chain reactions) with appropriate animations and color coding following dark space theme.",
+        "testStrategy": "Test ParticleSystemManager performance by spawning 100+ particles simultaneously and verifying smooth 60fps animation performance on mid-range devices while monitoring memory usage for particle recycling efficiency. Validate StarReignitionSequence animation timing by measuring exact duration of each phase transition and confirming color values match specification at key animation points. Test EnergyPulseEffect cascade propagation by creating multiple dead stars at varying distances and verifying pulse timing delays correspond correctly to spatial relationships. Validate ScreenShakeEffect intensity scaling by triggering cascades of different magnitudes and confirming shake patterns match expected intensity curves. Test AmbientLightingOverlay rendering performance with multiple revived sectors and verify smooth blending between overlapping glow zones without visual artifacts. Validate CascadeHistoryVisualization with extensive cascade history data (50+ events) ensuring smooth scrolling performance and accurate timeline rendering.",
+        "status": "pending",
+        "dependencies": [
+          42,
+          5
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 68,
+        "title": "Create Random Discovery Notification UI Components",
+        "description": "Design and implement comprehensive frontend components for the discovery system including notification modals, collection screens, progress tracking, and celebration animations using React Native and NativeWind styling.",
+        "details": "Create comprehensive DiscoveryUI component suite with the following elements: 1) **DiscoveryNotificationModal Component**: Implement modal dialog using react-native-modal with dark space theme styling, featuring discovery animation sequence with particle effects using react-native-reanimated, congratulations messaging with discovery title and description, discovery icon with glow effects, and bonus preview showing gained benefits. Include haptic feedback using expo-haptics and auto-dismiss after 5 seconds. 2) **DiscoveryCollectionScreen Component**: Create scrollable collection interface using ScrollView with grid layout, displaying all discovered bonuses organized by category (geometric patterns, operational improvements, resource generation, meta-progression). Each discovery card shows icon, name, description, unlock date, and bonus details with locked/unlocked visual states. 3) **DiscoveryCounter Component**: Implement compact progress indicator for main UI showing collected/total discoveries ratio (e.g., \"12/45 Discoveries\") with animated progress bar and category breakdown on tap. 4) **DiscoveryGlowEffect Component**: Create subtle glow animation wrapper for recently acquired discoveries using Animated.Value with pulsing opacity and scale effects lasting 24 hours after unlock. 5) **DiscoveryStatsDisplay Component**: Build statistics screen showing discovery progress by category, unlock timeline, completion percentages, and rarest discoveries with achievement integration. Use NativeWind classes for consistent dark space theme with quantum-themed gradients, borders, and typography. Integrate with Chronos Particles system for discovery celebration rewards.",
+        "testStrategy": "Test DiscoveryNotificationModal rendering with various discovery types and verify animation timing, haptic feedback trigger, and auto-dismiss functionality. Validate DiscoveryCollectionScreen by populating with mock discovery data across all categories, testing grid layout responsiveness and locked/unlocked state visual differences. Test DiscoveryCounter accuracy by comparing displayed ratios with actual discovery counts and verify category breakdown modal functionality. Validate DiscoveryGlowEffect animation by triggering recent discoveries and confirming 24-hour glow duration with proper fade-out timing. Test DiscoveryStatsDisplay data visualization accuracy and verify integration with achievement system for discovery-based rewards.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          29,
+          41,
+          "43"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Implement Intelligent Probe Placement AI System",
+        "description": "Create an AI-driven probe placement system that strategically expands beacon networks from existing edges, identifies network boundaries, maintains optimal connection distances, and prioritizes geometric pattern completion and dying star targets through pure backend implementation.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Develop backend ProbeAI class with sophisticated placement algorithms focusing exclusively on business logic: 1) **Network Edge Detection**: Implement NetworkBoundaryAnalyzer using graph traversal to identify beacon network perimeters and expansion candidates. Use Delaunay triangulation to find network 'holes' and optimal expansion points. 2) **Strategic Placement Algorithm**: Create PlacementOptimizer that scores potential positions based on: connection viability (within beacon range), pattern completion potential (triangle/square/pentagon opportunities), dying star proximity weighting, and network connectivity improvement. Use weighted scoring system with configurable priorities. 3) **Connection Distance Validation**: Implement distance-based validation preventing isolated beacons using configurable max connection distance (default 2x beacon range). Add pathfinding verification ensuring new beacons maintain network connectivity. 4) **Pattern Completion Priority**: Integrate with existing PatternDetector to identify near-complete geometric formations and prioritize positions that would complete triangles (highest priority), squares, pentagons, or hexagons. 5) **Target Prioritization System**: Add PlayerTargetManager allowing manual star marking for AI bias. Weight placement scores toward marked dying stars with exponential decay based on distance. 6) **Adaptive Intelligence**: Implement learning system that tracks successful placements and adjusts scoring weights based on resource generation effectiveness. 7) **ProbeManager Integration**: Extend existing ProbeManager to support AI placement mode alongside manual placement with backend algorithm selection logic.",
+        "testStrategy": "Test network boundary detection accuracy with various beacon configurations including isolated clusters and linear chains. Verify connection distance validation prevents orphaned beacons across different network topologies. Test pattern completion priority by setting up near-complete geometric formations and confirming AI completes them correctly. Validate dying star target prioritization with manual star marking and distance-based scoring. Performance testing with large networks (100+ beacons) ensuring AI calculations complete within acceptable time limits. Test adaptive learning by running multiple placement cycles and verifying score weight adjustments improve placement quality over time. Unit tests for all AI algorithm components without UI dependencies.",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "Enhance Offline Progression System with Queued Probe Completions",
+        "description": "Implement backend offline progression calculations for probes launched before going offline, automatically placing completed beacons and managing network expansion that occurred during offline time through pure business logic systems.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Enhance the existing offline progression system to handle queued probe operations with backend-only implementation: 1) **ProbeQueueManager Implementation**: Create ProbeQueueManager class to serialize/deserialize probe queue state across app sessions using AsyncStorage. Handle probe data persistence including launch timestamps, types, target coordinates, and acceleration states. Implement queue validation and corruption recovery mechanisms. 2) **Offline Probe Tracking Backend**: Extend ResourceManager's offline calculation system to track active probes when app becomes inactive. Store probe launch timestamps, types, and target coordinates in persistent storage using AsyncStorage with proper data versioning and migration support. 3) **Completion Calculation Algorithms**: On app return, calculate elapsed offline time and determine which probes completed based on launch time + deployment duration (Pioneer: 30s, Harvester: 90s, Architect: 60s). Account for any manual acceleration bonuses that were active when launched. Implement precise timestamp calculations and handle edge cases for system clock changes. 4) **Automated Beacon Placement System**: For completed probes, automatically spawn beacons at their target coordinates using existing BeaconManager.createBeacon() method. Respect beacon placement rules and connection validation. Update network topology automatically and trigger pattern detection for newly placed beacons using existing PatternDetector from Task 7. 5) **Network Topology Updates**: Implement automated network connection establishment for newly placed beacons. Update beacon adjacency matrices and connection graphs. Trigger pattern detection algorithms to identify new geometric formations created during offline time. 6) **Resource Integration Backend**: Calculate and award resources generated by newly placed beacons during offline time, including pattern bonuses from completed geometric shapes detected by the pattern system. Integrate with existing resource calculation systems and update total resource accumulation in offline progression calculations. Handle multiplicative pattern bonuses and resource overflow scenarios.",
+        "testStrategy": "Test ProbeQueueManager serialization/deserialization across app restarts with various probe types and launch times. Verify offline time calculation accuracy for probe completion with different deployment durations and manual acceleration states. Test automatic beacon placement at correct coordinates with proper network connection validation. Validate pattern detection triggers for newly placed beacons forming geometric shapes using existing PatternDetector. Test resource calculations include bonuses from new patterns formed by offline beacon placements. Performance testing with large numbers of queued probes (50+) during extended offline periods. Test AsyncStorage persistence under low storage conditions and data corruption scenarios. Validate network topology updates and adjacency matrix calculations for newly placed beacons.",
+        "subtasks": []
+      },
+      {
+        "id": 31,
+        "title": "Create Audio System with Ambient Music and Sound Effects",
+        "description": "Implement a comprehensive backend audio system featuring ambient space music management, sound effect processing, audio ducking algorithms, and persistent audio settings without any UI components.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Install expo-av for audio playback capabilities and react-native-track-player for background music management. Create AudioManager class with backend methods: playAmbientTrack(), playBeaconPlacement(), playPatternComplete(), playProbeLaunch(), playReignitionEvent(), and stopAllSounds(). Implement ambient music system with 3-5 looping space-themed tracks (cosmic drones, stellar winds, quantum harmonics) using seamless loop points and track transition algorithms. Create sound effect library with backend processing: beacon placement (harmonic chime with pitch variation based on beacon level), pattern completion (ascending musical phrase with intensity based on pattern size), probe launch (swoosh with type-specific pitch - Pioneer high, Harvester mid, Architect low), stellar reignition (triumphant orchestral swell with particle effects sync). Implement AudioSettings class for volume control persistence and audio configuration management (master volume, music volume, effects volume, mute states) stored in save system. Create fade transition algorithms between ambient tracks based on galaxy sector entropy levels using mathematical interpolation. Implement audio ducking algorithms to reduce music volume during important sound effects with automatic restoration. Create AudioPreloader class to cache frequently used sounds for instant playback with memory management. Add haptic feedback synchronization algorithms with major audio events using expo-haptics timing coordination.",
+        "testStrategy": "Test audio engine functionality across iOS and Android platforms with various device audio configurations. Verify ambient music loops seamlessly without gaps using automated audio analysis. Test sound effect timing accuracy with simulated game events through unit testing of AudioManager methods. Verify volume control algorithms affect appropriate audio channels independently through isolated testing. Test audio state persistence across app backgrounding and save/load cycles. Performance testing to ensure audio processing doesn't impact frame rate during intensive gameplay. Test audio ducking algorithms during overlapping music and effects with automated volume level monitoring. Verify haptic feedback synchronization timing with audio cues through millisecond-accurate testing.",
+        "subtasks": []
+      },
+      {
+        "id": 45,
+        "title": "Implement Hierarchical Pattern Discovery System",
+        "description": "Transform the basic geometric pattern system into a hierarchical discovery system with complex multi-shape configurations, emergent patterns, and progressive complexity tiers to provide months of discovery content.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Create a comprehensive hierarchical pattern system backend that builds upon existing basic shapes: 1) **Pattern Definition System**: Implement ComplexPattern interface with geometric requirements, scale variations, specialization dependencies, proximity rules, and exclusivity conditions. Create PatternRequirement structure defining shape arrangements, beacon specializations, and connection rules. 2) **Enhanced Detection Algorithm**: Extend existing PatternDetector to handle multi-shape configurations using spatial indexing and hierarchical matching. Implement real-time detection with partial progress tracking for complex patterns spanning 10-50+ beacons. Add conflict resolution for overlapping pattern possibilities. 3) **Pattern Tiers Implementation**: Create backend logic for Tier 1 Enhanced Basic Patterns (Solar Ring: pentagon + 5 triangles, Quantum Core: square + corner triangles, Stellar Crown: hexagon + alternating perimeter shapes), Tier 2 Network Formations (Quantum Lattice: interconnected square grids, Stellar Cascade: fibonacci triangle chains, Resonance Web: complex multi-shape networks), Tier 3 Architectural Marvels (Galaxy Heart: 50+ beacon formations, Cosmic Mandala: symmetrical specialized patterns). 4) **Discovery System Backend**: Implement progressive pattern unlocking logic based on basic shape mastery, context-aware suggestion algorithms for complex patterns, discovery state management with completion tracking. 5) **Data Structures**: Create PatternDatabase with flexible pattern definitions and conflict resolution, DiscoveryTracker for completion state management, and HierarchicalBonus calculator for multiplicative pattern interactions. 6) **Performance Optimization**: Implement spatial partitioning for efficient large-network scanning, background pattern detection algorithms optimized for performance, and incremental validation systems to maintain detection efficiency.",
+        "testStrategy": "Comprehensive backend testing across all pattern systems: 1) **Pattern Detection Logic**: Test detection algorithms for all 30+ complex patterns with various beacon arrangements, verify partial progress calculation algorithms for incomplete patterns, test pattern prioritization logic when multiple configurations possible. 2) **Performance Validation**: Measure pattern detection algorithm performance with 500+ beacon networks maintaining <16ms scanning time, verify memory usage of spatial indexing stays under 20MB additional overhead, test background detection algorithm efficiency. 3) **Discovery Progression Logic**: Verify basic shape completion triggers Tier 1 pattern unlocking, test suggestion algorithm provides appropriate pattern hints, validate discovery state persistence and completion tracking. 4) **Business Logic Integration**: Test pattern bonus calculation algorithms integrate properly with resource generation systems, verify discovered pattern data persists across save/load cycles, test hierarchical bonus calculations with multiplicative stacking. 5) **Algorithm Accuracy**: Test spatial partitioning accuracy for large beacon networks, verify conflict resolution algorithms handle overlapping pattern possibilities correctly, validate incremental detection maintains accuracy during network changes.",
+        "subtasks": []
+      },
+      {
+        "id": 39,
+        "title": "Create Pattern Discovery Gallery UI with Visual Collection Display",
+        "description": "Build a comprehensive pattern gallery screen that displays all discovered geometric patterns with visual representations, rarity indicators, discovery timestamps, bonus multipliers, and completion tracking accessible from the main HUD.",
+        "details": "Implement PatternGalleryScreen component with comprehensive pattern collection visualization: 1) **Gallery Grid Layout**: Create scrollable grid using FlatList displaying pattern cards with visual SVG representations of each discovered geometric formation (triangle, square, pentagon, hexagon). Each card shows the actual beacon configuration that was discovered. 2) **Pattern Metadata Display**: Show discovery timestamp, current bonus multiplier value (1.5x for triangles through 5x for hexagons), rarity classification based on formation complexity and discovery frequency. Include completion percentage tracking how many unique variations of each pattern type have been found. 3) **Visual Pattern Rendering**: Use react-native-svg to render miniature versions of each pattern configuration, showing beacon positions and connecting lines in the same visual style as the galaxy map overlays. 4) **Rarity System Integration**: Implement rarity classification (Common, Uncommon, Rare, Epic, Legendary) based on pattern complexity, overlapping formations, and discovery frequency. Highlight rare formations with special border effects and animations. 5) **HUD Integration**: Add 'Patterns' button to main screen floating action button array that opens the gallery screen with slide-up animation. Include pattern count badge showing total discovered patterns. 6) **Data Management**: Extend PatternDetector to persist pattern discoveries with timestamps and metadata in save system. Create PatternCollection class managing discovered patterns, rarity calculations, and completion tracking across game sessions.",
+        "testStrategy": "Verify pattern gallery displays all discovered patterns from PatternDetector system with accurate visual representations matching actual beacon configurations. Test rarity indicators correctly classify patterns based on complexity and discovery frequency. Validate discovery timestamps persist across app sessions and display in readable format. Test completion percentage calculations accurately reflect pattern discovery progress. Verify gallery access button integrates smoothly with main HUD without interfering with existing floating UI elements. Test scroll performance with large numbers of discovered patterns maintaining 60fps.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [],
+        "tag": "master",
+        "metadata": {
+          "moveHistory": [
+            {
+              "fromTag": "master",
+              "toTag": "frontend",
+              "timestamp": "2025-09-05T00:11:12.076Z"
+            },
+            {
+              "fromTag": "frontend",
+              "toTag": "master",
+              "timestamp": "2025-09-05T00:50:09.650Z"
+            }
+          ]
+        }
+      },
+      {
+        "id": 37,
+        "title": "Create Probe Targeting and Direction Control UI",
+        "description": "Implement backend systems for probe targeting and placement optimization with three targeting modes for dying star systems, pattern completion, and empty sector exploration, focusing exclusively on business logic, algorithms, and placement calculation systems.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Create backend ProbeTargetingManager class with three targeting modes: 1) **Dying Star Priority**: Implement algorithm to identify sectors containing dying star systems for Stellar Essence harvesting, using galaxy sector data to calculate optimal expansion paths with weighted scoring based on star system health and resource potential. 2) **Pattern Completion**: Develop NetworkBoundaryAnalyzer using graph traversal algorithms to analyze existing beacon network topology and identify incomplete geometric patterns, calculating optimal probe positions that would complete triangles, squares, pentagons, or hexagons with maximum pattern bonus efficiency. 3) **Empty Sector Exploration**: Create exploration algorithm targeting unexplored sectors for balanced network expansion, using spatial analysis to avoid areas with existing beacon coverage while maintaining optimal network connectivity. Implement PlacementOptimizer class with scoring algorithms that evaluate potential probe positions based on targeting mode, existing beacon density, resource availability, and network connectivity metrics. Create ProbePlacementPredictor with calculation algorithms that determine optimal expansion vectors using probability matrices and spatial analysis. Implement ProbePathCalculator that processes targeting mode preferences, existing beacon positions, probe type capabilities, and resource availability to calculate expansion recommendations. Add targeting preference persistence system integrated with save/load functionality to maintain player choices across sessions. Focus purely on business logic, targeting algorithms, mathematical calculations, and placement optimization systems without any frontend concerns.",
+        "testStrategy": "Test each targeting mode algorithm independently by running placement calculations and verifying they generate expected expansion recommendations toward dying stars, pattern completion positions, or empty sectors. Validate PlacementOptimizer scoring algorithms produce consistent results across multiple calculation runs with identical input parameters. Test NetworkBoundaryAnalyzer graph traversal performance with complex beacon networks and verify pattern recognition accuracy for geometric formations. Test targeting preference persistence through save/load cycles and verify algorithm state restoration. Test ProbePlacementPredictor calculation accuracy by comparing predicted optimal positions with manually calculated expected results. Validate ProbePathCalculator integration with resource systems and verify recommendations respect resource constraints and probe type limitations. Test performance with large beacon networks (500+ beacons) and verify calculation algorithms maintain acceptable response times.",
+        "subtasks": []
+      },
+      {
+        "id": 51,
+        "title": "Enhanced Sector Visualization - Replace simple rectangular test sectors with sophisticated Voronoi cell boundaries, smooth entropy gradients, hexagonal grid overlays, and organic sector shapes",
+        "description": "Complete the galaxy map overhaul by implementing full logic, polish, and sophisticated rendering features for the modular galaxy map system created in task 50. Transform the basic modular foundation into a production-ready visualization engine with Voronoi boundaries, entropy gradients, hexagonal overlays, and organic sector shapes.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Build upon the modular galaxy map foundation from task 50 to create a fully functional and polished galaxy visualization system: 1) **Complete Modular Component Logic**: Implement full business logic for all modular components created in task 50 (GalaxyMapCore, GalaxyMapModular, GalaxyOverlaySystem, SectorStateRenderer, OverlayControls). Connect data flow between components, implement proper state management, and add missing event handlers. 2) **Voronoi Sector Implementation**: Complete VoronoiSectorRenderer with full Fortune's algorithm implementation for organic cell boundaries. Integrate with existing SectorManager and ensure proper star system positioning within Voronoi cells. Add boundary caching and regeneration logic based on sector changes. 3) **Enhanced Visual Polish**: Implement smooth entropy gradient transitions using SVG radialGradient elements with proper color interpolation (healthy blue #3B82F6 → dying orange #F59E0B → dead red #EF4444). Add sophisticated boundary rendering with bezier curves, glow effects, and zoom-adaptive detail levels. 4) **Hexagonal Grid Overlay**: Complete HexagonalGridOverlay with adaptive density based on zoom level and proper opacity transitions. Ensure grid alignment with sector boundaries and implement performance-optimized rendering. 5) **Production-Ready Features**: Add comprehensive error handling, loading states, and fallback rendering for all modular components. Implement proper cleanup and memory management. Add debug overlays and development tools integration. 6) **Integration & Testing**: Ensure all modular components work seamlessly together, integrate with existing BeaconRenderer and StarSystem components, and validate the complete galaxy map experience meets performance requirements (60fps with 500+ beacons).",
+        "testStrategy": "Validate complete modular system integration by testing data flow between all components created in task 50. Test Voronoi cell generation accuracy with various star system distributions and verify no boundary overlaps or gaps exist. Validate smooth entropy gradient rendering with proper color transitions and performance optimization. Test hexagonal grid overlay visibility, opacity transitions, and alignment across multiple zoom levels. Verify organic sector shapes render correctly with noise-based boundary perturbation. Conduct comprehensive performance testing with 100+ sectors and 500+ beacons ensuring 60fps maintenance on target mobile devices. Test error handling, loading states, and graceful degradation scenarios.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Complete modular component business logic implementation",
+            "description": "Implement full business logic for GalaxyMapCore, GalaxyMapModular, GalaxyOverlaySystem, SectorStateRenderer, and OverlayControls components",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement production-ready Voronoi sector boundaries",
+            "description": "Complete VoronoiSectorRenderer with Fortune's algorithm, caching system, and integration with SectorManager",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add sophisticated visual polish and rendering effects",
+            "description": "Implement smooth entropy gradients, bezier curve boundaries, glow effects, and zoom-adaptive detail levels",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Complete hexagonal grid overlay system",
+            "description": "Finish HexagonalGridOverlay with adaptive density, opacity transitions, and boundary alignment",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add production features and error handling",
+            "description": "Implement comprehensive error handling, loading states, fallback rendering, and memory management",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Integration testing and performance optimization",
+            "description": "Test complete modular system integration and optimize for 60fps performance with 500+ beacons",
+            "status": "pending",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          }
+        ],
+        "tag": "master",
+        "metadata": {
+          "moveHistory": [
+            {
+              "fromTag": "master",
+              "toTag": "frontend",
+              "timestamp": "2025-09-05T00:12:21.638Z"
+            },
+            {
+              "fromTag": "frontend",
+              "toTag": "master",
+              "timestamp": "2025-09-05T00:50:09.650Z"
+            }
+          ]
+        }
+      },
+      {
+        "id": 69,
+        "title": "Create Probe Targeting Control UI Components",
+        "description": "Design and implement frontend components for the probe targeting system including targeting mode toggles, heat map overlays, placement predictors, and smooth visual transitions between targeting modes.",
+        "details": "Create comprehensive ProbeTargetingUI component suite with the following elements: 1) **TargetingControlPanel Component**: Implement toggle button interface using TouchableOpacity components with three targeting modes - Dying Star Priority (red theme), Pattern Completion (blue theme), Empty Sector Exploration (green theme). Include active state indicators with haptic feedback using expo-haptics and smooth state transitions using react-native-reanimated. Use NativeWind styling for dark space theme with quantum-themed borders and glow effects. 2) **HeatMapOverlay Component**: Create SVG-based visualization using react-native-svg with semi-transparent colored regions representing targeting priorities. Implement red zones for dying stars using circle/polygon shapes, blue zones for pattern completion opportunities, and green zones for empty exploration sectors. Include opacity animations for smooth transitions between different heat map modes using Animated.Value. 3) **ProbePlacementPredictor Component**: Design visual probability zones showing optimal probe placement locations using SVG path elements with gradient fills and pulsing animations. Calculate and display success probability percentages based on selected targeting mode. Include predictive trajectory lines showing probe paths using Bezier curves. 4) **TargetingHUD Component**: Create status indicator overlay showing current targeting mode with icon badges, active zone counts, and prediction confidence metrics. Integrate with existing HUD system using consistent styling and positioning. 5) **TargetingModeTransitions**: Implement smooth animated transitions between targeting visualizations using coordinated opacity, scale, and position animations with react-native-reanimated shared values for 60fps performance.",
+        "testStrategy": "Test TargetingControlPanel rendering with all three targeting modes and verify proper toggle state management, haptic feedback triggers, and visual state transitions. Validate HeatMapOverlay by rendering with mock sector data for each targeting mode, confirming proper SVG path generation and smooth opacity transitions between modes. Test ProbePlacementPredictor accuracy by providing various sector configurations and verifying probability calculations match expected targeting algorithms. Validate TargetingHUD integration by testing overlay positioning with different screen sizes and confirming status indicators update correctly when targeting modes change. Performance test animated transitions by rapidly switching between targeting modes and monitoring frame rate consistency during complex SVG rendering with 100+ overlay elements.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          34,
+          "37"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 70,
+        "title": "Create Intelligent Probe AI Settings UI Components",
+        "description": "Design and implement frontend components for the AI probe placement system including AI mode toggles, status indicators, visual feedback systems, learning progress displays, manual star marking interface, placement history visualization, and performance monitoring displays.",
+        "details": "Create comprehensive AIProbeUI component suite with the following elements: 1) **AISettingsToggle Component**: Implement toggle switch using react-native-switch with three AI modes - Off (manual control), Adaptive Learning (AI assists placement), Full Automation (AI handles all placement). Include visual state indicators with haptic feedback using expo-haptics and smooth transitions using react-native-reanimated. Use NativeWind styling for dark space theme with distinct colors for each mode. 2) **AIStatusHUD Component**: Create overlay component showing current AI mode status with animated indicators, placement confidence meter using progress bar, and real-time AI decision display. Include pulsing animations for active AI states and clear manual/AI control visual distinctions. 3) **AIReasoningDisplay Component**: Implement expandable panel showing AI placement logic with reason categories (pattern optimization, resource efficiency, star proximity), confidence scores with color-coded indicators, and alternative placement suggestions. Use ScrollView with animated expansion/collapse. 4) **LearningProgressIndicator Component**: Create progress tracking display showing AI adaptation metrics, learning milestones achieved, and performance improvement graphs using react-native-chart-kit with custom styling. Include neural network visualization using react-native-svg. 5) **ManualStarMarking Component**: Implement star selection interface allowing users to mark preferred targets with touch gestures, visual markers using SVG overlays, priority level assignment, and bias strength sliders. Include confirmation dialogs for target changes. 6) **AIHistoryVisualization Component**: Create placement history timeline showing AI decisions over time, success/failure tracking with color coding, pattern formation efficiency metrics, and decision reversal options. Use FlatList with custom timeline rendering. 7) **PerformanceMonitoring Component**: Implement real-time dashboard showing AI vs manual performance comparison, resource generation efficiency metrics, pattern completion rates, and recommendation accuracy tracking with statistical displays.",
+        "testStrategy": "Test AISettingsToggle component rendering with all three AI modes and verify proper state transitions, haptic feedback triggers, and visual indicator changes. Validate AIStatusHUD overlay positioning and animation performance during mode switches and placement activities. Test AIReasoningDisplay expansion/collapse animations and verify reasoning text updates reflect actual AI decision logic with mock placement scenarios. Validate LearningProgressIndicator chart rendering with various progress data sets and confirm milestone achievement animations trigger correctly. Test ManualStarMarking interface with touch gesture recognition, marker placement accuracy, and priority slider responsiveness across different screen sizes. Validate AIHistoryVisualization timeline rendering with large datasets, scroll performance, and decision detail modal functionality. Test PerformanceMonitoring dashboard with real-time data updates and verify statistical calculation accuracy for AI vs manual comparison metrics.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          34,
+          69,
+          "24"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 71,
+        "title": "Create Offline Progression Summary UI Components",
+        "description": "Design and implement frontend components for the enhanced offline progression system including animated counters, beacon placement visualization, network statistics, and engaging progression feedback animations.",
+        "details": "Create comprehensive OfflineProgressionUI component suite with the following elements: 1) **OfflineProgressModal Component**: Implement modal dialog using react-native-modal with dark space theme styling, featuring animated counters showing probe completions by type (Pioneer, Harvester, Architect) using react-native-reanimated with count-up animations from 0 to final values over 2-3 seconds. Include probe type icons with completion badges and haptic feedback on modal appearance. 2) **BeaconPlacementVisualization Component**: Create beacon placement summary using ScrollView with coordinate displays showing new beacon positions in a grid format, including beacon type indicators and connection previews. Use NativeWind styling with quantum-themed borders and glow effects for newly placed beacons. 3) **NetworkConnectionCounter Component**: Implement animated counter for new network connections formed, featuring connection line animations using react-native-svg with path drawing effects and connection strength indicators. 4) **PatternCompletionCelebration Component**: Create celebration effects for completed patterns using particle systems with react-native-reanimated, including pattern type badges (triangle, square, pentagon, hexagon) with completion glow animations and bonus multiplier displays. 5) **ResourceGenerationSummary Component**: Design comprehensive resource breakdown showing Quantum Data, Stellar Essence, and Void Fragments generated during offline period, with pattern bonus breakdowns displayed as expandable sections using collapsible views. Include animated progress bars showing contribution percentages. 6) **NetworkExpansionStats Component**: Create statistics display showing network growth metrics including total beacon count, average connection strength, network coverage area expansion, and efficiency improvements with visual charts using react-native-svg for data visualization. All components use consistent dark space theme with smooth animated transitions and proper accessibility labels.",
+        "testStrategy": "Test OfflineProgressModal rendering with various offline durations and progression amounts, verifying animated counters start from zero and count up to correct final values with proper timing. Validate BeaconPlacementVisualization by testing with different quantities of newly placed beacons, confirming coordinate accuracy and proper scrolling behavior for large numbers of placements. Test NetworkConnectionCounter animations by simulating various connection formation scenarios and verifying SVG path animations render smoothly at 60fps. Validate PatternCompletionCelebration effects by triggering celebrations for each pattern type (triangle through hexagon) and confirming particle animations, glow effects, and bonus displays function correctly. Test ResourceGenerationSummary with edge cases including zero generation, massive offline sessions, and pattern bonus calculations to ensure breakdown accuracy and expandable sections work properly. Validate NetworkExpansionStats chart rendering with various network sizes and verify SVG data visualization performance with large datasets while maintaining smooth animations.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          34,
+          41,
+          "28"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 72,
+        "title": "Create Audio System Settings UI Components",
+        "description": "Design and implement comprehensive frontend components for the audio system including volume controls, audio quality settings, haptic feedback sync, music track selection, and accessibility-compliant audio controls using React Native and NativeWind styling.",
+        "details": "Create comprehensive AudioSettingsUI component suite with the following elements: 1) **AudioSettingsScreen Component**: Implement main settings screen using ScrollView with NativeWind dark space theme styling, featuring organized sections for volume controls, audio quality, and preferences. Include proper header with back navigation and settings icon. 2) **VolumeControlSlider Component**: Create custom slider components for master, music, and effects volumes using react-native-slider with custom thumb and track styling. Include real-time audio preview during adjustment, percentage display labels, and mute toggle buttons with haptic feedback using expo-haptics. Implement volume curve calculations for proper audio scaling. 3) **AudioQualitySelector Component**: Design dropdown/picker interface for audio quality selection (Low/Medium/High/Ultra) with bitrate information display and storage impact warnings. Use TouchableOpacity with modal picker for selection. 4) **HapticSyncToggle Component**: Implement toggle switches for haptic feedback synchronization with audio events using Switch component with custom styling. Include separate toggles for UI sounds, gameplay feedback, and notification vibrations. 5) **MusicTrackSelector Component**: Create scrollable track selection interface with preview playback functionality, track duration display, album artwork placeholders, and currently playing indicator. Include shuffle and loop mode toggles. 6) **SoundEffectPreview Component**: Implement preview buttons for each sound effect category (UI, gameplay, notifications) with play/stop states and volume level indicators. Use TouchableOpacity with audio feedback. 7) **AudioDuckingControls Component**: Create sensitivity slider for audio ducking during notifications with test button and explanation text. Include automatic ducking toggle and recovery time settings. 8) **AudioTroubleshooting Component**: Design expandable troubleshooting section with common audio issues, reset options, device compatibility checks, and audio driver information display. Use Animated views for expand/collapse functionality. All components must follow accessibility guidelines with proper labels, hints, and screen reader support using accessibility props.",
+        "testStrategy": "Test AudioSettingsScreen rendering with all audio components and verify proper section organization, scrolling behavior, and dark theme styling consistency. Validate VolumeControlSlider functionality by adjusting sliders and confirming real-time audio preview, percentage calculations, and mute toggle synchronization with haptic feedback. Test AudioQualitySelector by cycling through all quality options and verifying storage impact calculations and bitrate displays. Validate HapticSyncToggle components by enabling/disabling toggles and confirming haptic feedback changes in other app areas. Test MusicTrackSelector by selecting different tracks, using preview playback, and verifying currently playing indicators update correctly. Validate SoundEffectPreview buttons by triggering each sound category and confirming proper play/stop state management and volume level responses. Test AudioDuckingControls sensitivity adjustments with mock notifications and measure ducking response times and recovery behavior. Verify AudioTroubleshooting section expansion/collapse animations and test reset functionality with proper confirmation dialogs. Conduct comprehensive accessibility testing using screen readers to ensure all audio controls are properly labeled and navigable. Performance test with rapid slider adjustments and multiple simultaneous audio previews to ensure smooth 60fps interactions.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          41,
+          "31"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 73,
+        "title": "Create Hierarchical Pattern Discovery UI Components",
+        "description": "Design and implement comprehensive frontend components for the complex pattern discovery system including celebration effects, pattern library UI, suggestion displays, progress tracking, and discovery animations.",
+        "details": "Create comprehensive PatternDiscoveryUI component suite with the following elements: 1) **PatternDiscoveryModal Component**: Implement celebration modal using react-native-modal with particle system animations using react-native-reanimated, featuring discovery title with tier indicator, complexity progression visualization, earned rewards display, and auto-dismiss with haptic feedback. Include tier-based color schemes (bronze/silver/gold/quantum). 2) **PatternLibraryScreen Component**: Create scrollable library using FlatList with hierarchical tier sections (Basic Triangles, Advanced Polygons, Complex Formations, Quantum Structures), pattern cards showing completion status, complexity ratings, unlock requirements, and tap-to-view details. Use NativeWind dark space theme with tier-based accent colors. 3) **PatternSuggestionOverlay Component**: Implement context-aware hint system using Animated.View positioning over galaxy map, showing suggested beacon placements with dotted connection previews, completion percentage indicators, and dismissible hint cards with pattern formation guidance. 4) **PatternProgressTracker Component**: Create progress visualization using react-native-progress with multi-tier progress bars, pattern completion statistics, tier unlock countdowns, and achievement milestone indicators. 5) **PatternDatabaseBrowser Component**: Implement searchable/filterable database using TextInput for search, Picker for tier filtering, completion status toggles, and grid layout for pattern cards with thumbnail previews. 6) **DiscoveryUnlockAnimation Component**: Create sophisticated unlock sequences using react-native-reanimated with scale/opacity transitions, particle bursts, tier achievement celebrations, and chained animations for multiple discoveries. Include proper cleanup and performance optimization for complex animations.",
+        "testStrategy": "Test PatternDiscoveryModal rendering with various tier discoveries and verify particle animation performance, haptic feedback timing, and proper tier color schemes. Validate PatternLibraryScreen by populating with mock pattern data across all tiers, testing scrolling performance with 100+ patterns and verifying hierarchical organization. Test PatternSuggestionOverlay positioning accuracy over galaxy map coordinates and confirm context-aware suggestions update correctly based on current beacon placement. Validate PatternProgressTracker calculations by testing with various completion percentages and tier progression scenarios. Test PatternDatabaseBrowser search/filter functionality with edge cases like empty results, special characters, and filter combinations. Performance test DiscoveryUnlockAnimation with rapid consecutive discoveries and verify smooth animation chaining without memory leaks.",
+        "status": "pending",
+        "dependencies": [
+          5,
+          41,
+          60,
+          68,
+          "45"
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-08-18T20:10:41.310Z",
-      "updated": "2025-09-04T23:21:23.397Z",
+      "updated": "2025-09-05T00:59:17.438Z",
       "description": "Tasks for master context"
     }
   }

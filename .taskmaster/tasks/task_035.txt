@@ -1,0 +1,11 @@
+# Task ID: 35
+# Title: Fix Manual Probe Launch Implementation - Switch from Hold-to-Accelerate to Instant 2x Speed Deployment
+# Status: done
+# Dependencies: 6
+# Priority: medium
+# Description: Correct the manual launch implementation to provide instant 2x speed deployment when clicking 'launch now' instead of the current hold-to-accelerate mechanic, matching PRD specifications.
+# Details:
+Modify the existing manual probe launch system to implement instant speed multiplication rather than hold-to-accelerate: 1) **Remove Hold Mechanic**: Remove any existing press-and-hold functionality from probe launch buttons, replacing with simple tap-to-launch behavior. 2) **Implement Speed Multiplier**: Modify ProbeManager launch methods to accept a speed multiplier parameter, applying 2x speed reduction to deployment timers when manually triggered (Pioneer 30s becomes 15s, Harvester 90s becomes 45s, Architect 60s becomes 30s). 3) **Update Launch Logic**: Ensure manual launches via 'launch now' button automatically apply the 2x speed bonus, while automated launches from the queue system maintain normal deployment speeds. 4) **UI Feedback**: Update launch button states and visual feedback to clearly indicate instant deployment rather than progressive acceleration. 5) **Preserve Existing Features**: Maintain all other probe launch functionality including resource costs, probe type selection, and queue management while only changing the speed application mechanism.
+
+# Test Strategy:
+Test manual launch timing by clicking 'launch now' and verifying Pioneer probes deploy in exactly 15 seconds instead of 30 seconds. Verify automated launches from probe queue still use standard timing (30s for Pioneer). Test all three probe types maintain correct 2x speed reduction when manually launched. Validate UI immediately shows deployment progress at accelerated rate without hold gestures. Test rapid successive manual launches to ensure speed bonus applies consistently to each deployment.

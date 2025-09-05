@@ -1,0 +1,11 @@
+# Task ID: 43
+# Title: Implement Random Discovery System for Dead Systems
+# Status: pending
+# Dependencies: 5, 27
+# Priority: medium
+# Description: Create a discovery system backend that grants permanent passive bonuses when establishing beacons in dead star systems, with 20+ unique bonuses persisting through prestige resets.
+# Details:
+Develop DiscoveryManager class with comprehensive discovery mechanics: 1) **Discovery Pool Creation**: Create static pool of 25+ unique permanent passive bonuses including geometric pattern bonuses ('+10% triangle effectiveness', '+15% square pattern generation', '+20% pentagon multiplier'), operational improvements ('probes launch 5% faster', 'beacon placement range +10%', 'connection stability +15%'), resource generation bonuses ('+8% quantum data generation', '+12% stellar essence from dying stars', '+5% void fragment collection'), and meta-progression enhancements ('quantum leap efficiency +10%', 'echo beacon power +20%'). Store discoveries as DiscoveryBonus objects with unique IDs, names, descriptions, bonus types, and values. 2) **Discovery Trigger System**: Integrate with beacon placement in dead star systems using existing StarSystem status checking. Implement discovery roll with 15-20% chance per dead system beacon placement, ensuring each system can only grant one discovery. Create DiscoveryRollManager that validates system status, checks previous discoveries, and selects random unused bonuses from the pool. 3) **Permanent Progression**: Extend SaveManager to persist discovered bonuses across prestige resets, storing discovery IDs in permanent progression data separate from resetable game state. Apply discovery bonuses through EffectManager that modifies base game calculations for pattern detection, resource generation, probe systems, and beacon mechanics.
+
+# Test Strategy:
+Test discovery trigger probability by placing 100 beacons in dead systems and verifying 15-20% discovery rate with no duplicate discoveries per system. Verify each of the 25+ bonuses correctly applies to their respective game systems with accurate percentage modifications. Test prestige reset functionality ensuring discoveries persist while other game state clears. Test EffectManager integration with all relevant game systems.

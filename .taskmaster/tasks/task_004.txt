@@ -1,0 +1,43 @@
+# Task ID: 4
+# Title: Implement Core Resource System
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Develop the fundamental resource generation engine with Quantum Data, Stellar Essence, Void Fragments, and real-time calculation with offline progression.
+# Details:
+Create ResourceManager class using React Context for global state. Implement tick-based calculation system running at 1Hz using expo-background-task for offline processing. Define resource types: QuantumData (primary currency), StellarEssence (harvested from dying stars), VoidFragments (from dead systems), ResonanceCrystals (pattern bonuses), ChronosParticles (premium earned currency). Use BigNumber.js for large number handling avoiding JavaScript precision issues. Implement offline calculation with 50% rate cap at 8 hours maximum. Add resource generation modifiers from beacon levels and patterns.
+
+# Test Strategy:
+Unit tests for resource calculations with various beacon configurations. Offline progression accuracy tests with different time intervals. Performance testing with rapid resource updates. Validation of BigNumber operations and display formatting.
+
+# Subtasks:
+## 1. Create ResourceManager Class with React Context Integration [done]
+### Dependencies: None
+### Description: Build the core ResourceManager class with React Context for global state management and resource tracking across the application.
+### Details:
+Create ResourceManager class with React Context provider and consumer hooks. Implement state management for all resource types with proper TypeScript interfaces. Set up context optimization to prevent unnecessary re-renders using React.memo and context splitting patterns. Include methods for resource updates, queries, and state persistence integration.
+
+## 2. Define Resource Types and BigNumber Integration [done]
+### Dependencies: None
+### Description: Implement all resource type definitions with BigNumber.js integration for handling large numbers without precision loss.
+### Details:
+Define resource types: QuantumData, StellarEssence, VoidFragments, ResonanceCrystals, ChronosParticles with proper interfaces. Integrate BigNumber.js for all mathematical operations avoiding JavaScript precision issues. Create resource formatting utilities for display. Implement resource validation and conversion methods between number types.
+
+## 3. Implement Tick-Based Calculation Engine [done]
+### Dependencies: 4.1, 4.2
+### Description: Build the core calculation engine running at 1Hz with background processing capabilities for continuous resource generation.
+### Details:
+Create tick-based calculation system using setInterval at 1Hz frequency. Implement expo-background-task integration for iOS/Android background processing. Build calculation pipeline processing all active resource generators. Add performance monitoring to ensure tick consistency and handle calculation bottlenecks.
+
+## 4. Develop Offline Progression System [done]
+### Dependencies: 4.3
+### Description: Create offline calculation system with rate caps and time limits to handle resource generation when app is closed.
+### Details:
+Implement offline calculation with 50% rate cap and 8-hour maximum progression window. Create time difference calculations using timestamps. Build catch-up mechanism for offline resource generation. Add offline progression summary display when returning to the app. Implement proper state synchronization between offline and online modes.
+
+## 5. Build Resource Modifier System [done]
+### Dependencies: 4.3
+### Description: Implement the modifier system that applies beacon levels and pattern bonuses to base resource generation rates.
+### Details:
+Create modifier calculation system for beacon levels and geometric pattern bonuses. Implement multiplicative stacking for overlapping modifiers. Build modifier validation and application pipeline integrated with the tick calculation engine. Add modifier preview and impact display for user feedback. Ensure proper modifier persistence and state management.
+

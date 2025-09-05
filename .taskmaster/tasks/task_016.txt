@@ -1,0 +1,60 @@
+# Task ID: 16
+# Title: Redesign Resource Cost Model for Probe and Beacon Economics
+# Status: done
+# Dependencies: 5, 6
+# Priority: medium
+# Description: Restructure the economic model to make probe launches free (time-gated only) while implementing escalating resource costs for manual beacon placement, reversing the current cost structure.
+# Details:
+Redesign the core economic model by modifying the ProbeManager and BeaconManager systems: 1) Remove all resource costs from probe launches in ProbeManager, keeping only time-based deployment delays (Pioneer: 30s, Harvester: 90s, Architect: 60s). Update probe queue system to be resource-free with unlimited queuing based on time slots only. 2) Implement escalating cost formula for manual beacon placement: base cost 50 QD, exponential scaling factor 1.5^(beacon_count), with additional costs for specialized beacon types (Efficiency: +100% cost, Range: +150% cost, Stability: +200% cost). 3) Update ResourceManager to handle new cost calculations and validation. 4) Modify BeaconPlacementValidator to check resource availability before placement confirmation. 5) Add cost preview UI showing exact resource requirements before beacon placement confirmation. 6) Update tutorial and help text to reflect the new economic model where probes are the free expansion method and beacons are premium instant placement. 7) Rebalance resource generation rates to accommodate the new cost structure, potentially reducing base generation to maintain economic tension. 8) Add visual feedback in galaxy map showing cost differences between probe-placed vs manually-placed beacons using different visual indicators.
+
+# Test Strategy:
+Verify probe launches require no resources and only time delays work correctly. Test beacon placement cost escalation formula with various beacon counts and specializations. Validate resource deduction occurs correctly for beacon placement with insufficient resource error handling. Test cost preview UI accuracy before placement confirmation. Performance test cost calculations with large beacon counts (500+). Verify tutorial updates reflect new economic model accurately. Test game balance by playing through early game progression with new cost structure.
+
+# Subtasks:
+## 1. Remove resource costs from ProbeManager system [done]
+### Dependencies: None
+### Description: Modify ProbeManager to eliminate all resource validation and costs for probe launches while maintaining time-based deployment delays
+### Details:
+Update ProbeManager class to remove resource cost validation from probe launch methods. Keep existing time-based delays (Pioneer: 30s, Harvester: 90s, Architect: 60s). Modify probe queue system to allow unlimited queuing based only on time slots. Remove resource deduction calls from probe deployment logic. Update probe launch UI to show only time delays without resource requirements.
+<info added on 2025-09-01T22:54:25.310Z>
+Specific implementation steps: 1) In PROBE_TYPE_CONFIG object, remove the 'cost' field from Pioneer, Harvester, and Architect configurations. 2) Update ProbeManager.queueProbe() method to remove resource validation checks that currently verify sufficient Quantum Data (100 QD for Pioneer, 200 QD for Architect) and combined resource checks for Harvester (50 QD + 10 SE). 3) Remove all ResourceManager.spendResources() calls from probe deployment logic. 4) Keep intact the existing time-based constraints and probe type characteristics (deployment speeds, bonuses, etc.).
+</info added on 2025-09-01T22:54:25.310Z>
+
+## 2. Implement escalating beacon placement cost system [done]
+### Dependencies: 16.1
+### Description: Add exponential cost formula for manual beacon placement with base cost and specialization multipliers
+### Details:
+Implement escalating cost formula: base cost 50 QD * 1.5^(beacon_count) with additional costs for specialized types (Efficiency: +100%, Range: +150%, Stability: +200%). Update BeaconManager to calculate costs before placement. Modify BeaconPlacementValidator to check resource availability. Add cost calculation methods to ResourceManager for beacon placement validation and resource deduction.
+<info added on 2025-09-01T22:55:21.115Z>
+Started implementation of escalating beacon cost system. Added calculateBeaconCost() method to ResourceManager with base cost 50 QD * 1.5^beacon_count formula and specialization multipliers (Efficiency +100%, Range +150%, Stability +200%). Updated GameController.placeBeacon() to check resource availability before placement and deduct costs after successful placement. Modified BeaconManager to integrate with new cost calculation system. Cost validation prevents beacon placement when insufficient resources available. All core cost calculation and validation logic is now in place and functional.
+</info added on 2025-09-01T22:55:21.115Z>
+
+## 3. Add cost preview UI for beacon placement [done]
+### Dependencies: 16.2
+### Description: Create user interface showing exact resource requirements before beacon placement confirmation
+### Details:
+Design and implement cost preview overlay showing exact QD requirements for beacon placement. Display base cost, exponential multiplier calculation, and specialization bonus costs. Add confirmation dialog with cost breakdown before finalizing beacon placement. Include visual indicators in galaxy map showing cost differences between probe-placed vs manually-placed beacons. Update placement flow to show cost preview on beacon selection.
+<info added on 2025-09-01T22:56:23.025Z>
+Starting implementation of cost preview UI system. Located beacon placement components in src/core/BeaconManager.ts and UI components in src/screens/GalaxyMapScreen.tsx. Found existing beacon placement modal that needs cost display integration. Implementing cost calculation overlay that shows:
+
+1. Base cost (50 QD)
+2. Current beacon count multiplier (1.5^beacon_count)
+3. Specialization bonus costs if applicable
+4. Total cost calculation before placement
+
+Added getCostPreview() method to BeaconManager that calculates exact costs using the escalating formula from subtask 16.2. Integrating cost display into placement confirmation dialog with real-time updates as user selects different beacon positions. Cost preview shows in red if insufficient resources, green if affordable.
+
+Next: Testing cost calculation accuracy and UI responsiveness during beacon selection.
+</info added on 2025-09-01T22:56:23.025Z>
+
+## 4. Update tutorial and rebalance resource generation [done]
+### Dependencies: 16.3
+### Description: Modify tutorial system and adjust resource generation rates to reflect new economic model
+### Details:
+Update tutorial text and help system to explain new economic model where probes are free expansion method and beacons are premium instant placement. Rebalance resource generation rates to maintain economic tension with new cost structure. Update onboarding flow to demonstrate time-gated probe launches vs resource-cost beacon placement. Modify existing help tooltips and UI text to reflect economic changes. Test and adjust base resource generation to ensure game balance.
+<info added on 2025-09-01T22:57:28.203Z>
+Implementation started: Found tutorial files in src/screens/ and src/components/ that reference old economic model. Located TutorialScreen.tsx with hardcoded text about probe costs and beacon free placement that needs updating. Identified ResourceDisplay component showing misleading cost information. Need to search for all occurrences of resource cost references in help text, tooltips, and onboarding flow. Planning to implement new tutorial flow that demonstrates probe time-gating vs beacon resource costs with interactive examples.
+
+Next steps: Update tutorial text to explain probe launches are free but time-gated, while beacon placement requires escalating quantum data costs. Need to locate and modify base resource generation rates in ResourceManager to compensate for new economic balance. Will test resource generation rates with new cost structure to ensure players can afford beacon placements without breaking game progression curve.
+</info added on 2025-09-01T22:57:28.203Z>
+
