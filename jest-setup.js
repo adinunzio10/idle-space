@@ -148,9 +148,9 @@ jest.mock('react-native-gesture-handler', () => {
     global.GestureTestUtils = gestureHandlerGlobal;
   }
 
-  // Modern Gesture API mock
+  // Modern Gesture API mock with proper method chaining
   const createGestureBuilder = (gestureType) => {
-    return jest.fn(() => {
+    return jest.fn().mockImplementation(() => {
       const gestureConfig = {
         gestureType,
         enabled: true,
@@ -166,80 +166,88 @@ jest.mock('react-native-gesture-handler', () => {
         onTouchesCancelled: null,
       };
 
+      // Create gesture object with proper method chaining
       const gestureObject = {
-        // Gesture configuration methods (chainable)
-        enabled: jest.fn(function() { return gestureObject; }),
-        disabled: jest.fn(function() { return gestureObject; }),
-        shouldCancelWhenOutside: jest.fn(function() { return gestureObject; }),
-        simultaneousWithExternalGesture: jest.fn(function(otherGesture) { return gestureObject; }),
-        requireExternalGestureToFail: jest.fn(function(otherGesture) { return gestureObject; }),
-        blockedByExternalGesture: jest.fn(function(otherGesture) { return gestureObject; }),
-        withRef: jest.fn(function() { return gestureObject; }),
-        
-        // Pan-specific methods
-        minDistance: jest.fn(function() { return gestureObject; }),
-        minPointers: jest.fn(function() { return gestureObject; }),
-        maxPointers: jest.fn(function() { return gestureObject; }),
-        minVelocity: jest.fn(function() { return gestureObject; }),
-        minVelocityX: jest.fn(function() { return gestureObject; }),
-        minVelocityY: jest.fn(function() { return gestureObject; }),
-        failOffsetXStart: jest.fn(function() { return gestureObject; }),
-        failOffsetXEnd: jest.fn(function() { return gestureObject; }),
-        failOffsetYStart: jest.fn(function() { return gestureObject; }),
-        failOffsetYEnd: jest.fn(function() { return gestureObject; }),
-        activeOffsetXStart: jest.fn(function() { return gestureObject; }),
-        activeOffsetXEnd: jest.fn(function() { return gestureObject; }),
-        activeOffsetYStart: jest.fn(function() { return gestureObject; }),
-        activeOffsetYEnd: jest.fn(function() { return gestureObject; }),
-        
-        // Pinch-specific methods
-        scale: jest.fn(function() { return gestureObject; }),
-        
-        // Tap-specific methods
-        numberOfTaps: jest.fn(function() { return gestureObject; }),
-        maxDistance: jest.fn(function() { return gestureObject; }),
-        maxDuration: jest.fn(function() { return gestureObject; }),
-        maxDelay: jest.fn(function() { return gestureObject; }),
-        maxDeltaX: jest.fn(function() { return gestureObject; }),
-        maxDeltaY: jest.fn(function() { return gestureObject; }),
-        
-        // LongPress-specific methods
-        minDuration: jest.fn(function() { return gestureObject; }),
-        
-        // Event handlers
-        onStart: jest.fn(function(callback) {
-          gestureConfig.onStart = callback;
-          return gestureObject;
-        }),
-        onUpdate: jest.fn(function(callback) {
-          gestureConfig.onUpdate = callback;
-          return gestureObject;
-        }),
-        onEnd: jest.fn(function(callback) {
-          gestureConfig.onEnd = callback;
-          return gestureObject;
-        }),
-        onChange: jest.fn(function(callback) {
-          gestureConfig.onChange = callback;
-          return gestureObject;
-        }),
-        onFinalize: jest.fn(function(callback) {
-          gestureConfig.onFinalize = callback;
-          return gestureObject;
-        }),
-        onBegin: jest.fn(function(callback) {
-          gestureConfig.onBegin = callback;
-          return gestureObject;
-        }),
-        onTouchesCancelled: jest.fn(function(callback) {
-          gestureConfig.onTouchesCancelled = callback;
-          return gestureObject;
-        }),
-        
         // Internal properties for testing
         _config: gestureConfig,
         _gestureType: gestureType,
       };
+      
+      // Configuration methods that return gestureObject for chaining
+      gestureObject.enabled = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.disabled = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.shouldCancelWhenOutside = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.simultaneousWithExternalGesture = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.requireExternalGestureToFail = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.blockedByExternalGesture = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.withRef = jest.fn().mockReturnValue(gestureObject);
+      
+      // Pan-specific configuration methods
+      gestureObject.minDistance = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.minPointers = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.maxPointers = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.minVelocity = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.minVelocityX = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.minVelocityY = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.failOffsetXStart = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.failOffsetXEnd = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.failOffsetYStart = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.failOffsetYEnd = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.activeOffsetXStart = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.activeOffsetXEnd = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.activeOffsetYStart = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.activeOffsetYEnd = jest.fn().mockReturnValue(gestureObject);
+      
+      // Pinch-specific methods
+      gestureObject.scale = jest.fn().mockReturnValue(gestureObject);
+      
+      // Tap-specific methods
+      gestureObject.numberOfTaps = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.maxDistance = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.maxDuration = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.maxDelay = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.maxDeltaX = jest.fn().mockReturnValue(gestureObject);
+      gestureObject.maxDeltaY = jest.fn().mockReturnValue(gestureObject);
+      
+      // LongPress-specific methods
+      gestureObject.minDuration = jest.fn().mockReturnValue(gestureObject);
+      
+      // Event handlers that store callbacks and return gestureObject for chaining
+      // These are the critical methods that must properly chain
+      gestureObject.onStart = jest.fn().mockImplementation((callback) => {
+        gestureConfig.onStart = callback;
+        return gestureObject; // Return the same object for chaining
+      });
+      
+      gestureObject.onUpdate = jest.fn().mockImplementation((callback) => {
+        gestureConfig.onUpdate = callback;
+        return gestureObject; // Return the same object for chaining
+      });
+      
+      gestureObject.onEnd = jest.fn().mockImplementation((callback) => {
+        gestureConfig.onEnd = callback;
+        return gestureObject; // Return the same object for chaining
+      });
+      
+      gestureObject.onChange = jest.fn().mockImplementation((callback) => {
+        gestureConfig.onChange = callback;
+        return gestureObject; // Return the same object for chaining
+      });
+      
+      gestureObject.onFinalize = jest.fn().mockImplementation((callback) => {
+        gestureConfig.onFinalize = callback;
+        return gestureObject; // Return the same object for chaining
+      });
+      
+      gestureObject.onBegin = jest.fn().mockImplementation((callback) => {
+        gestureConfig.onBegin = callback;
+        return gestureObject; // Return the same object for chaining
+      });
+      
+      gestureObject.onTouchesCancelled = jest.fn().mockImplementation((callback) => {
+        gestureConfig.onTouchesCancelled = callback;
+        return gestureObject; // Return the same object for chaining
+      });
 
       return gestureObject;
     });
@@ -259,6 +267,7 @@ jest.mock('react-native-gesture-handler', () => {
     Simultaneous: jest.fn((...gestures) => ({ type: 'simultaneous', gestures })),
     Exclusive: jest.fn((...gestures) => ({ type: 'exclusive', gestures })),
   };
+  
 
   const GestureDetector = React.forwardRef((props, ref) => {
     React.useImperativeHandle(ref, () => ({}));

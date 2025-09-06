@@ -4,24 +4,9 @@ import Animated, {
   useAnimatedProps,
   useSharedValue,
   runOnJS,
+  withDecay,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-
-// Conditional SVG imports to handle Jest testing issues
-let Svg: any, G: any, Rect: any;
-
-if (process.env.NODE_ENV === 'test') {
-  // Use simple View components for testing
-  Svg = View;
-  G = View;
-  Rect = View;
-} else {
-  // Use actual SVG components in production
-  const SvgModule = require('react-native-svg');
-  Svg = SvgModule.Svg || SvgModule.default;
-  G = SvgModule.G;
-  Rect = SvgModule.Rect;
-}
 
 import {
   Point2D,
@@ -56,6 +41,22 @@ import {
 } from '../../utils/galaxy/modules';
 import { galaxyMapConfig } from '../../utils/galaxy/GalaxyMapConfig';
 
+// Conditional SVG imports to handle Jest testing issues
+let Svg: any, G: any, Rect: any;
+
+if (process.env.NODE_ENV === 'test') {
+  // Use simple View components for testing
+  Svg = View;
+  G = View;
+  Rect = View;
+} else {
+  // Use actual SVG components in production
+  const SvgModule = require('react-native-svg');
+  Svg = SvgModule.Svg || SvgModule.default;
+  G = SvgModule.G;
+  Rect = SvgModule.Rect;
+}
+
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedG = Animated.createAnimatedComponent(G);
 
@@ -81,6 +82,11 @@ interface GalaxyMapModularProps {
   enabledModules?: string[]; // Allow selective module enabling
   performanceMode?: boolean;
   debugMode?: boolean;
+  gestureConfig?: {
+    panActivationDistance?: number; // Minimum distance to activate pan gesture
+    panSensitivity?: number; // Touch sensitivity multiplier
+    enableMomentum?: boolean; // Enable momentum/decay after pan ends
+  };
 }
 
 export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
@@ -98,6 +104,11 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
   enabledModules = EMPTY_MODULES,
   performanceMode = false,
   debugMode = false,
+  gestureConfig = {
+    panActivationDistance: 8, // Default 8px minimum distance
+    panSensitivity: 1.0, // Default sensitivity
+    enableMomentum: false, // Momentum disabled by default for compatibility
+  },
 }) => {
   // Module system
   const moduleManager = useRef<ModuleManager | null>(null);
@@ -633,19 +644,53 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     [width, height, beacons, onBeaconSelect, onMapPress]
   );
 
-  // Optimized pan gesture with improved throttling
+  // Optimized pan gesture with improved throttling and configurable activation
   const lastPanUpdate = useRef(0);
+  const gestureStartPosition = useRef({ x: 0, y: 0 });
+  const isPanActive = useRef(false);
+  
+  // Extract gesture configuration with defaults
+  const panActivationDistance = gestureConfig?.panActivationDistance ?? 8;
+  const panSensitivity = gestureConfig?.panSensitivity ?? 1.0;
+  const enableMomentum = gestureConfig?.enableMomentum ?? false;
   
   const panGesture = Gesture.Pan()
-    .onStart(() => {
+    .onStart((event) => {
       lastTranslateX.value = translateX.value;
       lastTranslateY.value = translateY.value;
+      // Use event position if available, fallback to center of screen for testing
+      gestureStartPosition.current = { 
+        x: event?.x ?? width / 2, 
+        y: event?.y ?? height / 2 
+      };
+      isPanActive.current = false; // Will be activated once threshold is met
       runOnJS(setGestureActiveState)(true);
       lastPanUpdate.current = 0; // Reset throttling
     })
     .onUpdate(event => {
-      translateX.value = lastTranslateX.value + event.translationX;
-      translateY.value = lastTranslateY.value + event.translationY;
+      // Check if pan should be activated based on activation distance
+      if (!isPanActive.current) {
+        // Use current position if available, otherwise use translation distance
+        const currentX = event.x ?? (gestureStartPosition.current.x + event.translationX);
+        const currentY = event.y ?? (gestureStartPosition.current.y + event.translationY);
+        
+        const deltaX = currentX - gestureStartPosition.current.x;
+        const deltaY = currentY - gestureStartPosition.current.y;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        if (distance >= panActivationDistance) {
+          isPanActive.current = true;
+        } else {
+          return; // Don't process pan updates until activation threshold is met
+        }
+      }
+      
+      // Apply sensitivity multiplier to translation
+      const sensitiveTranslationX = event.translationX * panSensitivity;
+      const sensitiveTranslationY = event.translationY * panSensitivity;
+      
+      translateX.value = lastTranslateX.value + sensitiveTranslationX;
+      translateY.value = lastTranslateY.value + sensitiveTranslationY;
       
       // Time-based throttling for smoother panning (16ms = ~60fps)
       const now = Date.now();
@@ -658,14 +703,47 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         lastPanUpdate.current = now;
       }
     })
-    .onEnd(() => {
-      // Final update when gesture ends
-      runOnJS(updateViewportState)(
-        translateX.value,
-        translateY.value,
-        scale.value,
-        true // immediate update
-      );
+    .onEnd((event) => {
+      // Apply momentum if enabled and pan was active
+      const hasVelocity = (event?.velocityX ?? 0) !== 0 || (event?.velocityY ?? 0) !== 0;
+      if (enableMomentum && isPanActive.current && hasVelocity) {
+        // Apply velocity-based momentum using withDecay
+        translateX.value = withDecay({
+          velocity: (event?.velocityX ?? 0) * panSensitivity * 0.5, // Reduce velocity for smoother decay
+          clamp: [
+            -(GALAXY_WIDTH * scale.value - width),
+            0
+          ],
+        });
+        
+        translateY.value = withDecay({
+          velocity: (event?.velocityY ?? 0) * panSensitivity * 0.5,
+          clamp: [
+            -(GALAXY_HEIGHT * scale.value - height),
+            0
+          ],
+        });
+        
+        // Update viewport state after momentum animation completes
+        setTimeout(() => {
+          runOnJS(updateViewportState)(
+            translateX.value,
+            translateY.value,
+            scale.value,
+            true // immediate update
+          );
+        }, 500); // Allow time for decay animation
+      } else {
+        // Final update when gesture ends without momentum
+        runOnJS(updateViewportState)(
+          translateX.value,
+          translateY.value,
+          scale.value,
+          true // immediate update
+        );
+      }
+      
+      isPanActive.current = false;
       runOnJS(setGestureActiveState)(false);
     });
 
