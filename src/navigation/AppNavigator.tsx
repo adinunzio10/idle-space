@@ -6,7 +6,6 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainScreen } from '../screens/MainScreen';
-import { GalaxyMapScreen } from '../screens/GalaxyMapScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { StatisticsScreen } from '../screens/StatisticsScreen';
 import { PatternGalleryScreen } from '../screens/PatternGalleryScreen';
@@ -17,7 +16,6 @@ import { ProbeInstance } from '../types/probe';
 
 export type RootStackParamList = {
   Main: undefined;
-  GalaxyMap: undefined;
   Settings: undefined;
   Statistics: undefined;
   PatternGallery: undefined;
@@ -104,17 +102,6 @@ export const AppNavigator: React.FC<AppNavigatorProps> = ({
           )}
         </Stack.Screen>
 
-        <Stack.Screen name="GalaxyMap">
-          {() =>
-            gameState ? (
-              <GalaxyMapScreen
-                gameState={gameState}
-                gameController={gameController}
-                probes={probes}
-              />
-            ) : null
-          }
-        </Stack.Screen>
 
         <Stack.Screen name="Settings">
           {() =>

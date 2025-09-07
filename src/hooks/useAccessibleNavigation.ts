@@ -186,10 +186,6 @@ export const useAccessibleNavigation = () => {
       navigateWithAccessibility('Main', undefined, {
         announcement: 'Returned to Signal Garden home screen',
       }),
-    toGalaxyMap: () =>
-      navigateWithAccessibility('GalaxyMap', undefined, {
-        announcement: 'Opened galaxy map - swipe to pan, pinch to zoom',
-      }),
     toSettings: () =>
       navigateWithAccessibility('Settings', undefined, {
         announcement: 'Opened settings - configure game preferences',

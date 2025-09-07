@@ -976,7 +976,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         </Animated.View>
       </GestureDetector>
 
-      {/* Performance controls are now integrated into the FPS overlay in GalaxyMapScreen */}
+      {/* Performance controls are now integrated into the FPS overlay in MainScreen */}
     </View>
   );
 };

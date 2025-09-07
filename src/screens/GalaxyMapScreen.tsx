@@ -1,3 +1,9 @@
+/**
+ * @deprecated This screen is deprecated. MainScreen now serves as the primary galaxy map interface.
+ * The functionality has been consolidated into MainScreen.tsx for better user experience.
+ * This file is kept for reference but should not be used in new development.
+ * Consider removing after confirming no issues arise.
+ */
 import React, { useState } from 'react';
 import {
   Text,
