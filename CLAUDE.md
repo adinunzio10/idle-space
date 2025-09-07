@@ -112,6 +112,26 @@ npm run type-check          # Run TypeScript compiler without emitting files
 npm test                    # Run all tests - MUST pass before commits
 npm run test:watch          # Run tests in watch mode during development
 npm run test:coverage       # Generate test coverage report
+
+# Specific Test Categories (use these predefined scripts)
+npm run test:galaxy         # Run galaxy map tests only
+npm run test:worklet        # Run worklet tests only
+npm run test:performance    # Run performance tests only
+npm run test:gesture        # Run gesture-related tests only
+npm run test:spatial        # Run spatial/geometric tests only
+npm run test:component      # Run component tests only
+npm run test:util           # Run utility tests only
+
+# Custom Test Patterns (when predefined scripts don't exist)
+npm test -- --testPathPattern=YourTestName    # Run specific test pattern
+npm test -- --testNamePattern="describe name" # Run tests matching describe block
+
+# IMPORTANT: Common Test Running Mistakes to AVOID
+# ❌ WRONG: npm test --testPathPattern=Pattern    (missing the --)
+# ❌ WRONG: jest --testPathPatterns=Pattern       (deprecated syntax)
+# ❌ WRONG: npm run test Pattern                  (incorrect syntax)
+# ✅ CORRECT: npm test -- --testPathPattern=Pattern
+# ✅ CORRECT: Use predefined scripts: npm run test:galaxy
 ```
 
 ### Testing Framework Setup

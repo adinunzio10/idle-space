@@ -4084,5 +4084,652 @@
       "updated": "2025-09-05T01:13:48.098Z",
       "description": "Tasks for archived context"
     }
+  },
+  "galaxymap-testing": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Enhance Testing Infrastructure Foundation",
+        "description": "Optimize and expand the existing Jest configuration and mock system for comprehensive GalaxyMapModular testing",
+        "details": "Building on the existing jest-setup.js infrastructure, create enhanced testing utilities specifically for spatial interface testing. Implement performance monitoring mocks for React Native Performance API, create advanced gesture simulation utilities with realistic touch sequences, and establish memory leak detection helpers. Add specialized matchers for viewport calculations, coordinate transformations, and gesture accuracy validation. Create comprehensive test data factories for beacons, connections, and viewport states with various edge cases. Integrate with the existing WorkletTestUtils and GestureTestUtils global utilities. Set up continuous integration optimizations for the complex React Native + Reanimated + SVG testing stack.",
+        "testStrategy": "Validate infrastructure through setup verification tests, mock system integration tests, and performance baseline establishment. Test gesture simulation accuracy, worklet execution isolation, and memory monitoring capabilities.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Extend Jest utilities for spatial interface performance monitoring",
+            "description": "Enhance existing jest-setup.js with React Native Performance API mocks and spatial testing utilities",
+            "dependencies": [],
+            "details": "Build on the existing 900+ line jest-setup.js infrastructure to add React Native Performance API mocks for measuring spatial calculations. Integrate performance monitoring capabilities with existing WorkletTestUtils and GestureTestUtils. Add memory usage tracking mocks and performance baseline establishment utilities. Create specialized performance assertion helpers for coordinate transformation timing and viewport calculation efficiency.\n<info added on 2025-09-07T16:47:33.127Z>\nImplementation completed successfully. Added comprehensive Performance API infrastructure including performance marks/measures/timing mocks, SpatialPerformanceTestUtils with coordinate transformation benchmarking capabilities, MemoryTestUtils for memory leak detection and tracking, custom Jest matchers for performance assertions (toCompleteWithin, toUseMemoryWithin, toHaveGoodSpatialPerformance), and enhanced GestureTestUtils/WorkletTestUtils with integrated performance monitoring. All spatial calculation timing and viewport efficiency testing utilities are operational and all tests are passing. Ready to proceed with advanced gesture simulation implementation.\n</info added on 2025-09-07T16:47:33.127Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create advanced gesture simulation with momentum and elastic behavior",
+            "description": "Develop realistic touch sequence simulation utilities with physics-based gesture behavior",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Extend the existing GestureTestUtils to simulate realistic gesture sequences with momentum calculations, elastic scrolling behavior, and smooth deceleration patterns. Implement multi-touch simulation for simultaneous pan+pinch combinations. Create gesture validation utilities that can verify gesture accuracy, timing, and physics-based behavior patterns. Add support for edge case gesture scenarios like rapid direction changes and boundary interactions.\n<info added on 2025-09-07T16:59:17.375Z>\nImplementation completed successfully with comprehensive physics-based gesture simulation system. Added 7 key components: momentum calculations with realistic friction/velocity decay, elastic boundary interactions with configurable stiffness/damping parameters, multi-touch pan+pinch combination simulation, gesture validation for timing/physics accuracy, complex path handling with direction changes and velocity adaptation, boundary interaction modes (clamp/bounce/overscroll), and performance measurement integration. All 13 tests passing, confirming advanced gesture simulation capabilities meet TDD requirements. Ready for integration with worklet isolation testing in next subtask.\n</info added on 2025-09-07T16:59:17.375Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Enhance worklet isolation testing with memory leak detection",
+            "description": "Improve worklet execution testing infrastructure with memory monitoring and leak detection capabilities",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Build upon existing WorkletTestUtils to add memory leak detection for worklet execution cycles. Implement worklet isolation testing that can validate proper cleanup and resource management. Create memory monitoring helpers that track worklet memory usage patterns and detect potential leaks during complex gesture sequences. Add utilities for testing worklet performance under various load conditions and ensuring proper garbage collection.\n<info added on 2025-09-07T17:03:06.838Z>\nRED Phase Complete: Created comprehensive test suite with 15 test cases covering enhanced worklet isolation testing with memory leak detection. Tests are failing as expected, defining the required API surface for: memory monitoring for gesture sequences, worklet cleanup validation, performance testing under load, garbage collection validation, isolated worklet contexts, nested SharedValue leak detection, runOnJS cleanup validation, UI thread impact measurement, and integration with existing performance/gesture infrastructure from Tasks 1.1 and 1.2. Ready to implement the GREEN phase.\n</info added on 2025-09-07T17:03:06.838Z>\n<info added on 2025-09-07T17:06:25.981Z>\nGREEN Phase Complete: Successfully implemented all enhanced worklet isolation testing utilities with memory leak detection. All 15 test cases now passing! Added comprehensive functionality including: memory monitoring for gesture sequences, worklet cleanup validation, performance testing under load, garbage collection validation, isolated worklet contexts, nested SharedValue leak detection, runOnJS cleanup validation, UI thread impact measurement, and full integration with existing performance/gesture infrastructure. Ready for REFACTOR phase to optimize and clean up implementation.\n</info added on 2025-09-07T17:06:25.981Z>\n<info added on 2025-09-07T17:09:30.732Z>\nREFACTOR Phase Complete: Successfully optimized and cleaned up the implementation with better error handling, enhanced documentation, more detailed reporting, and improved test stability. All 15 test cases passing with comprehensive worklet isolation testing utilities including memory leak detection, performance monitoring, and full integration with existing infrastructure. Implementation follows TDD best practices with proper Red-Green-Refactor cycle completed successfully.\n</info added on 2025-09-07T17:09:30.732Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add specialized matchers for coordinate precision and viewport validation",
+            "description": "Create custom Jest matchers for spatial calculations, coordinate transformations, and viewport state validation",
+            "dependencies": [
+              "1.2",
+              "1.3"
+            ],
+            "details": "Develop custom Jest matchers specifically for spatial interface testing including coordinate precision validation, viewport calculation accuracy, and transformation matrix verification. Add matchers for gesture accuracy validation, boundary constraint checking, and scale limit enforcement. Create specialized assertion utilities for floating-point precision at extreme zoom levels and coordinate system consistency across different viewport states.\n<info added on 2025-09-07T17:21:01.248Z>\nImplementation completed successfully with comprehensive spatial Jest matchers suite. Added 9 specialized matchers to jest-setup.js with full TDD methodology: toBeWithinCoordinatePrecision for floating-point coordinate validation, toBeValidTransformationMatrix for 2D matrix verification with invertibility checks, toHaveValidViewportBounds for constraint validation, toBeWithinViewportCalculationTolerance for accuracy testing, toHaveAccurateGesturePhysics for momentum/friction validation, toMeetGestureTimingRequirements for performance validation, toRespectScaleLimits for scale constraint enforcement, toHaveConsistentCoordinateSystem for transformation consistency, and toCompleteWithinSpatialPerformanceBounds for performance regression detection. Created 29 comprehensive tests (18 unit + 11 integration) all passing, with TypeScript declarations and enhanced test-utils.ts documentation. Matchers handle extreme zoom levels, physics-based gesture validation, and provide detailed error messaging for debugging spatial interface functionality.\n</info added on 2025-09-07T17:21:01.248Z>",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Core Component Architecture Validation",
+        "description": "Comprehensive testing of GalaxyMapModular component architecture, props, lifecycle, and integration points",
+        "details": "Expand the existing component tests to cover all props validation with edge cases including invalid viewport states, malformed beacon data, and boundary conditions. Test the ModuleManager integration thoroughly including module registration, lifecycle management, and event bus communication patterns. Validate React lifecycle behavior during complex state changes, prop updates, and re-renders. Test error boundaries and fallback mechanisms when modules fail to initialize or crash during runtime. Establish performance baselines for component mounting, updating, and unmounting with various data sizes. Implement comprehensive state management testing for the complex viewport state, gesture state, and module coordination state.",
+        "testStrategy": "Use existing test patterns from ModuleStability tests. Create prop validation suites with type checking, boundary testing, and invalid input handling. Test component lifecycle with act() wrappers for state updates and async operations.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Props Validation Testing Suite",
+            "description": "Comprehensive testing of all GalaxyMapModular props including edge cases, invalid states, and malformed data handling",
+            "dependencies": [],
+            "details": "Create exhaustive prop validation tests covering viewport state edge cases (invalid dimensions, negative values, NaN coordinates), malformed beacon data (missing properties, invalid coordinates, corrupted state), and boundary conditions (empty arrays, null values, undefined props). Test prop type validation, default value assignment, and graceful degradation when props are invalid. Implement tests for complex prop combinations and state transitions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "ModuleManager Integration Testing",
+            "description": "Thorough testing of module registration, lifecycle management, and event bus communication patterns",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Test module registration process, initialization order, and dependency resolution. Validate lifecycle management including module mounting, updating, and cleanup phases. Test event bus communication patterns between modules, event propagation, and message handling. Verify module coordination state management and inter-module communication reliability. Test module failure recovery and isolation mechanisms.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "React Lifecycle Testing",
+            "description": "Validation of React lifecycle behavior during complex state changes, prop updates, and re-renders",
+            "dependencies": [
+              "2.2"
+            ],
+            "details": "Test component mounting, updating, and unmounting cycles with complex state transitions. Validate behavior during prop updates with large datasets, rapid state changes, and concurrent updates. Test re-render optimization and memoization effectiveness. Verify useEffect cleanup, state synchronization, and context updates during lifecycle transitions. Test component behavior under stress with rapid mount/unmount cycles.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Error Boundary and Fallback Testing",
+            "description": "Testing of error boundaries and fallback mechanisms when modules fail or crash during runtime",
+            "dependencies": [
+              "2.3"
+            ],
+            "details": "Test error boundary activation when modules fail to initialize, crash during runtime, or encounter unhandled exceptions. Validate fallback UI rendering and graceful degradation mechanisms. Test error recovery strategies, module restart capabilities, and state preservation during errors. Verify error reporting, logging, and user notification systems. Test boundary isolation to prevent cascade failures between modules.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Performance Baseline Establishment",
+            "description": "Establish performance baselines for component mounting, updating, and unmounting with various data sizes",
+            "dependencies": [
+              "2.4"
+            ],
+            "details": "Create performance benchmarks for component operations with varying beacon counts (10, 100, 500+ beacons). Measure mounting time, update performance during prop changes, and unmounting cleanup efficiency. Establish baseline metrics for render cycles, state synchronization, and module coordination overhead. Test performance under different device capabilities and screen sizes. Create automated performance regression detection for future changes.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Advanced Gesture System Testing Framework",
+        "description": "Comprehensive testing of pan, pinch, tap gesture interactions with realistic touch simulation and edge case validation",
+        "details": "Enhance the existing GestureTestUtils to create realistic gesture sequences for testing complex interactions. Build comprehensive pan gesture testing including momentum calculation, boundary constraints, elastic scrolling behavior, and smooth deceleration. Implement detailed pinch gesture testing with focal point accuracy, simultaneous pan+pinch combinations, and scale limit enforcement. Create tap gesture testing with hit area validation, multi-tap sequences, and interaction zone accuracy. Test gesture composition and conflict resolution between simultaneous gestures. Implement performance monitoring during gesture interactions to ensure 60fps maintenance. Add accessibility gesture testing for alternative input methods and screen reader compatibility.",
+        "testStrategy": "Leverage existing gesture mocking infrastructure. Create gesture sequence validation through event simulation, performance monitoring during interactions, and accuracy verification through coordinate transformation testing.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Pan Gesture Testing with Momentum and Boundary Constraints",
+            "description": "Comprehensive testing of pan gesture interactions including momentum calculation, boundary enforcement, and elastic scrolling behavior",
+            "dependencies": [],
+            "details": "Enhance GestureTestUtils to simulate realistic pan gesture sequences with velocity, momentum, and deceleration. Test boundary constraint enforcement, elastic scrolling behavior when reaching limits, and smooth momentum-based transitions. Validate pan gesture accuracy across different viewport states and zoom levels. Implement testing for gesture interruption and resumption scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Pinch Gesture Testing with Focal Point Accuracy",
+            "description": "Detailed testing of pinch-to-zoom gestures with focal point precision, scale limits, and simultaneous pan combinations",
+            "dependencies": [],
+            "details": "Create realistic pinch gesture simulation with accurate focal point calculation and multi-touch coordinate handling. Test scale limit enforcement at minimum and maximum zoom levels. Validate simultaneous pan+pinch gesture combinations and their coordinate transformations. Implement testing for pinch gesture accuracy across different screen positions and zoom states.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Tap Gesture Hit Area and Multi-Tap Validation",
+            "description": "Comprehensive tap gesture testing including hit area validation, multi-tap sequences, and interaction zone accuracy",
+            "dependencies": [],
+            "details": "Implement tap gesture testing with precise hit area validation for beacons and UI elements. Test multi-tap sequences, double-tap detection, and tap timing validation. Validate interaction zone accuracy across different zoom levels and viewport states. Create testing for tap gesture conflicts with pan/pinch gestures and proper gesture priority handling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Gesture Composition and Conflict Resolution Testing",
+            "description": "Testing of simultaneous gesture handling, gesture priority resolution, and complex gesture interactions",
+            "dependencies": [
+              "3.1",
+              "3.2",
+              "3.3"
+            ],
+            "details": "Test simultaneous gesture recognition and conflict resolution between pan, pinch, and tap gestures. Validate gesture priority systems and proper cancellation of conflicting gestures. Implement testing for complex gesture sequences and state transitions. Test gesture handler worklet execution and thread safety during simultaneous operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Performance Monitoring During Gesture Interactions",
+            "description": "Real-time performance monitoring and validation of 60fps maintenance during gesture operations",
+            "dependencies": [
+              "3.4"
+            ],
+            "details": "Implement performance monitoring during gesture interactions to ensure 60fps maintenance. Test frame rate consistency during complex gesture sequences and high beacon count scenarios. Validate memory usage during gesture operations and detect potential memory leaks. Create performance benchmarks for gesture processing and coordinate transformation operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Accessibility Gesture Support Testing",
+            "description": "Testing of accessibility gesture support, alternative input methods, and screen reader compatibility",
+            "dependencies": [
+              "3.5"
+            ],
+            "details": "Implement accessibility gesture testing for alternative input methods and assistive technologies. Test screen reader compatibility with gesture interactions and proper accessibility announcements. Validate gesture alternatives for users with motor impairments. Test compliance with platform accessibility guidelines and proper focus management during gesture interactions.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Spatial Mathematics Precision Testing",
+        "description": "Rigorous validation of coordinate transformations, viewport calculations, and spatial indexing with mathematical precision verification",
+        "details": "Create comprehensive testing for the screenToGalaxy coordinate transformation functions with floating-point precision validation at extreme zoom levels. Test calculateVisibleBounds accuracy across various viewport states and screen sizes. Implement scale clamping validation with boundary conditions and smooth transitions. Test constrainTranslationElastic behavior with edge cases and constraint violations. Validate spatial indexing operations (rbush integration) with performance benchmarking for large datasets. Create precision testing for calculateZoomFocalPoint with various focal point positions and scale ratios. Implement hit testing accuracy validation with boundary cases and overlapping elements.",
+        "testStrategy": "Mathematical accuracy validation through precise coordinate checking, boundary condition testing, and performance benchmarking of spatial calculations. Use property-based testing for coordinate transformation invariants.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Coordinate Transformation Precision Testing",
+            "description": "Test screenToGalaxy and galaxyToScreen coordinate transformations with floating-point precision validation at extreme zoom levels",
+            "dependencies": [],
+            "details": "Implement comprehensive testing for coordinate transformation functions with mathematical precision verification. Test accuracy at extreme zoom levels (0.001x to 1000x), validate floating-point precision, and ensure coordinate transformation invariants hold. Use property-based testing to verify that transforming coordinates back and forth maintains precision within acceptable tolerance levels.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Viewport Bounds Calculation Accuracy Testing",
+            "description": "Validate calculateVisibleBounds accuracy across various viewport states and screen sizes",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "Test viewport bounds calculation across different screen dimensions, zoom levels, and translation offsets. Verify accuracy of visible area calculations, ensure proper handling of edge cases where bounds extend beyond galaxy limits, and validate performance with various viewport configurations. Test boundary conditions and ensure consistent results across different device screen sizes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Scale Clamping and Transition Validation",
+            "description": "Test scale clamping behavior with boundary conditions and smooth transitions",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "Implement comprehensive testing for scale clamping logic including minimum and maximum zoom limits, smooth transition behavior at boundaries, and proper handling of scale changes during gestures. Validate that scale transitions are smooth and don't cause jarring jumps. Test edge cases where scale values approach or exceed defined limits.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Elastic Translation Constraint Testing",
+            "description": "Test constrainTranslationElastic behavior with edge cases and constraint violations",
+            "dependencies": [
+              "4.2"
+            ],
+            "details": "Validate elastic translation constraints including boundary enforcement, elastic behavior when dragging beyond limits, and smooth return animations. Test edge cases such as extreme translation values, rapid direction changes, and constraint violations. Ensure elastic behavior feels natural and maintains consistent physics-based responses.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Spatial Indexing Performance Benchmarking",
+            "description": "Validate rbush spatial indexing operations with performance benchmarking for large datasets",
+            "dependencies": [
+              "4.1",
+              "4.2"
+            ],
+            "details": "Implement comprehensive testing and benchmarking for spatial indexing operations using rbush integration. Test performance with large datasets (1000+ beacons), validate query accuracy for spatial searches, and benchmark insertion/removal operations. Create performance baselines and regression detection for spatial indexing efficiency. Test hit detection accuracy and spatial query optimization.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Module System Integration Testing",
+        "description": "End-to-end testing of the modular architecture including individual modules, lifecycle management, and inter-module communication",
+        "details": "Build comprehensive testing for each module (BeaconRendering, Connection, Environment, UI, Gestures, Performance, etc.) using the existing MockModuleManager foundation. Test module initialization, registration, and cleanup processes. Validate event bus communication patterns between modules with message passing accuracy and timing verification. Test the performance monitoring system including adaptive behavior, threshold detection, and emergency mode activation. Implement resource management testing for memory usage optimization and cleanup verification. Test module dependency resolution and circular dependency prevention. Validate module caching effectiveness and invalidation strategies.",
+        "testStrategy": "Integration testing through module lifecycle simulation, event bus message validation, and performance threshold testing. Mock individual modules while testing system-wide behavior and coordination.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Individual Module Testing Suite",
+            "description": "Comprehensive testing of each module type (BeaconRendering, Connection, Environment, UI, Gestures, Performance) with initialization, functionality, and cleanup validation",
+            "dependencies": [],
+            "details": "Build individual test suites for each module using the MockModuleManager foundation. Test BeaconRendering module with canvas operations, coordinate transformations, and rendering performance. Test Connection module with beacon linking, network topology validation, and connection state management. Test Environment module with viewport updates, spatial calculations, and boundary detection. Test UI module with component lifecycle, event handling, and state synchronization. Test Gestures module with touch event processing, gesture recognition, and interaction feedback. Test Performance module with metrics collection, threshold monitoring, and optimization triggers.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "ModuleManager Lifecycle Testing",
+            "description": "End-to-end testing of module registration, initialization, activation, deactivation, and cleanup processes through ModuleManager",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Test complete module lifecycle management including registration validation with duplicate prevention, initialization sequencing with dependency resolution, activation state transitions, deactivation cleanup verification, and module disposal with resource cleanup. Validate module factory patterns, singleton enforcement, and module instance caching. Test error handling during each lifecycle phase including failed initialization recovery, activation timeout handling, and graceful degradation when modules fail.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Event Bus Communication Validation",
+            "description": "Comprehensive testing of inter-module communication patterns, message accuracy, timing verification, and event propagation",
+            "dependencies": [
+              "5.2"
+            ],
+            "details": "Test event bus message passing between modules with payload validation, delivery confirmation, and timing accuracy. Validate event subscription management including subscribe/unsubscribe patterns, event filtering, and listener cleanup. Test message queuing during module lifecycle transitions, event priority handling, and broadcast vs targeted messaging. Verify error handling for malformed messages, failed deliveries, and listener exceptions. Test performance under high message volume and concurrent access patterns.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Performance Monitoring Integration Testing",
+            "description": "Testing of adaptive performance monitoring, threshold detection, emergency mode activation, and optimization trigger validation",
+            "dependencies": [
+              "5.3"
+            ],
+            "details": "Test performance monitoring system with metrics collection accuracy, threshold detection sensitivity, and adaptive behavior triggers. Validate emergency mode activation under performance stress with automatic module degradation, recovery detection, and normal mode restoration. Test optimization triggers including LOD activation, culling system engagement, and resource usage reduction. Verify performance data aggregation, trend analysis, and predictive optimization recommendations. Test monitoring overhead and impact on system performance.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Resource Management and Cleanup Verification",
+            "description": "Comprehensive testing of memory management, resource cleanup, module caching effectiveness, and dependency resolution",
+            "dependencies": [
+              "5.4"
+            ],
+            "details": "Test memory usage optimization with allocation tracking, leak detection, and cleanup verification across module lifecycle. Validate resource management including texture cleanup, event listener removal, and animation disposal. Test module caching effectiveness with cache hit/miss ratios, invalidation strategies, and memory footprint optimization. Verify dependency resolution accuracy with circular dependency prevention, loading order validation, and missing dependency handling. Test resource pooling efficiency and automatic garbage collection triggers.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Performance Benchmarking and Optimization Testing",
+        "description": "Comprehensive performance testing including FPS monitoring, memory usage validation, and regression detection",
+        "details": "Implement comprehensive performance benchmarking building on the existing Performance.test.tsx patterns. Create FPS monitoring during complex gesture interactions with large datasets (100+ beacons). Establish memory usage baselines and implement memory leak detection for long-running sessions. Test performance optimization features including LOD (Level of Detail) systems, viewport culling, and spatial indexing efficiency. Create regression testing to detect performance degradation over time. Implement stress testing scenarios with extreme data sizes, rapid gesture sequences, and concurrent operations. Test emergency mode activation and recovery mechanisms under performance pressure.",
+        "testStrategy": "Performance monitoring through React Native Performance API integration, memory profiling with heap snapshots, and automated regression detection through CI/CD performance baselines.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "FPS Monitoring During Large Dataset Gesture Interactions",
+            "description": "Implement FPS monitoring system for gesture interactions with 100+ beacons using React Native Performance API",
+            "dependencies": [],
+            "details": "Build on existing Performance.test.tsx patterns to create FPS monitoring during complex pan and pinch gestures with large beacon datasets. Integrate React Native Performance API to track frame rates during gesture interactions. Create test scenarios with 100+ beacons and measure FPS degradation during continuous gestures. Implement frame time measurement and dropped frame detection. Validate FPS maintains above 30fps threshold during normal operations and implement alerts for performance degradation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Memory Usage Baselines and Leak Detection",
+            "description": "Establish memory usage baselines and implement automated memory leak detection for long-running test sessions",
+            "dependencies": [],
+            "details": "Create memory profiling infrastructure using heap snapshots and memory usage tracking. Establish baseline memory consumption for various beacon counts and interaction patterns. Implement automated leak detection by monitoring memory growth over extended test sessions. Create memory stress tests with rapid beacon creation/destruction cycles. Validate memory cleanup during component unmounting and gesture completion. Set up automated memory regression detection in CI/CD pipeline.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Performance Optimization Feature Testing",
+            "description": "Test LOD systems, viewport culling, and spatial indexing efficiency with performance validation",
+            "dependencies": [],
+            "details": "Create comprehensive testing for Level of Detail (LOD) systems with different beacon density scenarios. Test viewport culling efficiency by validating off-screen beacon rendering is properly disabled. Benchmark spatial indexing performance using rbush integration with various tree configurations. Test performance optimization feature activation under different load conditions. Validate adaptive behavior switches between performance modes based on system capabilities and beacon count thresholds.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Performance Regression Detection and Baseline Management",
+            "description": "Implement automated performance regression testing with historical baseline comparison",
+            "dependencies": [
+              "6.1",
+              "6.2"
+            ],
+            "details": "Create performance baseline management system for tracking FPS, memory usage, and gesture response times over time. Implement automated regression detection that compares current performance metrics against historical baselines. Set up CI/CD integration for performance testing with failure thresholds. Create performance reporting dashboard showing trends and regression alerts. Implement statistical analysis for performance variance detection and noise filtering in performance measurements.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Extreme Load Stress Testing Scenarios",
+            "description": "Create stress testing with extreme data sizes, rapid gesture sequences, and concurrent operations",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Design stress testing scenarios with 1000+ beacons, rapid gesture sequences, and concurrent operations. Test system behavior under extreme memory pressure and CPU load. Create rapid-fire gesture simulation with overlapping pan/pinch operations. Test performance degradation patterns and system recovery capabilities. Implement concurrent operation stress testing with multiple simultaneous gesture streams and background processing. Validate graceful degradation under extreme load conditions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Emergency Mode Activation and Recovery Testing",
+            "description": "Test emergency performance mode activation, behavior during degraded performance, and recovery mechanisms",
+            "dependencies": [
+              "6.3",
+              "6.4"
+            ],
+            "details": "Implement testing for emergency mode activation when performance thresholds are exceeded. Test emergency mode behavior including reduced rendering quality, disabled animations, and simplified interactions. Validate automatic recovery mechanisms when performance improves and emergency mode should deactivate. Test user notification systems during emergency mode activation. Create manual emergency mode override testing and validation of emergency mode persistence across app lifecycle events.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "End-to-End User Workflow Testing",
+        "description": "Complete user interaction workflow testing with realistic usage patterns and multi-beacon scenarios",
+        "details": "Create comprehensive end-to-end testing scenarios covering complete user workflows: pan to explore → zoom in/out → tap to select beacons → gesture combinations for complex navigation. Test realistic multi-beacon scenarios with 50-500 beacons to validate performance and interaction accuracy. Implement cross-platform testing to ensure iOS vs Android behavior consistency. Test long-running session scenarios to validate memory management and state persistence. Create user experience validation including responsiveness, smoothness, and interaction feedback quality. Test offline/background behavior and state recovery patterns.",
+        "testStrategy": "Integration testing through complete workflow simulation, cross-platform validation using existing React Native Testing Library patterns, and long-running session monitoring with memory leak detection.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Complete User Workflow Simulation Testing",
+            "description": "Test complete user interaction sequences: pan to explore → zoom in/out → tap to select beacons → gesture combinations",
+            "dependencies": [],
+            "details": "Create comprehensive end-to-end test scenarios that simulate realistic user workflows. Test the complete interaction chain from initial pan gestures to explore the galaxy, through zoom operations for detailed inspection, to tap selections for beacon interaction, and complex gesture combinations for advanced navigation. Validate gesture sequence timing, state transitions between interaction modes, and user feedback responsiveness. Ensure smooth transitions between different interaction types and validate that gesture interruptions are handled gracefully.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Multi-Beacon Scenario Performance Testing",
+            "description": "Test realistic scenarios with 50-500 beacons to validate performance and interaction accuracy at scale",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Implement comprehensive testing scenarios with varying beacon densities from 50 to 500 beacons to validate performance under realistic usage conditions. Test interaction accuracy with dense beacon clusters, selection precision in crowded areas, and rendering performance during complex pan/zoom operations. Validate spatial indexing efficiency with large datasets, memory usage patterns during intensive interactions, and frame rate consistency across different beacon densities. Test edge cases like rapid gesture sequences with high beacon counts.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Cross-Platform Behavior Consistency Testing",
+            "description": "Ensure iOS vs Android behavior consistency across all user interaction workflows",
+            "dependencies": [
+              "7.1",
+              "7.2"
+            ],
+            "details": "Implement platform-specific testing to ensure consistent user experience across iOS and Android platforms. Test gesture recognition differences between platforms, touch sensitivity variations, and animation performance disparities. Validate that coordinate transformations work identically across platforms, viewport calculations are consistent, and gesture timing thresholds produce similar user experiences. Test platform-specific optimizations and ensure they don't break cross-platform compatibility.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Long-Running Session and State Persistence Testing",
+            "description": "Test extended usage scenarios, memory management, and state recovery patterns",
+            "dependencies": [
+              "7.2"
+            ],
+            "details": "Create comprehensive testing for extended user sessions including memory leak detection, state persistence validation, and performance degradation monitoring over time. Test background/foreground transitions with state recovery, offline behavior handling, and data consistency across app lifecycle events. Validate that long-running sessions maintain performance standards, memory usage remains stable, and user interactions stay responsive. Test state serialization/deserialization accuracy and recovery from unexpected app termination scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Memory Management and Resource Testing",
+        "description": "Comprehensive memory leak detection, resource cleanup validation, and long-running session testing",
+        "details": "Expand the existing MemoryLeak.test.tsx to create comprehensive memory management validation. Implement automated memory leak detection for component mounting/unmounting cycles, gesture handler cleanup, and module lifecycle management. Test resource cleanup including event listeners, animation cleanup, shared value disposal, and worklet memory management. Create long-running session simulation (30+ minutes) with continuous interaction to validate sustained performance. Test garbage collection effectiveness and memory pressure handling. Implement memory usage monitoring with alerts for excessive growth patterns.",
+        "testStrategy": "Memory profiling through automated leak detection, resource cleanup verification, and long-running session simulation with memory growth monitoring and cleanup validation.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Component Lifecycle Memory Leak Detection",
+            "description": "Implement automated detection of memory leaks during component mounting/unmounting cycles",
+            "dependencies": [],
+            "details": "Extend existing MemoryLeak.test.tsx to create comprehensive component lifecycle memory validation. Test GalaxyMapModular mounting/unmounting cycles with memory usage monitoring. Implement automated leak detection for React refs, context subscriptions, and component state cleanup. Validate proper disposal of component-level resources including event listeners and timers. Create test patterns for detecting retained component instances after unmounting.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Gesture Handler and Worklet Cleanup Validation",
+            "description": "Test memory cleanup for gesture handlers, shared values, and worklet memory management",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "Implement comprehensive testing of React Native Reanimated memory management. Test gesture handler cleanup including pan, pinch, and tap gesture disposal. Validate shared value cleanup and worklet memory management including runOnJS callbacks and worklet scope disposal. Test animation cleanup for interrupted and completed animations. Implement detection of retained gesture handler instances and worklet memory leaks.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Long-Running Session Simulation Testing",
+            "description": "Create 30+ minute simulation tests with continuous interaction to validate sustained performance",
+            "dependencies": [
+              "8.1",
+              "8.2"
+            ],
+            "details": "Implement automated long-running session tests that simulate 30+ minutes of continuous user interaction. Create realistic interaction patterns including pan gestures, zoom operations, beacon selection, and module state changes. Monitor memory usage growth patterns throughout extended sessions. Test memory stability during sustained gesture interactions and animation sequences. Implement automated session interruption and recovery testing.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Garbage Collection Effectiveness Testing",
+            "description": "Test garbage collection performance and memory reclamation effectiveness",
+            "dependencies": [
+              "8.2",
+              "8.3"
+            ],
+            "details": "Implement testing of garbage collection effectiveness for disposed components and resources. Create memory pressure scenarios to validate GC triggering and memory reclamation. Test weak reference patterns and memory cleanup timing. Implement heap snapshot analysis for detecting unreachable but retained objects. Validate GC performance under high memory pressure conditions and rapid allocation/deallocation cycles.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Memory Pressure Handling and Cleanup Verification",
+            "description": "Test memory pressure scenarios and implement monitoring with growth pattern alerts",
+            "dependencies": [
+              "8.3",
+              "8.4"
+            ],
+            "details": "Implement comprehensive memory pressure testing and monitoring systems. Create test scenarios for low memory conditions and validate graceful degradation behavior. Test memory cleanup prioritization during pressure conditions including cache eviction and resource disposal. Implement automated memory usage monitoring with configurable alerts for excessive growth patterns. Create memory budget enforcement testing and validate cleanup effectiveness under sustained pressure.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Visual Regression and Rendering Testing",
+        "description": "Automated visual testing for rendering consistency, SVG output validation, and cross-platform visual parity",
+        "details": "Implement visual regression testing using React Native Testing Library's component tree validation. Create SVG rendering accuracy testing by validating the mock SVG components produce expected structure and properties. Test rendering consistency across different viewport states, zoom levels, and beacon configurations. Implement screenshot comparison testing for critical UI states using Detox for high-value user flows. Validate responsive design behavior across different screen sizes and orientations. Test accessibility rendering including screen reader compatibility and high contrast mode support.",
+        "testStrategy": "Visual validation through component tree comparison, SVG structure verification, and automated screenshot testing for critical user interface states and accessibility compliance.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "SVG Component Tree Validation and Structure Verification",
+            "description": "Implement comprehensive testing for SVG component structure validation using React Native Testing Library's component tree validation capabilities",
+            "dependencies": [],
+            "details": "Build on existing SVG mocking infrastructure in jest-setup.js to create tests that validate mock SVG components produce expected structure and properties. Test SVG element hierarchy, attribute validation, and prop passing accuracy. Verify that beacon rendering produces consistent SVG structure across different configurations. Implement component tree comparison utilities for detecting structural changes in SVG output.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Rendering Consistency Across Viewport States and Zoom Levels",
+            "description": "Test rendering consistency across different viewport configurations, zoom levels, and beacon arrangements to ensure visual stability",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "Create comprehensive tests for rendering behavior across various viewport states including different screen sizes, zoom levels (from minimum to maximum scale), and beacon configurations. Test responsive design behavior and ensure consistent rendering at different zoom levels. Validate that UI elements maintain proper positioning and sizing across viewport changes. Test accessibility rendering including screen reader compatibility and high contrast mode support.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Screenshot Comparison Testing for Critical UI States",
+            "description": "Implement automated screenshot comparison testing using Detox for high-value user flows and critical interface states",
+            "dependencies": [
+              "9.1",
+              "9.2"
+            ],
+            "details": "Set up Detox-based screenshot comparison testing for critical UI states and user flows. Create baseline screenshots for key interface states and implement automated comparison testing to detect visual regressions. Test critical user flows including initial app load, beacon placement, gesture interactions, and menu navigation. Establish screenshot comparison thresholds and implement test infrastructure for cross-platform visual parity validation.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Test Maintainability and CI/CD Integration",
+        "description": "Establish maintainable testing patterns, comprehensive documentation, and robust CI/CD integration for continuous quality assurance",
+        "details": "Create comprehensive testing documentation building on existing patterns, establish testing best practices guide for future GalaxyMapModular development. Implement test suite optimization for CI/CD performance including parallel test execution and smart test selection. Create automated test quality monitoring including flaky test detection, coverage regression alerts, and performance regression notifications. Establish testing pattern templates for future spatial interface components. Implement comprehensive test reporting with performance metrics, coverage trends, and quality indicators. Create maintainable test architecture with shared utilities, pattern libraries, and reusable test components.",
+        "testStrategy": "Quality assurance through automated test suite monitoring, comprehensive documentation validation, CI/CD pipeline optimization, and maintainable architecture verification through pattern consistency checking.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          6,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Comprehensive Testing Documentation and Best Practices Guide",
+            "description": "Develop detailed testing documentation building on existing patterns and establish best practices guide for future GalaxyMapModular development",
+            "dependencies": [],
+            "details": "Document existing sophisticated testing patterns from jest-setup.js and test-utils.ts. Create testing best practices guide covering gesture testing, module testing, performance testing, and visual regression testing. Establish coding standards for test file organization, naming conventions, and test structure. Document mock patterns and testing utilities usage. Create templates for different types of tests (unit, integration, performance, visual). Include guidelines for test maintainability and readability.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement CI/CD Test Suite Optimization",
+            "description": "Optimize test suite for CI/CD performance with parallel execution, smart test selection, and performance monitoring",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Implement parallel test execution configuration for Jest to reduce CI/CD build times. Create smart test selection based on changed files and dependencies. Optimize test suite performance through test grouping and resource management. Configure test result caching and incremental testing. Implement test timeout management and resource cleanup for CI environments. Create test performance monitoring and reporting for CI/CD pipeline optimization.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Establish Automated Quality Monitoring System",
+            "description": "Create automated monitoring for test quality including flaky test detection, coverage regression alerts, and performance regression notifications",
+            "dependencies": [
+              "10.2"
+            ],
+            "details": "Implement flaky test detection through test result history analysis and failure pattern recognition. Create coverage regression alerts that notify when test coverage drops below established thresholds. Set up performance regression notifications for test execution time increases. Implement comprehensive test reporting with performance metrics, coverage trends, and quality indicators. Create automated quality dashboards and alerts. Establish test architecture monitoring with shared utilities validation and pattern consistency checking.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-07T16:27:41.288Z",
+      "updated": "2025-09-07T17:25:12.508Z",
+      "description": "Tasks for galaxymap-testing context"
+    }
   }
 }
