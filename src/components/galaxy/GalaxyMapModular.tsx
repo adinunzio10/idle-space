@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import GalaxyMapErrorBoundary from './GalaxyMapErrorBoundary';
 import Animated, {
   useAnimatedProps,
   useSharedValue,
@@ -110,6 +111,90 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     enableMomentum: false, // Momentum disabled by default for compatibility
   },
 }) => {
+  // Props validation and sanitization
+  const sanitizedWidth = useMemo(() => {
+    if (typeof width !== 'number' || isNaN(width) || !isFinite(width) || width <= 0) {
+      return 400; // Default fallback width
+    }
+    return Math.max(1, Math.min(width, 10000)); // Clamp between 1 and 10000
+  }, [width]);
+
+  const sanitizedHeight = useMemo(() => {
+    if (typeof height !== 'number' || isNaN(height) || !isFinite(height) || height <= 0) {
+      return 600; // Default fallback height
+    }
+    return Math.max(1, Math.min(height, 10000)); // Clamp between 1 and 10000
+  }, [height]);
+
+  const sanitizedBeacons = useMemo(() => {
+    if (!Array.isArray(beacons)) {
+      return []; // Return empty array if beacons is not an array
+    }
+    
+    // Filter and sanitize beacon data
+    return beacons.filter((beacon): beacon is Beacon => {
+      if (!beacon || typeof beacon !== 'object') return false;
+      if (!beacon.id || typeof beacon.id !== 'string') return false;
+      if (!beacon.position || typeof beacon.position !== 'object') return false;
+      if (typeof beacon.position.x !== 'number' || isNaN(beacon.position.x) || !isFinite(beacon.position.x)) return false;
+      if (typeof beacon.position.y !== 'number' || isNaN(beacon.position.y) || !isFinite(beacon.position.y)) return false;
+      return true;
+    });
+  }, [beacons]);
+
+  const sanitizedConnections = useMemo(() => {
+    if (!Array.isArray(connections)) {
+      return EMPTY_CONNECTIONS; // Return empty array if connections is not an array
+    }
+    
+    // Filter and sanitize connection data
+    return connections.filter((connection): connection is Connection => {
+      if (!connection || typeof connection !== 'object') return false;
+      if (!connection.id || typeof connection.id !== 'string') return false;
+      if (!connection.sourceId || typeof connection.sourceId !== 'string') return false;
+      if (!connection.targetId || typeof connection.targetId !== 'string') return false;
+      if (typeof connection.strength !== 'number' || isNaN(connection.strength) || !isFinite(connection.strength)) return false;
+      if (typeof connection.isActive !== 'boolean') return false;
+      return true;
+    });
+  }, [connections]);
+
+  const sanitizedPatterns = useMemo(() => {
+    return Array.isArray(patterns) ? patterns : EMPTY_PATTERNS;
+  }, [patterns]);
+
+  const sanitizedStarSystems = useMemo(() => {
+    return Array.isArray(starSystems) ? starSystems : EMPTY_STAR_SYSTEMS;
+  }, [starSystems]);
+
+  const sanitizedSectors = useMemo(() => {
+    return Array.isArray(sectors) ? sectors : EMPTY_SECTORS;
+  }, [sectors]);
+
+  const sanitizedEnabledModules = useMemo(() => {
+    if (!Array.isArray(enabledModules)) {
+      return EMPTY_MODULES;
+    }
+    // Filter out invalid module names
+    return enabledModules.filter(module => 
+      typeof module === 'string' && module.length > 0
+    );
+  }, [enabledModules]);
+
+  const sanitizedGestureConfig = useMemo(() => {
+    const config = gestureConfig || {};
+    return {
+      panActivationDistance: typeof config.panActivationDistance === 'number' && 
+                           isFinite(config.panActivationDistance) && 
+                           config.panActivationDistance > 0 
+                           ? config.panActivationDistance : 8,
+      panSensitivity: typeof config.panSensitivity === 'number' && 
+                     isFinite(config.panSensitivity) && 
+                     config.panSensitivity > 0 
+                     ? config.panSensitivity : 1.0,
+      enableMomentum: typeof config.enableMomentum === 'boolean' ? config.enableMomentum : false,
+    };
+  }, [gestureConfig]);
   // Module system
   const moduleManager = useRef<ModuleManager | null>(null);
   const eventBusUnsubscribe = useRef<(() => void) | null>(null);
@@ -176,17 +261,50 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
   const lastTranslateY = useSharedValue(0);
 
   // Viewport state management
-  const [viewportState, setViewportState] = useState<ViewportState>({
+  const [viewportState, setViewportState] = useState<ViewportState>(() => ({
     translateX: 0,
     translateY: 0,
     scale: 1,
     bounds: {
       minX: 0,
-      maxX: width,
+      maxX: sanitizedWidth,
       minY: 0,
-      maxY: height,
+      maxY: sanitizedHeight,
     },
-  });
+  }));
+
+  // Update viewport state when dimensions change
+  useEffect(() => {
+    // Use functional update to avoid dependency on current viewportState
+    setViewportState(prevState => {
+      const newViewport = {
+        ...prevState,
+        bounds: {
+          minX: 0,
+          maxX: sanitizedWidth,
+          minY: 0,
+          maxY: sanitizedHeight,
+        },
+      };
+
+      // Emit viewport changed event to modules when dimensions change
+      // Only emit if modules are initialized and not during initial mount
+      if (moduleManager.current && modulesInitialized && !isGestureActiveRef.current) {
+        // Use a timeout to ensure the event is emitted after the state update
+        setTimeout(() => {
+          if (moduleManager.current) {
+            moduleManager.current.getEventBus().emit('viewport:changed', {
+              moduleId: 'core',
+              timestamp: Date.now(),
+              data: newViewport,
+            });
+          }
+        }, 0);
+      }
+
+      return newViewport;
+    });
+  }, [sanitizedWidth, sanitizedHeight, modulesInitialized]);
 
   // Notification management with proper timeout cleanup
   const dismissNotification = useCallback((notificationId: number) => {
@@ -229,7 +347,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
   }, []); // Empty dependency array - function doesn't need to be recreated
 
   // Stabilize enabledModules array to prevent unnecessary re-initialization
-  const stableEnabledModules = useMemo(() => enabledModules, [enabledModules.length, ...enabledModules]);
+  const stableEnabledModules = useMemo(() => sanitizedEnabledModules, [sanitizedEnabledModules.length, ...sanitizedEnabledModules]);
 
   // Initialize module system
   useEffect(() => {
@@ -338,11 +456,13 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     setFps(prev => prev !== roundedFps ? roundedFps : prev);
     
     // Report performance to GalaxyMapConfig for auto-optimization
-    galaxyMapConfig.reportPerformance(newFps, deltaTime);
+    if (galaxyMapConfig?.reportPerformance) {
+      galaxyMapConfig.reportPerformance(newFps, deltaTime);
+    }
     
     // Check if we should skip frames (every 100ms)
     if (now - lastSkipCheck.current > 100) {
-      shouldSkipFrame.current = galaxyMapConfig.shouldSkipFrame();
+      shouldSkipFrame.current = galaxyMapConfig?.shouldSkipFrame?.() || false;
       lastSkipCheck.current = now;
     }
     
@@ -354,15 +474,17 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       
       // Log performance every 60 frames
       if (frameCount.current % 60 === 0) {
-        const configStats = galaxyMapConfig.getPerformanceStats();
+        const configStats = galaxyMapConfig?.getPerformanceStats?.() || { currentQuality: 'unknown', skipRatio: 0 };
         console.log(`[GalaxyMapModular] FPS: ${Math.round(newFps)}, Global FPS: ${Math.round(globalMetrics.averageFps)}, Quality: ${configStats.currentQuality}, Skip Ratio: ${(configStats.skipRatio * 100).toFixed(1)}%, Disabled Modules: ${globalMetrics.disabledModules.length}, Frame: ${frameCount.current}`);
       }
 
       // Emergency mode detection - if FPS drops below 10 consistently (and not in initial frames)
-      if (newFps < 10 && !emergencyModeRef.current && frameCount.current > 60) {
+      if ((newFps < 10 || globalMetrics.averageFps < 10) && !emergencyModeRef.current && frameCount.current > 60) {
         console.warn('[GalaxyMapModular] Emergency mode triggered due to low FPS');
         setEmergencyModeState(true);
-        galaxyMapConfig.emergencyReset();
+        if (galaxyMapConfig?.emergencyReset) {
+          galaxyMapConfig.emergencyReset();
+        }
       }
     }
   }, [setEmergencyModeState]); // Include setEmergencyModeState dependency
@@ -391,7 +513,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         translateX: newTranslateX,
         translateY: newTranslateY,
         scale: newScale,
-        bounds: calculateVisibleBounds(width, height, {
+        bounds: calculateVisibleBounds(sanitizedWidth, sanitizedHeight, {
           translateX: newTranslateX,
           translateY: newTranslateY,
           scale: newScale,
@@ -412,7 +534,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       // Clear pending update
       pendingViewportUpdate.current = null;
     },
-    [width, height] // Dependencies for calculateVisibleBounds
+    [sanitizedWidth, sanitizedHeight] // Dependencies for calculateVisibleBounds
   );
   
   // Process pending viewport updates immediately after gesture ends (no InteractionManager delay)
@@ -429,7 +551,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
           translateX: pending.translateX,
           translateY: pending.translateY,
           scale: pending.scale,
-          bounds: calculateVisibleBounds(width, height, {
+          bounds: calculateVisibleBounds(sanitizedWidth, sanitizedHeight, {
             translateX: pending.translateX,
             translateY: pending.translateY,
             scale: pending.scale,
@@ -455,17 +577,17 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     // Check for pending updates periodically
     const interval = setInterval(checkPendingUpdate, 16); // Check at 60fps
     return () => clearInterval(interval);
-  }, [width, height]); // Only width/height dependency needed
+  }, [sanitizedWidth, sanitizedHeight]); // Only width/height dependency needed
 
   // Memoize screen dimensions to prevent unnecessary context recreation
-  const screenDimensions = useMemo(() => ({ width, height }), [width, height]);
+  const screenDimensions = useMemo(() => ({ width: sanitizedWidth, height: sanitizedHeight }), [sanitizedWidth, sanitizedHeight]);
   
   // Memoize stable references for arrays to prevent unnecessary updates
-  const stableBeacons = useMemo(() => beacons, [beacons]);
-  const stableConnections = useMemo(() => connections, [connections]);
-  const stablePatterns = useMemo(() => patterns, [patterns]);
-  const stableStarSystems = useMemo(() => starSystems, [starSystems]);
-  const stableSectors = useMemo(() => sectors, [sectors]);
+  const stableBeacons = useMemo(() => sanitizedBeacons, [sanitizedBeacons]);
+  const stableConnections = useMemo(() => sanitizedConnections, [sanitizedConnections]);
+  const stablePatterns = useMemo(() => sanitizedPatterns, [sanitizedPatterns]);
+  const stableStarSystems = useMemo(() => sanitizedStarSystems, [sanitizedStarSystems]);
+  const stableSectors = useMemo(() => sanitizedSectors, [sanitizedSectors]);
   
   // Throttled viewport for module context to reduce re-renders
   const throttledViewportRef = useRef(viewportState);
@@ -591,7 +713,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         translateX,
         translateY,
         scale,
-        bounds: calculateVisibleBounds(width, height, {
+        bounds: calculateVisibleBounds(sanitizedWidth, sanitizedHeight, {
           translateX,
           translateY,
           scale,
@@ -606,7 +728,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       const hitRadius = 20;
       let selectedBeaconFound = null;
       
-      for (const beacon of beacons) {
+      for (const beacon of sanitizedBeacons) {
         if (isPointInHitArea(galaxyPoint, beacon.position, hitRadius)) {
           selectedBeaconFound = beacon;
           break;
@@ -641,7 +763,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         }
       }
     },
-    [width, height, beacons, onBeaconSelect, onMapPress]
+    [sanitizedWidth, sanitizedHeight, sanitizedBeacons, onBeaconSelect, onMapPress]
   );
 
   // Optimized pan gesture with improved throttling and configurable activation
@@ -650,9 +772,9 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
   const isPanActive = useRef(false);
   
   // Extract gesture configuration with defaults
-  const panActivationDistance = gestureConfig?.panActivationDistance ?? 8;
-  const panSensitivity = gestureConfig?.panSensitivity ?? 1.0;
-  const enableMomentum = gestureConfig?.enableMomentum ?? false;
+  const panActivationDistance = sanitizedGestureConfig.panActivationDistance;
+  const panSensitivity = sanitizedGestureConfig.panSensitivity;
+  const enableMomentum = sanitizedGestureConfig.enableMomentum;
   
   const panGesture = Gesture.Pan()
     .onStart((event) => {
@@ -660,8 +782,8 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       lastTranslateY.value = translateY.value;
       // Use event position if available, fallback to center of screen for testing
       gestureStartPosition.current = { 
-        x: event?.x ?? width / 2, 
-        y: event?.y ?? height / 2 
+        x: event?.x ?? sanitizedWidth / 2, 
+        y: event?.y ?? sanitizedHeight / 2 
       };
       isPanActive.current = false; // Will be activated once threshold is met
       runOnJS(setGestureActiveState)(true);
@@ -711,7 +833,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         translateX.value = withDecay({
           velocity: (event?.velocityX ?? 0) * panSensitivity * 0.5, // Reduce velocity for smoother decay
           clamp: [
-            -(GALAXY_WIDTH * scale.value - width),
+            -(GALAXY_WIDTH * scale.value - sanitizedWidth),
             0
           ],
         });
@@ -719,7 +841,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         translateY.value = withDecay({
           velocity: (event?.velocityY ?? 0) * panSensitivity * 0.5,
           clamp: [
-            -(GALAXY_HEIGHT * scale.value - height),
+            -(GALAXY_HEIGHT * scale.value - sanitizedHeight),
             0
           ],
         });
@@ -760,8 +882,8 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       const newScale = clampScale(lastScale.value * event.scale);
       
       const focalPoint = {
-        x: event.focalX || width / 2,
-        y: event.focalY || height / 2,
+        x: event.focalX || sanitizedWidth / 2,
+        y: event.focalY || sanitizedHeight / 2,
       };
       
       const newTranslation = calculateZoomFocalPoint(
@@ -773,8 +895,8 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
 
       const constrainedTranslation = constrainTranslationElastic(
         newTranslation,
-        width,
-        height,
+        sanitizedWidth,
+        sanitizedHeight,
         GALAXY_WIDTH,
         GALAXY_HEIGHT,
         newScale
@@ -835,8 +957,25 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
     };
   });
 
+  // Error reporting callback for analytics
+  const handleErrorReport = useCallback((errorReport: any) => {
+    console.error('[GalaxyMapModular] Error reported:', errorReport);
+    
+    // Add error notification
+    addNotification(
+      'error',
+      `Component error: ${errorReport.error.message}`,
+      errorReport.moduleId
+    );
+  }, [addNotification]);
+
   return (
-    <View style={[{ width, height }, style]} className="galaxy-map-modular" testID="galaxy-map">
+    <GalaxyMapErrorBoundary 
+      onErrorReport={handleErrorReport}
+      showReporting={debugMode}
+      testID="galaxy-map-error-boundary"
+    >
+      <View style={[{ width: sanitizedWidth, height: sanitizedHeight }, style]} className="galaxy-map-modular" testID="galaxy-map">
       {/* Performance and debug display */}
       {debugMode && moduleManager.current && (
         <View className="absolute top-4 left-4 bg-black bg-opacity-50 p-2 rounded">
@@ -849,7 +988,7 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
                   FPS: {fps} | Global FPS: {Math.round(globalMetrics.averageFps)}
                 </Text>
                 <Text className="text-white text-xs">
-                  Beacons: {beacons.length} | Quality: {configStats.currentQuality}
+                  Beacons: {sanitizedBeacons.length} | Quality: {configStats.currentQuality}
                 </Text>
                 <Text className="text-white text-xs">
                   Modules: {modulesInitialized ? 'Ready' : 'Loading'} | Skip: {(configStats.skipRatio * 100).toFixed(1)}%
@@ -884,7 +1023,9 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
           <View className="space-y-2">
             <TouchableOpacity
               onPress={() => {
-                galaxyMapConfig.setQualityLevel('high', 'user recovery');
+                if (galaxyMapConfig?.setQualityLevel) {
+                  galaxyMapConfig.setQualityLevel('high', 'user recovery');
+                }
                 setEmergencyModeState(false);
               }}
               className="bg-green-600 px-3 py-2 rounded"
@@ -893,8 +1034,10 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                galaxyMapConfig.setModuleEnabled('beacon-rendering', true);
-                galaxyMapConfig.setModuleEnabled('connection-rendering', true);
+                if (galaxyMapConfig?.setModuleEnabled) {
+                  galaxyMapConfig.setModuleEnabled('beacon-rendering', true);
+                  galaxyMapConfig.setModuleEnabled('connection-rendering', true);
+                }
               }}
               className="bg-blue-600 px-3 py-2 rounded"
             >
@@ -950,11 +1093,11 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
       <GestureDetector gesture={composedGesture}>
         <Animated.View style={{ flex: 1 }}>
           <AnimatedSvg
-            width={width}
-            height={height}
-            viewBox={`0 0 ${width} ${height}`}
+            width={sanitizedWidth}
+            height={sanitizedHeight}
+            viewBox={`0 0 ${sanitizedWidth} ${sanitizedHeight}`}
           >
-            <Rect x={0} y={0} width={width} height={height} fill="#0F172A" />
+            <Rect x={0} y={0} width={sanitizedWidth} height={sanitizedHeight} fill="#0F172A" />
 
             <AnimatedG {...(process.env.NODE_ENV !== 'test' ? { animatedProps } : {})}>
               {/* Galaxy bounds visualization */}
@@ -976,8 +1119,9 @@ export const GalaxyMapModular: React.FC<GalaxyMapModularProps> = ({
         </Animated.View>
       </GestureDetector>
 
-      {/* Performance controls are now integrated into the FPS overlay in MainScreen */}
-    </View>
+        {/* Performance controls are now integrated into the FPS overlay in MainScreen */}
+      </View>
+    </GalaxyMapErrorBoundary>
   );
 };
 
