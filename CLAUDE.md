@@ -6,6 +6,90 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Signal Garden is an idle/incremental mobile game built with React Native and Expo. Players control an AI consciousness spreading through a dying galaxy by launching probes to establish quantum communication beacons. The core gameplay involves creating geometric patterns of connected beacons to generate resources and save dying stars.
 
+## Test-Driven Development (TDD) Requirements
+
+**MANDATORY**: All code changes must follow Test-Driven Development practices. No code should be written without corresponding tests following the appropriate Red-Green-Refactor cycle.
+
+### For NEW CODE and REFACTORING
+
+Follow the strict Red-Green-Refactor cycle:
+
+1. **RED Phase**: Write a failing test first
+   - Test should describe the desired behavior/API
+   - Run test to confirm it fails for the right reason
+   - Test failure validates the test is properly connected
+
+2. **GREEN Phase**: Write minimal code to make the test pass
+   - Implement only what's needed to pass the current test
+   - Avoid over-engineering or adding extra features
+   - Focus on making the test pass as simply as possible
+
+3. **REFACTOR Phase**: Improve code while keeping tests green
+   - Clean up implementation without changing behavior
+   - Run tests continuously to ensure they remain green
+   - Improve design, remove duplication, enhance readability
+
+### For EXISTING CODE BUGS
+
+Follow the characterization-then-fix approach:
+
+1. **Characterize Current Behavior**: Write a test that passes by documenting the current buggy behavior
+   - This test captures what the code currently does (even if wrong)
+   - Serves as a safety net during refactoring
+   - Documents the bug for future reference
+
+2. **Define Correct Behavior**: Write a test that fails because it expects the correct behavior
+   - This test specifies what the code should do
+   - Initially fails because bug still exists
+   - Guides the fix implementation
+
+3. **Fix the Code**: Modify implementation to make the correct behavior test pass
+   - Make minimal changes to address the specific bug
+   - Ensure the correct behavior test now passes
+   - May cause the characterization test to fail (expected)
+
+4. **Clean Up**: Remove or update the bug-documenting test
+   - Remove characterization test if no longer needed
+   - Or update it to test a different edge case
+   - Ensure final test suite represents desired behavior
+
+### Testing Framework Requirements
+
+Before implementing any feature or fix:
+
+1. **Verify Test Framework**: Ensure Jest and React Native Testing Library are configured
+   - Check `package.json` for test dependencies
+   - Verify test scripts are available
+   - Set up testing framework if not present
+
+2. **Test File Organization**: Follow React Native testing conventions
+   - Component tests: `__tests__/ComponentName.test.tsx`
+   - Utility tests: `__tests__/utilityName.test.ts`
+   - Integration tests: `__tests__/integration/`
+   - E2E tests: Use Detox for critical user flows
+
+3. **Test Coverage Requirements**:
+   - All new functions/components must have tests
+   - Bug fixes must include regression tests
+   - Critical game systems require integration tests
+   - Performance-sensitive code needs benchmark tests
+
+### TDD Integration with Project Workflow
+
+1. **Before Writing Code**: Always write the test first
+2. **During Implementation**: Run tests frequently to stay in Green phase
+3. **Before Commits**: Ensure all tests pass (`npm run test`)
+4. **Code Quality**: Run `npm run lint` and `npm run type-check` after test pass
+5. **Task Master Integration**: Update task status only after tests are green
+
+### Game-Specific Testing Patterns
+
+- **Game State**: Test state transitions and persistence
+- **Animations**: Mock React Native Reanimated for unit tests
+- **Performance**: Benchmark spatial algorithms and rendering
+- **Touch Interactions**: Test gesture handling with React Native Testing Library
+- **Offline Behavior**: Test resource generation during app backgrounding
+
 ## Development Commands
 
 ### Essential Commands
@@ -23,11 +107,22 @@ npm run lint:fix            # Auto-fix ESLint issues
 npm run format              # Format code with Prettier
 npm run format:check        # Check if code is properly formatted
 npm run type-check          # Run TypeScript compiler without emitting files
+
+# Testing (Required for all code changes - see TDD Requirements above)
+npm test                    # Run all tests - MUST pass before commits
+npm run test:watch          # Run tests in watch mode during development
+npm run test:coverage       # Generate test coverage report
 ```
 
-### Testing
+### Testing Framework Setup
 
-No test framework is currently configured. When implementing tests, check if Jest, React Native Testing Library, or Detox should be added based on project needs.
+**REQUIRED**: Jest and React Native Testing Library must be configured before any code implementation. If not present, add these dependencies:
+
+```bash
+npm install --save-dev jest @types/jest react-native-testing-library
+npm install --save-dev @testing-library/jest-native @testing-library/react-native
+npm install --save-dev detox # For E2E testing of critical user flows
+```
 
 ## Architecture
 
