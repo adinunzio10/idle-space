@@ -123,14 +123,14 @@ npm run test:component      # Run component tests only
 npm run test:util           # Run utility tests only
 
 # Custom Test Patterns (when predefined scripts don't exist)
-npm test -- --testPathPattern=YourTestName    # Run specific test pattern
+npm test -- --testPathPatterns=YourTestName   # Run specific test pattern
 npm test -- --testNamePattern="describe name" # Run tests matching describe block
 
 # IMPORTANT: Common Test Running Mistakes to AVOID
-# ❌ WRONG: npm test --testPathPattern=Pattern    (missing the --)
-# ❌ WRONG: jest --testPathPatterns=Pattern       (deprecated syntax)
-# ❌ WRONG: npm run test Pattern                  (incorrect syntax)
-# ✅ CORRECT: npm test -- --testPathPattern=Pattern
+# ❌ WRONG: npm test --testPathPatterns=Pattern    (missing the --)
+# ❌ WRONG: jest --testPathPattern=Pattern         (singular form - use plural)
+# ❌ WRONG: npm run test Pattern                   (incorrect syntax)
+# ✅ CORRECT: npm test -- --testPathPatterns=Pattern (note: plural with --)
 # ✅ CORRECT: Use predefined scripts: npm run test:galaxy
 ```
 
